@@ -45,4 +45,11 @@ var (
 
 	logsLineStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#CBD5E1"))
+
+	inspectSectionStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#A78BFA")).
+				Bold(true)
+
+	inspectValueStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#CBD5E1"))
 )

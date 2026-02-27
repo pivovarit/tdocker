@@ -8,7 +8,10 @@ import (
 	"github.com/pivovarit/tdocker/internal/docker"
 )
 
-const logsPanelHeight = 15
+const (
+	logsPanelHeight    = 15
+	inspectPanelHeight = 20
+)
 
 type Model struct {
 	table            table.Model
@@ -35,6 +38,11 @@ type Model struct {
 	logsScrollOffset int
 	logsAutoScroll   bool
 	logsStop         func()
+
+	inspectVisible   bool
+	inspectLines     []string
+	inspectContainer string
+	inspectOffset    int
 }
 
 func InitialModel() Model {
@@ -108,6 +116,29 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "G", "end":
 				m.logsScrollOffset = max(0, len(m.logsLines)-(logsPanelHeight-2))
 				m.logsAutoScroll = true
+			}
+			return m, nil
+		}
+		if m.inspectVisible {
+			switch msg.String() {
+			case "esc", "i":
+				m = m.closeInspect()
+			case "q", "ctrl+c":
+				m = m.closeInspect()
+				return m, tea.Quit
+			case "up", "k":
+				if m.inspectOffset > 0 {
+					m.inspectOffset--
+				}
+			case "down", "j":
+				maxOff := max(0, len(m.inspectLines)-(inspectPanelHeight-2))
+				if m.inspectOffset < maxOff {
+					m.inspectOffset++
+				}
+			case "g", "home":
+				m.inspectOffset = 0
+			case "G", "end":
+				m.inspectOffset = max(0, len(m.inspectLines)-(inspectPanelHeight-2))
 			}
 			return m, nil
 		}
@@ -212,6 +243,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.confirmName = filtered[cursor].Names
 				return m, nil
 			}
+		case "i":
+			cursor := m.table.Cursor()
+			filtered := m.filtered()
+			if cursor >= 0 && cursor < len(filtered) {
+				m.inspectVisible = true
+				m.inspectLines = nil
+				m.inspectOffset = 0
+				m.inspectContainer = filtered[cursor].Names
+				m.table.SetHeight(m.tableHeight())
+				return m, docker.InspectContainer(filtered[cursor].ID)
+			}
 		}
 
 	case docker.ContainersMsg:
@@ -274,6 +316,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case docker.LogsEndMsg:
 		return m, nil
+
+	case docker.InspectMsg:
+		if !m.inspectVisible {
+			return m, nil
+		}
+		if msg.Err != nil {
+			m.err = msg.Err
+			m = m.closeInspect()
+			return m, nil
+		}
+		m.inspectLines = buildInspectLines(msg.Data, m.width)
+		return m, nil
 	}
 
 	var cmd tea.Cmd
@@ -304,10 +358,22 @@ func (m Model) closeLogs() Model {
 	return m
 }
 
+func (m Model) closeInspect() Model {
+	m.inspectVisible = false
+	m.inspectLines = nil
+	m.inspectContainer = ""
+	m.inspectOffset = 0
+	m.table.SetHeight(m.tableHeight())
+	return m
+}
+
 func (m Model) tableHeight() int {
 	reserved := 8
 	if m.logsVisible {
 		reserved += logsPanelHeight
+	}
+	if m.inspectVisible {
+		reserved += inspectPanelHeight
 	}
 	h := m.height - reserved
 	if h < 3 {

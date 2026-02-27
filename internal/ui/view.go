@@ -2,7 +2,10 @@ package ui
 
 import (
 	"fmt"
+	"sort"
 	"strings"
+
+	"github.com/pivovarit/tdocker/internal/docker"
 )
 
 func (m Model) View() string {
@@ -82,6 +85,11 @@ func (m Model) View() string {
 		b.WriteString(m.renderLogsPanel())
 	}
 
+	if m.inspectVisible {
+		b.WriteString("\n")
+		b.WriteString(m.renderInspectPanel())
+	}
+
 	b.WriteString("\n")
 	switch {
 	case m.logsVisible:
@@ -90,6 +98,14 @@ func (m Model) View() string {
 				keyStyle.Render("g") + " top  ·  " +
 				keyStyle.Render("G") + " bottom  ·  " +
 				keyStyle.Render("esc") + "/" + keyStyle.Render("l") + " close  ·  " +
+				keyStyle.Render("q") + " quit",
+		))
+	case m.inspectVisible:
+		b.WriteString(helpStyle.Render(
+			"  ↑/↓ scroll  ·  " +
+				keyStyle.Render("g") + " top  ·  " +
+				keyStyle.Render("G") + " bottom  ·  " +
+				keyStyle.Render("esc") + "/" + keyStyle.Render("i") + " close  ·  " +
 				keyStyle.Render("q") + " quit",
 		))
 	case m.confirming:
@@ -121,6 +137,7 @@ func (m Model) View() string {
 		b.WriteString(helpStyle.Render(
 			"  " + prefix + "↑/↓ navigate  ·  " +
 				keyStyle.Render("/") + " filter  ·  " +
+				keyStyle.Render("i") + " inspect  ·  " +
 				keyStyle.Render("l") + " logs  ·  " +
 				keyStyle.Render("s") + " stop  ·  " +
 				keyStyle.Render("S") + " start  ·  " +
@@ -161,4 +178,112 @@ func (m Model) renderLogsPanel() string {
 	}
 
 	return b.String()
+}
+
+func (m Model) renderInspectPanel() string {
+	var b strings.Builder
+	w := m.width
+
+	b.WriteString(logsDividerStyle.Render(strings.Repeat("─", w)))
+	b.WriteString("\n")
+	b.WriteString(logsTitleStyle.Render(" Inspect: " + m.inspectContainer))
+	b.WriteString("\n")
+
+	maxLines := inspectPanelHeight - 2
+
+	if len(m.inspectLines) == 0 {
+		b.WriteString(emptyStyle.Render("Loading…"))
+		b.WriteString("\n")
+		for i := 1; i < maxLines; i++ {
+			b.WriteString("\n")
+		}
+		return b.String()
+	}
+
+	start := m.inspectOffset
+	end := start + maxLines
+	if end > len(m.inspectLines) {
+		end = len(m.inspectLines)
+	}
+
+	shown := 0
+	for i := start; i < end; i++ {
+		b.WriteString(m.inspectLines[i])
+		b.WriteString("\n")
+		shown++
+	}
+	for ; shown < maxLines; shown++ {
+		b.WriteString("\n")
+	}
+
+	return b.String()
+}
+
+func buildInspectLines(d *docker.InspectData, width int) []string {
+	var lines []string
+	add := func(s string) { lines = append(lines, s) }
+
+	add(inspectSectionStyle.Render("Image"))
+	digest := d.ImageDigest
+	if width > 4 && len(digest) > width-4 {
+		digest = digest[:width-5] + "…"
+	}
+	add("  " + inspectValueStyle.Render(digest))
+	add("")
+
+	add(inspectSectionStyle.Render("Ports"))
+	if len(d.Ports) == 0 {
+		add("  " + inspectValueStyle.Render("(none)"))
+	} else {
+		portKeys := make([]string, 0, len(d.Ports))
+		for k := range d.Ports {
+			portKeys = append(portKeys, k)
+		}
+		sort.Strings(portKeys)
+		for _, containerPort := range portKeys {
+			bindings := d.Ports[containerPort]
+			if len(bindings) == 0 {
+				add("  " + keyStyle.Render(containerPort) + "  " + inspectValueStyle.Render("→  (not published)"))
+			} else {
+				for _, b := range bindings {
+					host := b.HostIP + ":" + b.HostPort
+					add("  " + keyStyle.Render(containerPort) + "  " + inspectValueStyle.Render("→  "+host))
+				}
+			}
+		}
+	}
+	add("")
+
+	add(inspectSectionStyle.Render("Environment"))
+	if len(d.Env) == 0 {
+		add("  " + inspectValueStyle.Render("(none)"))
+	} else {
+		for _, e := range d.Env {
+			if idx := strings.Index(e, "="); idx > 0 {
+				add("  " + keyStyle.Render(e[:idx]+"=") + inspectValueStyle.Render(e[idx+1:]))
+			} else {
+				add("  " + inspectValueStyle.Render(e))
+			}
+		}
+	}
+	add("")
+
+	add(inspectSectionStyle.Render("Mounts"))
+	if len(d.Mounts) == 0 {
+		add("  " + inspectValueStyle.Render("(none)"))
+	} else {
+		for _, mount := range d.Mounts {
+			rw := "ro"
+			if mount.RW {
+				rw = "rw"
+			}
+			src := mount.Source
+			if src == "" {
+				src = "(" + mount.Type + ")"
+			}
+			add("  " + keyStyle.Render(src) + "  " + inspectValueStyle.Render("→  "+mount.Destination+"  ("+rw+")"))
+		}
+	}
+
+	return lines
 }
