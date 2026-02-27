@@ -20,7 +20,10 @@ type Model struct {
 	loading          bool
 	stopping         bool
 	confirming       bool
-	confirmIdx       int
+	confirmID        string
+	confirmName      string
+	filtering        bool
+	filterQuery      string
 	err              error
 	width            int
 	height           int
@@ -44,23 +47,45 @@ func (m Model) Init() tea.Cmd {
 	return docker.FetchContainers(m.showAll)
 }
 
+func (m Model) filtered() []docker.Container {
+	if m.filterQuery == "" {
+		return m.sorted
+	}
+	q := strings.ToLower(m.filterQuery)
+	var out []docker.Container
+	for _, c := range m.sorted {
+		if strings.Contains(strings.ToLower(c.Names), q) ||
+			strings.Contains(strings.ToLower(c.Image), q) ||
+			strings.Contains(strings.ToLower(c.ID), q) {
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
+func (m Model) rebuildTable() Model {
+	m.table = buildTable(m.filtered(), m.width)
+	m.table.SetHeight(m.tableHeight())
+	m.viewportStart = 0
+	return m
+}
+
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m.table = buildTable(m.sorted, m.width)
-		m.table.SetHeight(m.tableHeight())
+		m = m.rebuildTable()
 		return m, nil
 
 	case tea.KeyMsg:
 		if m.logsVisible {
 			switch msg.String() {
 			case "esc", "l":
-				m.closeLogs()
+				m = m.closeLogs()
 			case "q", "ctrl+c":
-				m.closeLogs()
+				m = m.closeLogs()
 				return m, tea.Quit
 			case "up", "k":
 				if m.logsScrollOffset > 0 {
@@ -90,9 +115,25 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.confirming = false
 				m.stopping = true
 				m.err = nil
-				return m, docker.StopContainer(m.sorted[m.confirmIdx].ID)
+				return m, docker.StopContainer(m.confirmID)
 			case "n", "N", "esc", "q":
 				m.confirming = false
+			}
+			return m, nil
+		}
+		if m.filtering {
+			switch msg.Type {
+			case tea.KeyEsc, tea.KeyEnter:
+				m.filtering = false
+			case tea.KeyBackspace, tea.KeyDelete:
+				if len(m.filterQuery) > 0 {
+					runes := []rune(m.filterQuery)
+					m.filterQuery = string(runes[:len(runes)-1])
+					m = m.rebuildTable()
+				}
+			case tea.KeyRunes:
+				m.filterQuery += string(msg.Runes)
+				m = m.rebuildTable()
 			}
 			return m, nil
 		}
@@ -108,24 +149,35 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.loading = true
 			m.err = nil
 			return m, docker.FetchContainers(m.showAll)
+		case "/":
+			m.filtering = true
+			return m, nil
+		case "esc":
+			if m.filterQuery != "" {
+				m.filterQuery = ""
+				m = m.rebuildTable()
+			}
 		case "l":
 			cursor := m.table.Cursor()
-			if cursor >= 0 && cursor < len(m.sorted) {
-				m.logsContainer = m.sorted[cursor].Names
+			filtered := m.filtered()
+			if cursor >= 0 && cursor < len(filtered) {
+				m.logsContainer = filtered[cursor].Names
 				m.logsLines = nil
 				m.logsScrollOffset = 0
 				m.logsAutoScroll = true
 				m.logsVisible = true
-				firstLine, stop := docker.StartLogs(m.sorted[cursor].ID)
+				firstLine, stop := docker.StartLogs(filtered[cursor].ID)
 				m.logsStop = stop
 				m.table.SetHeight(m.tableHeight())
 				return m, firstLine
 			}
 		case "s":
 			cursor := m.table.Cursor()
-			if cursor >= 0 && cursor < len(m.sorted) && m.sorted[cursor].State == "running" {
+			filtered := m.filtered()
+			if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State == "running" {
 				m.confirming = true
-				m.confirmIdx = cursor
+				m.confirmID = filtered[cursor].ID
+				m.confirmName = filtered[cursor].Names
 				return m, nil
 			}
 		}
@@ -133,11 +185,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case docker.ContainersMsg:
 		m.containers = msg
 		m.sorted = docker.Sort(m.containers)
-		m.viewportStart = 0
 		m.loading = false
 		m.err = nil
-		m.table = buildTable(m.sorted, m.width)
-		m.table.SetHeight(m.tableHeight())
+		m = m.rebuildTable()
 		return m, nil
 
 	case docker.ErrMsg:
@@ -182,7 +232,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m *Model) closeLogs() {
+func (m Model) closeLogs() Model {
 	if m.logsStop != nil {
 		m.logsStop()
 		m.logsStop = nil
@@ -193,6 +243,7 @@ func (m *Model) closeLogs() {
 	m.logsScrollOffset = 0
 	m.logsAutoScroll = true
 	m.table.SetHeight(m.tableHeight())
+	return m
 }
 
 func (m Model) tableHeight() int {
@@ -244,8 +295,14 @@ func (m Model) View() string {
 		mode = "all"
 	}
 
+	filtered := m.filtered()
+	countStr := fmt.Sprintf("%d", len(m.containers))
+	if m.filterQuery != "" {
+		countStr = fmt.Sprintf("%d/%d", len(filtered), len(m.containers))
+	}
+
 	b.WriteString(titleStyle.Render(
-		fmt.Sprintf(" tdocker  ·  %d container(s)  ·  showing %s", len(m.containers), mode),
+		fmt.Sprintf(" tdocker  ·  %s container(s)  ·  showing %s", countStr, mode),
 	))
 	b.WriteString("\n")
 
@@ -274,6 +331,9 @@ func (m Model) View() string {
 			keyStyle.Render("q") + " to quit."))
 		return b.String()
 
+	case len(filtered) == 0:
+		b.WriteString(emptyStyle.Render(fmt.Sprintf("No containers match %q.", m.filterQuery)))
+
 	default:
 		const headerLines = 2
 
@@ -285,10 +345,10 @@ func (m Model) View() string {
 				continue
 			}
 			containerIdx := m.viewportStart + dataIdx
-			if containerIdx >= len(m.sorted) {
+			if containerIdx >= len(filtered) {
 				break
 			}
-			if m.sorted[containerIdx].State != "running" && containerIdx != cursor {
+			if filtered[containerIdx].State != "running" && containerIdx != cursor {
 				lines[i] = stoppedRowStyle.Render(line)
 			}
 		}
@@ -301,7 +361,8 @@ func (m Model) View() string {
 	}
 
 	b.WriteString("\n")
-	if m.logsVisible {
+	switch {
+	case m.logsVisible:
 		b.WriteString(helpStyle.Render(
 			"  ↑/↓ scroll  ·  " +
 				keyStyle.Render("g") + " top  ·  " +
@@ -309,20 +370,28 @@ func (m Model) View() string {
 				keyStyle.Render("esc") + "/" + keyStyle.Render("l") + " close  ·  " +
 				keyStyle.Render("q") + " quit",
 		))
-	} else if m.confirming && m.confirmIdx < len(m.sorted) {
-		name := m.sorted[m.confirmIdx].Names
+	case m.confirming:
 		b.WriteString(
 			confirmStyle.Render("  Stop ") +
-				keyStyle.Render(name) +
+				keyStyle.Render(m.confirmName) +
 				confirmStyle.Render("? press ") +
 				keyStyle.Render("y") +
 				confirmStyle.Render(" to confirm, ") +
 				keyStyle.Render("n") +
 				confirmStyle.Render(" to cancel"),
 		)
-	} else {
+	case m.filtering:
 		b.WriteString(helpStyle.Render(
-			"  ↑/↓ navigate  ·  " +
+			"  / " + keyStyle.Render(m.filterQuery+"▌") + "   ·  esc/enter exit",
+		))
+	default:
+		prefix := ""
+		if m.filterQuery != "" {
+			prefix = keyStyle.Render("["+m.filterQuery+"]") + "  ·  " + keyStyle.Render("esc") + " clear  ·  "
+		}
+		b.WriteString(helpStyle.Render(
+			"  " + prefix + "↑/↓ navigate  ·  " +
+				keyStyle.Render("/") + " filter  ·  " +
 				keyStyle.Render("l") + " logs  ·  " +
 				keyStyle.Render("s") + " stop  ·  " +
 				keyStyle.Render("a") + " toggle all  ·  " +
