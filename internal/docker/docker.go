@@ -1,11 +1,8 @@
 package docker
 
 import (
-	"bufio"
-	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os/exec"
 	"sort"
 	"strings"
@@ -27,11 +24,11 @@ type (
 	ContainersMsg []Container
 	ErrMsg        struct{ Err error }
 	StopMsg       struct{ Err error }
-	LogsLineMsg   struct {
-		Line string
-		Next tea.Cmd
+	StartMsg      struct{ Err error }
+	DeleteMsg     struct {
+		ID  string
+		Err error
 	}
-	LogsEndMsg struct{ Err error }
 )
 
 func FetchContainers(all bool) tea.Cmd {
@@ -68,40 +65,24 @@ func StopContainer(id string) tea.Cmd {
 	}
 }
 
-func StartLogs(id string) (tea.Cmd, func()) {
-	ctx, cancel := context.WithCancel(context.Background())
-
-	cmd := exec.CommandContext(ctx, "docker", "logs", "--follow", "--tail", "200", id)
-	pr, pw := io.Pipe()
-	cmd.Stdout = pw
-	cmd.Stderr = pw
-
-	if err := cmd.Start(); err != nil {
-		cancel()
-		return func() tea.Msg { return LogsEndMsg{err} }, func() {}
-	}
-
-	go func() {
-		cmd.Wait()
-		pw.Close()
-	}()
-
-	scanner := bufio.NewScanner(pr)
-
-	var readNext tea.Cmd
-	readNext = func() tea.Msg {
-		if scanner.Scan() {
-			return LogsLineMsg{Line: scanner.Text(), Next: readNext}
+func StartContainer(id string) tea.Cmd {
+	return func() tea.Msg {
+		out, err := exec.Command("docker", "start", id).CombinedOutput()
+		if err != nil {
+			return StartMsg{fmt.Errorf("docker start: %w\n%s", err, strings.TrimSpace(string(out)))}
 		}
-		return LogsEndMsg{scanner.Err()}
+		return StartMsg{}
 	}
+}
 
-	stop := func() {
-		cancel()
-		pr.Close()
+func DeleteContainer(id string) tea.Cmd {
+	return func() tea.Msg {
+		out, err := exec.Command("docker", "rm", id).CombinedOutput()
+		if err != nil {
+			return DeleteMsg{ID: id, Err: fmt.Errorf("docker rm: %w\n%s", err, strings.TrimSpace(string(out)))}
+		}
+		return DeleteMsg{ID: id}
 	}
-
-	return readNext, stop
 }
 
 func Sort(containers []Container) []Container {
