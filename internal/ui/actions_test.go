@@ -1,0 +1,249 @@
+package ui
+
+import (
+	"errors"
+	"testing"
+
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/pivovarit/tdocker/internal/docker"
+)
+
+var (
+	runningContainer = docker.Container{ID: "run111", Names: "web", Image: "nginx", State: "running"}
+	stoppedContainer = docker.Container{ID: "stop222", Names: "db", Image: "postgres", State: "exited"}
+)
+
+func TestUpdate_SKeyOnRunningEntersStopConfirm(t *testing.T) {
+	m := modelWithSorted([]docker.Container{runningContainer})
+	got := update(m, runeKey("s"))
+	if !got.confirming {
+		t.Fatal("want confirming=true")
+	}
+	if got.confirmAction != "stop" {
+		t.Errorf("want confirmAction=%q, got %q", "stop", got.confirmAction)
+	}
+	if got.confirmID != runningContainer.ID {
+		t.Errorf("want confirmID=%q, got %q", runningContainer.ID, got.confirmID)
+	}
+}
+
+func TestUpdate_SKeyOnStoppedDoesNothing(t *testing.T) {
+	m := modelWithSorted([]docker.Container{stoppedContainer})
+	got := update(m, runeKey("s"))
+	if got.confirming {
+		t.Error("want confirming=false for non-running container")
+	}
+}
+
+func TestUpdate_ShiftSOnStoppedEntersStartConfirm(t *testing.T) {
+	m := modelWithSorted([]docker.Container{stoppedContainer})
+	got := update(m, runeKey("S"))
+	if !got.confirming {
+		t.Fatal("want confirming=true")
+	}
+	if got.confirmAction != "start" {
+		t.Errorf("want confirmAction=%q, got %q", "start", got.confirmAction)
+	}
+	if got.confirmID != stoppedContainer.ID {
+		t.Errorf("want confirmID=%q, got %q", stoppedContainer.ID, got.confirmID)
+	}
+}
+
+func TestUpdate_ShiftSOnRunningDoesNothing(t *testing.T) {
+	m := modelWithSorted([]docker.Container{runningContainer})
+	got := update(m, runeKey("S"))
+	if got.confirming {
+		t.Error("want confirming=false for running container")
+	}
+}
+
+func TestUpdate_DKeyOnStoppedEntersDeleteConfirm(t *testing.T) {
+	m := modelWithSorted([]docker.Container{stoppedContainer})
+	got := update(m, runeKey("d"))
+	if !got.confirming {
+		t.Fatal("want confirming=true")
+	}
+	if got.confirmAction != "delete" {
+		t.Errorf("want confirmAction=%q, got %q", "delete", got.confirmAction)
+	}
+	if got.confirmID != stoppedContainer.ID {
+		t.Errorf("want confirmID=%q, got %q", stoppedContainer.ID, got.confirmID)
+	}
+}
+
+func TestUpdate_DKeyOnRunningDoesNothing(t *testing.T) {
+	m := modelWithSorted([]docker.Container{runningContainer})
+	got := update(m, runeKey("d"))
+	if got.confirming {
+		t.Error("want confirming=false for running container")
+	}
+}
+
+func TestUpdate_ConfirmYSetsStoppingFlag(t *testing.T) {
+	m := confirming("stop", runningContainer)
+	got := update(m, runeKey("y"))
+	if got.confirming {
+		t.Error("want confirming=false after y")
+	}
+	if !got.stopping {
+		t.Error("want stopping=true")
+	}
+}
+
+func TestUpdate_ConfirmYSetsStartingFlag(t *testing.T) {
+	m := confirming("start", stoppedContainer)
+	got := update(m, runeKey("y"))
+	if got.confirming {
+		t.Error("want confirming=false after y")
+	}
+	if !got.starting {
+		t.Error("want starting=true")
+	}
+}
+
+func TestUpdate_ConfirmYSetsDeletingFlag(t *testing.T) {
+	m := confirming("delete", stoppedContainer)
+	got := update(m, runeKey("y"))
+	if got.confirming {
+		t.Error("want confirming=false after y")
+	}
+	if !got.deleting {
+		t.Error("want deleting=true")
+	}
+}
+
+func TestUpdate_ConfirmCancelKeys(t *testing.T) {
+	cancelKeys := []tea.KeyMsg{
+		runeKey("n"),
+		runeKey("N"),
+		runeKey("q"),
+		{Type: tea.KeyEsc},
+	}
+	for _, key := range cancelKeys {
+		m := confirming("stop", runningContainer)
+		got := update(m, key)
+		if got.confirming {
+			t.Errorf("key %v: want confirming=false", key)
+		}
+		if got.stopping {
+			t.Errorf("key %v: want stopping=false", key)
+		}
+	}
+}
+
+func TestUpdate_DeleteMsgRemovesContainerLocally(t *testing.T) {
+	m := modelWithSorted([]docker.Container{runningContainer, stoppedContainer})
+	got := update(m, docker.DeleteMsg{ID: stoppedContainer.ID})
+	if got.deleting {
+		t.Error("want deleting=false")
+	}
+	if got.loading {
+		t.Error("want no reload — smooth deletion should update locally")
+	}
+	if len(got.containers) != 1 {
+		t.Fatalf("want 1 container remaining, got %d", len(got.containers))
+	}
+	if got.containers[0].ID != runningContainer.ID {
+		t.Errorf("want remaining ID=%q, got %q", runningContainer.ID, got.containers[0].ID)
+	}
+}
+
+func TestUpdate_DeleteMsgUnknownIDIsNoop(t *testing.T) {
+	m := modelWithSorted([]docker.Container{runningContainer, stoppedContainer})
+	got := update(m, docker.DeleteMsg{ID: "unknown"})
+	if len(got.containers) != 2 {
+		t.Errorf("want 2 containers unchanged, got %d", len(got.containers))
+	}
+}
+
+func TestUpdate_DeleteMsgErrorPreservesContainers(t *testing.T) {
+	m := modelWithSorted([]docker.Container{runningContainer, stoppedContainer})
+	got := update(m, docker.DeleteMsg{ID: stoppedContainer.ID, Err: errors.New("denied")})
+	if got.err == nil {
+		t.Error("want err set")
+	}
+	if len(got.containers) != 2 {
+		t.Errorf("want containers unchanged on error, got %d", len(got.containers))
+	}
+}
+
+func TestUpdate_DeleteAllContainersLeavesEmptyList(t *testing.T) {
+	m := modelWithSorted([]docker.Container{stoppedContainer})
+	got := update(m, docker.DeleteMsg{ID: stoppedContainer.ID})
+	if len(got.containers) != 0 {
+		t.Errorf("want 0 containers, got %d", len(got.containers))
+	}
+}
+
+func TestUpdate_StartMsgTriggersReload(t *testing.T) {
+	m := modelWithSorted([]docker.Container{stoppedContainer})
+	m.starting = true
+	result, cmd := m.Update(docker.StartMsg{})
+	got := result.(Model)
+	if got.starting {
+		t.Error("want starting=false")
+	}
+	if !got.loading {
+		t.Error("want loading=true to trigger reload")
+	}
+	if cmd == nil {
+		t.Error("want non-nil fetch cmd")
+	}
+}
+
+func TestUpdate_StartMsgErrorSetsErr(t *testing.T) {
+	m := modelWithSorted([]docker.Container{stoppedContainer})
+	m.starting = true
+	got, cmd := m.Update(docker.StartMsg{Err: errors.New("no such container")})
+	if got.(Model).err == nil {
+		t.Error("want err set")
+	}
+	if got.(Model).loading {
+		t.Error("want no reload on error")
+	}
+	if cmd != nil {
+		t.Error("want nil cmd on error")
+	}
+}
+
+func TestUpdate_StopMsgTriggersReload(t *testing.T) {
+	m := modelWithSorted([]docker.Container{runningContainer})
+	m.stopping = true
+	result, cmd := m.Update(docker.StopMsg{})
+	got := result.(Model)
+	if got.stopping {
+		t.Error("want stopping=false")
+	}
+	if !got.loading {
+		t.Error("want loading=true to trigger reload")
+	}
+	if cmd == nil {
+		t.Error("want non-nil fetch cmd")
+	}
+}
+
+func TestUpdate_StopMsgErrorSetsErr(t *testing.T) {
+	m := modelWithSorted([]docker.Container{runningContainer})
+	m.stopping = true
+	got, _ := m.Update(docker.StopMsg{Err: errors.New("failed")})
+	if got.(Model).err == nil {
+		t.Error("want err set")
+	}
+	if got.(Model).loading {
+		t.Error("want no reload on error")
+	}
+}
+
+func update(m Model, msg tea.Msg) Model {
+	result, _ := m.Update(msg)
+	return result.(Model)
+}
+
+func confirming(action string, c docker.Container) Model {
+	m := modelWithSorted([]docker.Container{c})
+	m.confirming = true
+	m.confirmAction = action
+	m.confirmID = c.ID
+	m.confirmName = c.Names
+	return m
+}
