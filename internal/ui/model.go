@@ -45,6 +45,8 @@ type Model struct {
 	inspectContainer string
 	inspectOffset    int
 
+	copiedName string
+
 	statsVisible     bool
 	statsContainer   string
 	statsContainerID string
@@ -96,6 +98,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
+		m.copiedName = ""
 		if m.logsVisible {
 			switch msg.String() {
 			case "esc", "l":
@@ -274,6 +277,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.inspectContainer = filtered[cursor].Names
 				m.table.SetHeight(m.tableHeight())
 				return m, docker.InspectContainer(filtered[cursor].ID)
+			}
+		case "c":
+			cursor := m.table.Cursor()
+			filtered := m.filtered()
+			if cursor >= 0 && cursor < len(filtered) {
+				c := filtered[cursor]
+				m.copiedName = c.Names
+				return m, copyToClipboard(c.ID)
 			}
 		case "t":
 			cursor := m.table.Cursor()
