@@ -10,7 +10,6 @@ import (
 
 func (m Model) View() string {
 	var b strings.Builder
-
 	mode := "running"
 	if m.showAll {
 		mode = "all"
@@ -141,23 +140,30 @@ func (m Model) View() string {
 			"  / " + keyStyle.Render(m.filterQuery+"▌") + "   ·  esc/enter exit",
 		))
 	default:
-		prefix := ""
-		if m.filterQuery != "" {
-			prefix = keyStyle.Render("["+m.filterQuery+"]") + "  ·  " + keyStyle.Render("esc") + " clear  ·  "
+		if m.copiedName != "" {
+			b.WriteString(helpStyle.Render(
+				"  " + confirmStyle.Render("✓ copied ID of ") + keyStyle.Render(m.copiedName),
+			))
+		} else {
+			prefix := ""
+			if m.filterQuery != "" {
+				prefix = keyStyle.Render("["+m.filterQuery+"]") + "  ·  " + keyStyle.Render("esc") + " clear  ·  "
+			}
+			b.WriteString(helpStyle.Render(
+				"  " + prefix + "↑/↓ navigate  ·  " +
+					keyStyle.Render("c") + " copy  ·  " +
+					keyStyle.Render("/") + " filter  ·  " +
+					keyStyle.Render("i") + " inspect  ·  " +
+					keyStyle.Render("t") + " stats  ·  " +
+					keyStyle.Render("l") + " logs  ·  " +
+					keyStyle.Render("s") + " stop  ·  " +
+					keyStyle.Render("S") + " start  ·  " +
+					keyStyle.Render("d") + " delete  ·  " +
+					keyStyle.Render("a") + " toggle all  ·  " +
+					keyStyle.Render("r") + " refresh  ·  " +
+					keyStyle.Render("q") + " quit",
+			))
 		}
-		b.WriteString(helpStyle.Render(
-			"  " + prefix + "↑/↓ navigate  ·  " +
-				keyStyle.Render("/") + " filter  ·  " +
-				keyStyle.Render("i") + " inspect  ·  " +
-				keyStyle.Render("t") + " stats  ·  " +
-				keyStyle.Render("l") + " logs  ·  " +
-				keyStyle.Render("s") + " stop  ·  " +
-				keyStyle.Render("S") + " start  ·  " +
-				keyStyle.Render("d") + " delete  ·  " +
-				keyStyle.Render("a") + " toggle all  ·  " +
-				keyStyle.Render("r") + " refresh  ·  " +
-				keyStyle.Render("q") + " quit",
-		))
 	}
 
 	return b.String()
