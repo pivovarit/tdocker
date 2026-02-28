@@ -17,8 +17,8 @@ func buildTable(containers []docker.Container, width int) table.Model {
 	)
 
 	nameW, imageW, statusW, portsW := 4, 5, 6, 5
-	for _, c := range containers {
-		if w := len([]rune(strings.TrimPrefix(c.Names, "/"))); w > nameW {
+	for i, c := range containers {
+		if w := len([]rune(buildTableName(containers, i))); w > nameW {
 			nameW = w
 		}
 		if w := len([]rune(c.Image)); w > imageW {
@@ -32,7 +32,7 @@ func buildTable(containers []docker.Container, width int) table.Model {
 		}
 	}
 
-	nameW = min(nameW, 30)
+	nameW = min(nameW, 50)
 	imageW = min(imageW, 40)
 	statusW = min(statusW, 20)
 	portsW = min(portsW, 60)
@@ -42,11 +42,11 @@ func buildTable(containers []docker.Container, width int) table.Model {
 		remaining = 40
 	}
 
-	total := nameW + imageW + statusW + portsW
-	nameW = max(remaining*nameW/total, 4)
-	imageW = max(remaining*imageW/total, 5)
-	statusW = max(remaining*statusW/total, 6)
-	portsW = max(remaining-nameW-imageW-statusW, 5)
+	leftover := max(remaining-nameW, 20)
+	total := imageW + statusW + portsW
+	imageW = max(leftover*imageW/total, 5)
+	statusW = max(leftover*statusW/total, 6)
+	portsW = max(leftover-imageW-statusW, 5)
 
 	cols := []table.Column{
 		{Title: "ID", Width: idW},
@@ -62,7 +62,7 @@ func buildTable(containers []docker.Container, width int) table.Model {
 	for i, c := range containers {
 		rows[i] = table.Row{
 			trunc(c.ID, idW),
-			trunc(c.Names, nameW),
+			trunc(buildTableName(containers, i), nameW),
 			trunc(c.Image, imageW),
 			trunc(c.State, stateW),
 			trunc(c.Status, statusW),
@@ -91,6 +91,31 @@ func buildTable(containers []docker.Container, width int) table.Model {
 	t.SetStyles(s)
 
 	return t
+}
+
+func buildTableName(containers []docker.Container, i int) string {
+	c := containers[i]
+	p := c.ComposeProject()
+	if p == "" {
+		return strings.TrimPrefix(c.Names, "/")
+	}
+	s := c.ComposeService()
+	if s == "" {
+		s = strings.TrimPrefix(c.Names, "/")
+	}
+	label := p + "/" + s
+	prev := i > 0 && containers[i-1].ComposeProject() == p
+	next := i < len(containers)-1 && containers[i+1].ComposeProject() == p
+	switch {
+	case !prev && next:
+		return "┬ " + label
+	case prev && next:
+		return "├ " + label
+	case prev && !next:
+		return "└ " + label
+	default:
+		return label
+	}
 }
 
 func trunc(s string, max int) string {

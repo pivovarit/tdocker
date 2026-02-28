@@ -74,7 +74,9 @@ func (m App) filtered() []docker.Container {
 	for _, c := range m.sorted {
 		if strings.Contains(strings.ToLower(c.Names), q) ||
 			strings.Contains(strings.ToLower(c.Image), q) ||
-			strings.Contains(strings.ToLower(c.ID), q) {
+			strings.Contains(strings.ToLower(c.ID), q) ||
+			strings.Contains(strings.ToLower(c.ComposeProject()), q) ||
+			strings.Contains(strings.ToLower(c.ComposeService()), q) {
 			out = append(out, c)
 		}
 	}

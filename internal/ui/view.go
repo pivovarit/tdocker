@@ -98,24 +98,24 @@ func (m App) View() string {
 	switch {
 	case m.logsVisible:
 		b.WriteString(helpStyle.Render(
-			"  ↑/↓ scroll  ·  " +
-				keyStyle.Render("g") + " top  ·  " +
-				keyStyle.Render("G") + " bottom  ·  " +
-				keyStyle.Render("esc") + "/" + keyStyle.Render("l") + " close  ·  " +
+			"  ↑/↓ scroll · " +
+				keyStyle.Render("g") + " top · " +
+				keyStyle.Render("G") + " bottom · " +
+				keyStyle.Render("esc") + "/" + keyStyle.Render("l") + " close · " +
 				keyStyle.Render("q") + " quit",
 		))
 	case m.inspectVisible:
 		b.WriteString(helpStyle.Render(
-			"  ↑/↓ scroll  ·  " +
-				keyStyle.Render("g") + " top  ·  " +
-				keyStyle.Render("G") + " bottom  ·  " +
-				keyStyle.Render("esc") + "/" + keyStyle.Render("i") + " close  ·  " +
+			"  ↑/↓ scroll · " +
+				keyStyle.Render("g") + " top · " +
+				keyStyle.Render("G") + " bottom · " +
+				keyStyle.Render("esc") + "/" + keyStyle.Render("i") + " close · " +
 				keyStyle.Render("q") + " quit",
 		))
 	case m.statsVisible:
 		b.WriteString(helpStyle.Render(
-			"  " + keyStyle.Render("r") + " refresh  ·  " +
-				keyStyle.Render("esc") + "/" + keyStyle.Render("t") + " close  ·  " +
+			"  " + keyStyle.Render("r") + " refresh · " +
+				keyStyle.Render("esc") + "/" + keyStyle.Render("t") + " close · " +
 				keyStyle.Render("q") + " quit",
 		))
 	case m.confirming:
@@ -137,7 +137,7 @@ func (m App) View() string {
 		)
 	case m.filtering:
 		b.WriteString(helpStyle.Render(
-			"  / " + keyStyle.Render(m.filterQuery+"▌") + "   ·  esc/enter exit",
+			"  / " + keyStyle.Render(m.filterQuery+"▌") + " · esc/enter exit",
 		))
 	default:
 		if m.copiedName != "" {
@@ -147,20 +147,20 @@ func (m App) View() string {
 		} else {
 			prefix := ""
 			if m.filterQuery != "" {
-				prefix = keyStyle.Render("["+m.filterQuery+"]") + "  ·  " + keyStyle.Render("esc") + " clear  ·  "
+				prefix = keyStyle.Render("["+m.filterQuery+"]") + " · " + keyStyle.Render("esc") + " clear · "
 			}
 			b.WriteString(helpStyle.Render(
-				"  " + prefix + "↑/↓ navigate  ·  " +
-					keyStyle.Render("c") + " copy  ·  " +
-					keyStyle.Render("/") + " filter  ·  " +
-					keyStyle.Render("i") + " inspect  ·  " +
-					keyStyle.Render("t") + " stats  ·  " +
-					keyStyle.Render("l") + " logs  ·  " +
-					keyStyle.Render("s") + " stop  ·  " +
-					keyStyle.Render("S") + " start  ·  " +
-					keyStyle.Render("d") + " delete  ·  " +
-					keyStyle.Render("a") + " toggle all  ·  " +
-					keyStyle.Render("r") + " refresh  ·  " +
+				"  " + prefix + "↑/↓ navigate · " +
+					keyStyle.Render("/") + " filter · " +
+					keyStyle.Render("c") + " copy · " +
+					keyStyle.Render("i") + " inspect · " +
+					keyStyle.Render("t") + " stats · " +
+					keyStyle.Render("l") + " logs · " +
+					keyStyle.Render("s") + " stop · " +
+					keyStyle.Render("S") + " start · " +
+					keyStyle.Render("d") + " delete · " +
+					keyStyle.Render("a") + " toggle all · " +
+					keyStyle.Render("r") + " refresh · " +
 					keyStyle.Render("q") + " quit",
 			))
 		}
