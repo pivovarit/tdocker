@@ -2,6 +2,12 @@
 
 A terminal UI for Docker container management. It displays your running (or all) containers in an interactive table, lets you navigate, filter, and inspect them, and provides quick actions - exec into a shell, view logs, start/stop/delete containers - all without leaving the terminal.
 
+
+
+https://github.com/user-attachments/assets/743ed68b-a001-4f3a-99a7-cd2e342ae9f6
+
+
+
 ### Keybindings
 
 | Key | Action |
