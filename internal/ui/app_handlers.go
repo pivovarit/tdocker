@@ -10,9 +10,6 @@ func (m App) handleLogsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "esc", "l":
 		m = m.closeLogs()
-	case "q", "ctrl+c":
-		m = m.closeLogs()
-		return m, tea.Quit
 	case "up", "k":
 		if m.logsScrollOffset > 0 {
 			m.logsScrollOffset--
@@ -40,9 +37,6 @@ func (m App) handleInspectKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "esc", "i":
 		m = m.closeInspect()
-	case "q", "ctrl+c":
-		m = m.closeInspect()
-		return m, tea.Quit
 	case "up", "k":
 		if m.inspectOffset > 0 {
 			m.inspectOffset--
@@ -64,9 +58,6 @@ func (m App) handleStatsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "esc", "t":
 		m = m.closeStats()
-	case "q", "ctrl+c":
-		m = m.closeStats()
-		return m, tea.Quit
 	case "r":
 		m.loading = true
 		m.err = nil
@@ -92,7 +83,7 @@ func (m App) handleConfirmKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.op = OpDeleting
 			return m, m.client.DeleteContainer(m.confirmID)
 		}
-	case "n", "N", "esc", "q":
+	case "n", "N", "esc":
 		m.op = OpNone
 	}
 	return m, nil
@@ -117,8 +108,6 @@ func (m App) handleFilterKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
-	case "q", "ctrl+c":
-		return m, tea.Quit
 	case "r":
 		m.loading = true
 		m.err = nil

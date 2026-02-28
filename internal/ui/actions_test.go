@@ -116,7 +116,6 @@ func TestUpdate_ConfirmCancelKeys(t *testing.T) {
 	cancelKeys := []tea.KeyMsg{
 		runeKey("n"),
 		runeKey("N"),
-		runeKey("q"),
 		{Type: tea.KeyEsc},
 	}
 	for _, key := range cancelKeys {
