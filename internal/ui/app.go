@@ -110,9 +110,28 @@ func (m App) computeFilter() App {
 }
 
 func (m App) rebuildTable() App {
+	var selectedID string
+	if prev := m.filteredContainers; len(prev) > 0 {
+		if c := m.table.Cursor(); c >= 0 && c < len(prev) {
+			selectedID = prev[c].ID
+		}
+	}
+
 	m = m.computeFilter()
 	m.table = buildTable(m.filteredContainers, m.width)
 	m.table.SetHeight(m.tableHeight())
 	m.viewportStart = 0
+
+	if selectedID != "" {
+		for i, c := range m.filteredContainers {
+			if c.ID == selectedID {
+				m.table.SetCursor(i)
+				if h := m.tableHeight(); h > 0 && i >= h {
+					m.viewportStart = i - h + 1
+				}
+				break
+			}
+		}
+	}
 	return m
 }

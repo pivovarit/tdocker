@@ -14,7 +14,7 @@ func modelWithMock(mc *stubClient, containers []docker.Container) App {
 	m.containers = containers
 	m.loading = false
 	m.width = 120
-	return m.computeFilter()
+	return m.rebuildTable()
 }
 
 func TestClient_RKey_FetchesWithCurrentShowAll(t *testing.T) {
