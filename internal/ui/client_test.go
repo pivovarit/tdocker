@@ -7,7 +7,6 @@ import (
 	"github.com/pivovarit/tdocker/internal/docker"
 )
 
-// modelWithMock builds an App wired to mc with the given containers loaded.
 func modelWithMock(mc *stubClient, containers []docker.Container) App {
 	m := newWithClient(mc)
 	m.sorted = containers
