@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"context"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -143,8 +145,9 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.logsScrollOffset = 0
 			m.logsAutoScroll = true
 			m.logsVisible = true
-			firstLine, stop := m.client.StartLogs(filtered[cursor].ID)
-			m.logsStop = stop
+			ctx, cancel := context.WithCancel(context.Background())
+			m.logsCancel = cancel
+			firstLine := m.client.StartLogs(ctx, filtered[cursor].ID)
 			m.table.SetHeight(m.tableHeight())
 			return m, firstLine
 		}

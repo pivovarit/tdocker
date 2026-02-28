@@ -1,9 +1,9 @@
 package ui
 
 func (m App) closeLogs() App {
-	if m.logsStop != nil {
-		m.logsStop()
-		m.logsStop = nil
+	if m.logsCancel != nil {
+		m.logsCancel()
+		m.logsCancel = nil
 	}
 	m.logsVisible = false
 	m.logsLines = nil

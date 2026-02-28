@@ -18,23 +18,19 @@ type (
 	LogsEndMsg struct{ Err error }
 )
 
-func StartLogs(id string) (tea.Cmd, func()) {
-	ctx, cancel := context.WithCancel(context.Background())
-
+func StartLogs(ctx context.Context, id string) tea.Cmd {
 	cmd := exec.CommandContext(ctx, "docker", "logs", "--follow", "--tail", "200", id)
 	pr, pw := io.Pipe()
 	cmd.Stdout = pw
 	cmd.Stderr = pw
 
 	if err := cmd.Start(); err != nil {
-		cancel()
-		return func() tea.Msg { return LogsEndMsg{err} }, func() {}
+		return func() tea.Msg { return LogsEndMsg{err} }
 	}
 
 	go func() {
 		err := cmd.Wait()
 		contextCancelled := ctx.Err() != nil
-		cancel()
 		if err != nil && !contextCancelled {
 			if cerr := pw.CloseWithError(err); cerr != nil {
 				log.Printf("pipe close: %v", cerr)
@@ -56,12 +52,5 @@ func StartLogs(id string) (tea.Cmd, func()) {
 		return LogsEndMsg{scanner.Err()}
 	}
 
-	stop := func() {
-		cancel()
-		if cerr := pw.Close(); cerr != nil {
-			log.Printf("pipe close: %v", cerr)
-		}
-	}
-
-	return readNext, stop
+	return readNext
 }
