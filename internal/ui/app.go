@@ -26,6 +26,7 @@ const (
 )
 
 type App struct {
+	client             docker.Client
 	table              table.Model
 	containers         []docker.Container
 	sorted             []docker.Container
@@ -64,7 +65,12 @@ type App struct {
 }
 
 func New() App {
+	return newWithClient(docker.CLI{})
+}
+
+func newWithClient(c docker.Client) App {
 	return App{
+		client:  c,
 		loading: true,
 		showAll: true,
 		table:   buildTable(nil, 120),
@@ -72,7 +78,7 @@ func New() App {
 }
 
 func (m App) Init() tea.Cmd {
-	return docker.FetchContainers(m.showAll)
+	return m.client.FetchContainers(m.showAll)
 }
 
 func (m App) filtered() []docker.Container {
@@ -185,7 +191,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.loading = true
 				m.err = nil
 				m.statsEntry = nil
-				return m, tea.Batch(docker.FetchContainers(m.showAll), docker.FetchStats(m.statsContainerID))
+				return m, tea.Batch(m.client.FetchContainers(m.showAll), m.client.FetchStats(m.statsContainerID))
 			}
 			return m, nil
 		}
@@ -197,13 +203,13 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				switch m.confirmAction {
 				case "stop":
 					m.op = OpStopping
-					return m, docker.StopContainer(m.confirmID)
+					return m, m.client.StopContainer(m.confirmID)
 				case "start":
 					m.op = OpStarting
-					return m, docker.StartContainer(m.confirmID)
+					return m, m.client.StartContainer(m.confirmID)
 				case "delete":
 					m.op = OpDeleting
-					return m, docker.DeleteContainer(m.confirmID)
+					return m, m.client.DeleteContainer(m.confirmID)
 				}
 			case "n", "N", "esc", "q":
 				m.op = OpNone
@@ -232,12 +238,12 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "r":
 			m.loading = true
 			m.err = nil
-			return m, docker.FetchContainers(m.showAll)
+			return m, m.client.FetchContainers(m.showAll)
 		case "a":
 			m.showAll = !m.showAll
 			m.loading = true
 			m.err = nil
-			return m, docker.FetchContainers(m.showAll)
+			return m, m.client.FetchContainers(m.showAll)
 		case "/":
 			m.filtering = true
 			return m, nil
@@ -255,7 +261,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.logsScrollOffset = 0
 				m.logsAutoScroll = true
 				m.logsVisible = true
-				firstLine, stop := docker.StartLogs(filtered[cursor].ID)
+				firstLine, stop := m.client.StartLogs(filtered[cursor].ID)
 				m.logsStop = stop
 				m.table.SetHeight(m.tableHeight())
 				return m, firstLine
@@ -294,13 +300,13 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cursor := m.table.Cursor()
 			filtered := m.filtered()
 			if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State == "running" {
-				return m, docker.ExecContainer(filtered[cursor].ID)
+				return m, m.client.ExecContainer(filtered[cursor].ID)
 			}
 		case "x":
 			cursor := m.table.Cursor()
 			filtered := m.filtered()
 			if cursor >= 0 && cursor < len(filtered) {
-				return m, docker.CheckDebugAvailable(filtered[cursor].ID)
+				return m, m.client.CheckDebugAvailable(filtered[cursor].ID)
 			}
 		case "i":
 			cursor := m.table.Cursor()
@@ -311,7 +317,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.inspectOffset = 0
 				m.inspectContainer = filtered[cursor].Names
 				m.table.SetHeight(m.tableHeight())
-				return m, docker.InspectContainer(filtered[cursor].ID)
+				return m, m.client.InspectContainer(filtered[cursor].ID)
 			}
 		case "c":
 			cursor := m.table.Cursor()
@@ -330,7 +336,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.statsContainer = filtered[cursor].Names
 				m.statsContainerID = filtered[cursor].ID
 				m.table.SetHeight(m.tableHeight())
-				return m, docker.FetchStats(filtered[cursor].ID)
+				return m, m.client.FetchStats(filtered[cursor].ID)
 			}
 		}
 
@@ -354,7 +360,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		m.loading = true
-		return m, docker.FetchContainers(m.showAll)
+		return m, m.client.FetchContainers(m.showAll)
 
 	case docker.StartMsg:
 		m.op = OpNone
@@ -363,7 +369,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		m.loading = true
-		return m, docker.FetchContainers(m.showAll)
+		return m, m.client.FetchContainers(m.showAll)
 
 	case docker.DeleteMsg:
 		m.op = OpNone
@@ -419,11 +425,11 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.err = fmt.Errorf("docker debug is not available (requires Docker Desktop or the debug plugin)")
 			return m, nil
 		}
-		return m, docker.DebugContainer(msg.ID)
+		return m, m.client.DebugContainer(msg.ID)
 
 	case docker.ExecDoneMsg:
 		m.loading = true
-		return m, docker.FetchContainers(m.showAll)
+		return m, m.client.FetchContainers(m.showAll)
 
 	case docker.StatsMsg:
 		if !m.statsVisible {
