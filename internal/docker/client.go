@@ -1,6 +1,10 @@
 package docker
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	"context"
+
+	tea "github.com/charmbracelet/bubbletea"
+)
 
 type Client interface {
 	FetchContainers(all bool) tea.Cmd
@@ -12,5 +16,5 @@ type Client interface {
 	DebugContainer(id string) tea.Cmd
 	InspectContainer(id string) tea.Cmd
 	FetchStats(id string) tea.Cmd
-	StartLogs(id string) (tea.Cmd, func())
+	StartLogs(ctx context.Context, id string) tea.Cmd
 }

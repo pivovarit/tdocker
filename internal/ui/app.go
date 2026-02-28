@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/table"
@@ -48,7 +49,7 @@ type App struct {
 	logsContainer      string
 	logsScrollOffset   int
 	logsAutoScroll     bool
-	logsStop           func()
+	logsCancel         context.CancelFunc
 
 	inspectVisible   bool
 	inspectLines     []string

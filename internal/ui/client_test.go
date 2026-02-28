@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -110,9 +111,9 @@ func TestClient_TKey_CallsFetchStatsWithID(t *testing.T) {
 func TestClient_LKey_CallsStartLogsWithID(t *testing.T) {
 	mc := newStubClient()
 	var gotID string
-	mc.startLogs = func(id string) (tea.Cmd, func()) {
+	mc.startLogs = func(_ context.Context, id string) tea.Cmd {
 		gotID = id
-		return func() tea.Msg { return nil }, func() {}
+		return func() tea.Msg { return nil }
 	}
 	m := modelWithMock(mc, []docker.Container{runningContainer})
 	update(m, runeKey("l"))
