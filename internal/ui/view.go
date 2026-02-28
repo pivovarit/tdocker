@@ -153,6 +153,8 @@ func (m App) View() string {
 				"  " + prefix + "↑/↓ navigate · " +
 					keyStyle.Render("/") + " filter · " +
 					keyStyle.Render("c") + " copy · " +
+					keyStyle.Render("e") + " exec · " +
+					keyStyle.Render("x") + " debug · " +
 					keyStyle.Render("i") + " inspect · " +
 					keyStyle.Render("t") + " stats · " +
 					keyStyle.Render("l") + " logs · " +

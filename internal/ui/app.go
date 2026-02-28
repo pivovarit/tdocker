@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/table"
@@ -269,6 +270,18 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.confirmName = filtered[cursor].Names
 				return m, nil
 			}
+		case "e":
+			cursor := m.table.Cursor()
+			filtered := m.filtered()
+			if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State == "running" {
+				return m, docker.ExecContainer(filtered[cursor].ID)
+			}
+		case "x":
+			cursor := m.table.Cursor()
+			filtered := m.filtered()
+			if cursor >= 0 && cursor < len(filtered) {
+				return m, docker.CheckDebugAvailable(filtered[cursor].ID)
+			}
 		case "i":
 			cursor := m.table.Cursor()
 			filtered := m.filtered()
@@ -380,6 +393,17 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.inspectLines = buildInspectLines(msg.Data, m.width)
 		return m, nil
+
+	case docker.DebugAvailableMsg:
+		if !msg.Available {
+			m.err = fmt.Errorf("docker debug is not available (requires Docker Desktop or the debug plugin)")
+			return m, nil
+		}
+		return m, docker.DebugContainer(msg.ID)
+
+	case docker.ExecDoneMsg:
+		m.loading = true
+		return m, docker.FetchContainers(m.showAll)
 
 	case docker.StatsMsg:
 		if !m.statsVisible {

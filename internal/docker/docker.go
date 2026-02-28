@@ -3,6 +3,7 @@ package docker
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os/exec"
 	"sort"
 	"strings"
@@ -59,6 +60,11 @@ type (
 		ID  string
 		Err error
 	}
+	ExecDoneMsg       struct{}
+	DebugAvailableMsg struct {
+		ID        string
+		Available bool
+	}
 )
 
 func FetchContainers(all bool) tea.Cmd {
@@ -113,6 +119,29 @@ func DeleteContainer(id string) tea.Cmd {
 		}
 		return DeleteMsg{ID: id}
 	}
+}
+
+func ExecContainer(id string) tea.Cmd {
+	return tea.ExecProcess(
+		exec.Command("docker", "exec", "-it", id, "sh"),
+		func(_ error) tea.Msg { return ExecDoneMsg{} },
+	)
+}
+
+func CheckDebugAvailable(id string) tea.Cmd {
+	return func() tea.Msg {
+		cmd := exec.Command("docker", "debug", "--help")
+		cmd.Stdout = io.Discard
+		cmd.Stderr = io.Discard
+		return DebugAvailableMsg{ID: id, Available: cmd.Run() == nil}
+	}
+}
+
+func DebugContainer(id string) tea.Cmd {
+	return tea.ExecProcess(
+		exec.Command("docker", "debug", id),
+		func(_ error) tea.Msg { return ExecDoneMsg{} },
+	)
 }
 
 func Sort(containers []Container) []Container {
