@@ -8,7 +8,7 @@ import (
 	"github.com/pivovarit/tdocker/internal/docker"
 )
 
-func (m Model) View() string {
+func (m App) View() string {
 	var b strings.Builder
 	mode := "running"
 	if m.showAll {
@@ -169,7 +169,7 @@ func (m Model) View() string {
 	return b.String()
 }
 
-func (m Model) renderLogsPanel() string {
+func (m App) renderLogsPanel() string {
 	var b strings.Builder
 	w := m.width
 
@@ -198,7 +198,7 @@ func (m Model) renderLogsPanel() string {
 	return b.String()
 }
 
-func (m Model) renderInspectPanel() string {
+func (m App) renderInspectPanel() string {
 	var b strings.Builder
 	w := m.width
 
@@ -237,7 +237,7 @@ func (m Model) renderInspectPanel() string {
 	return b.String()
 }
 
-func (m Model) renderStatsPanel() string {
+func (m App) renderStatsPanel() string {
 	var b strings.Builder
 	w := m.width
 

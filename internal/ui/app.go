@@ -14,7 +14,7 @@ const (
 	statsPanelHeight   = 9
 )
 
-type Model struct {
+type App struct {
 	table            table.Model
 	containers       []docker.Container
 	sorted           []docker.Container
@@ -53,19 +53,19 @@ type Model struct {
 	statsEntry       *docker.StatsEntry
 }
 
-func InitialModel() Model {
-	return Model{
+func New() App {
+	return App{
 		loading: true,
 		showAll: true,
 		table:   buildTable(nil, 120),
 	}
 }
 
-func (m Model) Init() tea.Cmd {
+func (m App) Init() tea.Cmd {
 	return docker.FetchContainers(m.showAll)
 }
 
-func (m Model) filtered() []docker.Container {
+func (m App) filtered() []docker.Container {
 	if m.filterQuery == "" {
 		return m.sorted
 	}
@@ -81,14 +81,14 @@ func (m Model) filtered() []docker.Container {
 	return out
 }
 
-func (m Model) rebuildTable() Model {
+func (m App) rebuildTable() App {
 	m.table = buildTable(m.filtered(), m.width)
 	m.table.SetHeight(m.tableHeight())
 	m.viewportStart = 0
 	return m
 }
 
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tea.WindowSizeMsg:
@@ -399,7 +399,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m Model) closeLogs() Model {
+func (m App) closeLogs() App {
 	if m.logsStop != nil {
 		m.logsStop()
 		m.logsStop = nil
@@ -413,7 +413,7 @@ func (m Model) closeLogs() Model {
 	return m
 }
 
-func (m Model) closeInspect() Model {
+func (m App) closeInspect() App {
 	m.inspectVisible = false
 	m.inspectLines = nil
 	m.inspectContainer = ""
@@ -422,7 +422,7 @@ func (m Model) closeInspect() Model {
 	return m
 }
 
-func (m Model) closeStats() Model {
+func (m App) closeStats() App {
 	m.statsVisible = false
 	m.statsEntry = nil
 	m.statsContainer = ""
@@ -431,7 +431,7 @@ func (m Model) closeStats() Model {
 	return m
 }
 
-func (m Model) tableHeight() int {
+func (m App) tableHeight() int {
 	reserved := 8
 	if m.logsVisible {
 		reserved += logsPanelHeight

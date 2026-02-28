@@ -94,10 +94,10 @@ func TestUpdate_RKeyWithStatsPanelOpenResetsEntry(t *testing.T) {
 	if cmd == nil {
 		t.Fatal("want non-nil batch cmd")
 	}
-	if !got.(Model).loading {
+	if !got.(App).loading {
 		t.Error("want loading=true after r")
 	}
-	if got.(Model).statsEntry != nil {
+	if got.(App).statsEntry != nil {
 		t.Error("want statsEntry=nil (cleared for reload)")
 	}
 }
@@ -163,7 +163,7 @@ func TestUpdate_StatsMsgErrorDoesNotSetEntry(t *testing.T) {
 	}
 }
 
-func statsPanel() Model {
+func statsPanel() App {
 	m := modelWithSorted([]docker.Container{runningContainer})
 	m.statsVisible = true
 	m.statsContainer = runningContainer.Names

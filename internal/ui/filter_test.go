@@ -13,8 +13,8 @@ var filterContainers = []docker.Container{
 	{ID: "deadbeef0000", Names: "cache", Image: "redis:7", State: "exited"},
 }
 
-func modelWithSorted(containers []docker.Container) Model {
-	m := InitialModel()
+func modelWithSorted(containers []docker.Container) App {
+	m := New()
 	m.sorted = containers
 	m.containers = containers
 	m.loading = false
@@ -121,7 +121,7 @@ func TestFiltered_MultipleMatches(t *testing.T) {
 func TestUpdate_SlashEntersFilterMode(t *testing.T) {
 	m := modelWithSorted(filterContainers)
 	result, _ := m.Update(runeKey("/"))
-	if !result.(Model).filtering {
+	if !result.(App).filtering {
 		t.Error("want filtering=true after /")
 	}
 }
@@ -131,7 +131,7 @@ func TestUpdate_FilteringTypingBuildsQuery(t *testing.T) {
 	m.filtering = true
 	for _, ch := range []string{"n", "g", "i", "n", "x"} {
 		result, _ := m.Update(runeKey(ch))
-		m = result.(Model)
+		m = result.(App)
 	}
 	if m.filterQuery != "nginx" {
 		t.Errorf("want filterQuery=%q, got %q", "nginx", m.filterQuery)
@@ -143,7 +143,7 @@ func TestUpdate_FilteringBackspaceRemovesChar(t *testing.T) {
 	m.filtering = true
 	m.filterQuery = "foo"
 	result, _ := m.Update(tea.KeyMsg{Type: tea.KeyBackspace})
-	if got := result.(Model).filterQuery; got != "fo" {
+	if got := result.(App).filterQuery; got != "fo" {
 		t.Errorf("want %q, got %q", "fo", got)
 	}
 }
@@ -153,7 +153,7 @@ func TestUpdate_FilteringBackspaceMultibyte(t *testing.T) {
 	m.filtering = true
 	m.filterQuery = "日本語"
 	result, _ := m.Update(tea.KeyMsg{Type: tea.KeyBackspace})
-	if got := result.(Model).filterQuery; got != "日本" {
+	if got := result.(App).filterQuery; got != "日本" {
 		t.Errorf("want %q, got %q", "日本", got)
 	}
 }
@@ -162,7 +162,7 @@ func TestUpdate_FilteringBackspaceOnEmpty(t *testing.T) {
 	m := modelWithSorted(filterContainers)
 	m.filtering = true
 	result, _ := m.Update(tea.KeyMsg{Type: tea.KeyBackspace})
-	if got := result.(Model).filterQuery; got != "" {
+	if got := result.(App).filterQuery; got != "" {
 		t.Errorf("want empty query, got %q", got)
 	}
 }
@@ -172,7 +172,7 @@ func TestUpdate_FilteringEscExitsKeepsQuery(t *testing.T) {
 	m.filtering = true
 	m.filterQuery = "web"
 	result, _ := m.Update(tea.KeyMsg{Type: tea.KeyEsc})
-	got := result.(Model)
+	got := result.(App)
 	if got.filtering {
 		t.Error("want filtering=false after esc")
 	}
@@ -186,7 +186,7 @@ func TestUpdate_FilteringEnterExitsKeepsQuery(t *testing.T) {
 	m.filtering = true
 	m.filterQuery = "web"
 	result, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
-	got := result.(Model)
+	got := result.(App)
 	if got.filtering {
 		t.Error("want filtering=false after enter")
 	}
@@ -199,7 +199,7 @@ func TestUpdate_EscInNormalModeClearsQuery(t *testing.T) {
 	m := modelWithSorted(filterContainers)
 	m.filterQuery = "web"
 	result, _ := m.Update(tea.KeyMsg{Type: tea.KeyEsc})
-	if got := result.(Model).filterQuery; got != "" {
+	if got := result.(App).filterQuery; got != "" {
 		t.Errorf("want empty query after esc, got %q", got)
 	}
 }
@@ -207,7 +207,7 @@ func TestUpdate_EscInNormalModeClearsQuery(t *testing.T) {
 func TestUpdate_EscInNormalModeNoopWhenEmpty(t *testing.T) {
 	m := modelWithSorted(filterContainers)
 	result, _ := m.Update(tea.KeyMsg{Type: tea.KeyEsc})
-	if got := result.(Model).filterQuery; got != "" {
+	if got := result.(App).filterQuery; got != "" {
 		t.Errorf("want empty query, got %q", got)
 	}
 }
