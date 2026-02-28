@@ -90,6 +90,11 @@ func (m Model) View() string {
 		b.WriteString(m.renderInspectPanel())
 	}
 
+	if m.statsVisible {
+		b.WriteString("\n")
+		b.WriteString(m.renderStatsPanel())
+	}
+
 	b.WriteString("\n")
 	switch {
 	case m.logsVisible:
@@ -106,6 +111,12 @@ func (m Model) View() string {
 				keyStyle.Render("g") + " top  ·  " +
 				keyStyle.Render("G") + " bottom  ·  " +
 				keyStyle.Render("esc") + "/" + keyStyle.Render("i") + " close  ·  " +
+				keyStyle.Render("q") + " quit",
+		))
+	case m.statsVisible:
+		b.WriteString(helpStyle.Render(
+			"  " + keyStyle.Render("r") + " refresh  ·  " +
+				keyStyle.Render("esc") + "/" + keyStyle.Render("t") + " close  ·  " +
 				keyStyle.Render("q") + " quit",
 		))
 	case m.confirming:
@@ -138,6 +149,7 @@ func (m Model) View() string {
 			"  " + prefix + "↑/↓ navigate  ·  " +
 				keyStyle.Render("/") + " filter  ·  " +
 				keyStyle.Render("i") + " inspect  ·  " +
+				keyStyle.Render("t") + " stats  ·  " +
 				keyStyle.Render("l") + " logs  ·  " +
 				keyStyle.Render("s") + " stop  ·  " +
 				keyStyle.Render("S") + " start  ·  " +
@@ -215,6 +227,39 @@ func (m Model) renderInspectPanel() string {
 	for ; shown < maxLines; shown++ {
 		b.WriteString("\n")
 	}
+
+	return b.String()
+}
+
+func (m Model) renderStatsPanel() string {
+	var b strings.Builder
+	w := m.width
+
+	b.WriteString(logsDividerStyle.Render(strings.Repeat("─", w)))
+	b.WriteString("\n")
+	b.WriteString(logsTitleStyle.Render(" Stats: " + m.statsContainer))
+	b.WriteString("\n")
+
+	if m.statsEntry == nil {
+		b.WriteString(emptyStyle.Render("Loading…"))
+		b.WriteString("\n")
+		for i := 1; i < statsPanelHeight-2; i++ {
+			b.WriteString("\n")
+		}
+		return b.String()
+	}
+
+	e := m.statsEntry
+	row := func(label, value string) string {
+		return "  " + inspectSectionStyle.Render(fmt.Sprintf("%-10s", label)) + "  " + inspectValueStyle.Render(value) + "\n"
+	}
+
+	b.WriteString("\n")
+	b.WriteString(row("CPU", e.CPUPerc))
+	b.WriteString(row("Memory", e.MemUsage+"  ("+e.MemPerc+")"))
+	b.WriteString(row("Net I/O", e.NetIO))
+	b.WriteString(row("Block I/O", e.BlockIO))
+	b.WriteString(row("PIDs", e.PIDs))
 
 	return b.String()
 }

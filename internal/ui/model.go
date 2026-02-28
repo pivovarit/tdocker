@@ -11,6 +11,7 @@ import (
 const (
 	logsPanelHeight    = 15
 	inspectPanelHeight = 20
+	statsPanelHeight   = 9
 )
 
 type Model struct {
@@ -43,6 +44,11 @@ type Model struct {
 	inspectLines     []string
 	inspectContainer string
 	inspectOffset    int
+
+	statsVisible     bool
+	statsContainer   string
+	statsContainerID string
+	statsEntry       *docker.StatsEntry
 }
 
 func InitialModel() Model {
@@ -139,6 +145,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.inspectOffset = 0
 			case "G", "end":
 				m.inspectOffset = max(0, len(m.inspectLines)-(inspectPanelHeight-2))
+			}
+			return m, nil
+		}
+		if m.statsVisible {
+			switch msg.String() {
+			case "esc", "t":
+				m = m.closeStats()
+			case "q", "ctrl+c":
+				m = m.closeStats()
+				return m, tea.Quit
+			case "r":
+				m.loading = true
+				m.err = nil
+				m.statsEntry = nil
+				return m, tea.Batch(docker.FetchContainers(m.showAll), docker.FetchStats(m.statsContainerID))
 			}
 			return m, nil
 		}
@@ -254,6 +275,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.table.SetHeight(m.tableHeight())
 				return m, docker.InspectContainer(filtered[cursor].ID)
 			}
+		case "t":
+			cursor := m.table.Cursor()
+			filtered := m.filtered()
+			if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State == "running" {
+				m.statsVisible = true
+				m.statsEntry = nil
+				m.statsContainer = filtered[cursor].Names
+				m.statsContainerID = filtered[cursor].ID
+				m.table.SetHeight(m.tableHeight())
+				return m, docker.FetchStats(filtered[cursor].ID)
+			}
 		}
 
 	case docker.ContainersMsg:
@@ -328,6 +360,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.inspectLines = buildInspectLines(msg.Data, m.width)
 		return m, nil
+
+	case docker.StatsMsg:
+		if !m.statsVisible {
+			return m, nil
+		}
+		if msg.Err != nil {
+			m.err = msg.Err
+			m = m.closeStats()
+			return m, nil
+		}
+		m.statsEntry = &msg.Entry
+		return m, nil
 	}
 
 	var cmd tea.Cmd
@@ -367,6 +411,15 @@ func (m Model) closeInspect() Model {
 	return m
 }
 
+func (m Model) closeStats() Model {
+	m.statsVisible = false
+	m.statsEntry = nil
+	m.statsContainer = ""
+	m.statsContainerID = ""
+	m.table.SetHeight(m.tableHeight())
+	return m
+}
+
 func (m Model) tableHeight() int {
 	reserved := 8
 	if m.logsVisible {
@@ -374,6 +427,9 @@ func (m Model) tableHeight() int {
 	}
 	if m.inspectVisible {
 		reserved += inspectPanelHeight
+	}
+	if m.statsVisible {
+		reserved += statsPanelHeight
 	}
 	h := m.height - reserved
 	if h < 3 {
