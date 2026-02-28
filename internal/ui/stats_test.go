@@ -163,6 +163,46 @@ func TestUpdate_StatsMsgErrorDoesNotSetEntry(t *testing.T) {
 	}
 }
 
+func TestUpdate_StatsMsgSchedulesNextTick(t *testing.T) {
+	m := statsPanel()
+	entry := docker.StatsEntry{CPUPerc: "1.00%"}
+	_, cmd := m.Update(docker.StatsMsg{Entry: entry})
+	if cmd == nil {
+		t.Error("want non-nil cmd (tick) after successful StatsMsg")
+	}
+}
+
+func TestUpdate_StatsTickFetchesStats(t *testing.T) {
+	mc := newStubClient()
+	var gotID string
+	mc.fetchStats = func(id string) tea.Cmd {
+		gotID = id
+		return func() tea.Msg { return nil }
+	}
+	m := modelWithMock(mc, []docker.Container{runningContainer})
+	m.statsVisible = true
+	m.statsContainerID = runningContainer.ID
+	update(m, statsTickMsg{})
+	if gotID != runningContainer.ID {
+		t.Errorf("want FetchStats(%q) on tick, got %q", runningContainer.ID, gotID)
+	}
+}
+
+func TestUpdate_StatsTickNoopWhenPanelClosed(t *testing.T) {
+	mc := newStubClient()
+	fetched := false
+	mc.fetchStats = func(_ string) tea.Cmd {
+		fetched = true
+		return func() tea.Msg { return nil }
+	}
+	m := modelWithMock(mc, []docker.Container{runningContainer})
+	m.statsVisible = false
+	update(m, statsTickMsg{})
+	if fetched {
+		t.Error("want no FetchStats call when panel is closed")
+	}
+}
+
 func statsPanel() App {
 	m := modelWithSorted([]docker.Container{runningContainer})
 	m.statsVisible = true

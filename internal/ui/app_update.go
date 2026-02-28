@@ -2,10 +2,20 @@ package ui
 
 import (
 	"fmt"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/pivovarit/tdocker/internal/docker"
 )
+
+type statsTickMsg struct{}
+
+func statsTickCmd() tea.Cmd {
+	return func() tea.Msg {
+		time.Sleep(2 * time.Second)
+		return statsTickMsg{}
+	}
+}
 
 func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
@@ -142,7 +152,13 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		m.statsEntry = &msg.Entry
-		return m, nil
+		return m, statsTickCmd()
+
+	case statsTickMsg:
+		if !m.statsVisible {
+			return m, nil
+		}
+		return m, m.client.FetchStats(m.statsContainerID)
 	}
 
 	var cmd tea.Cmd
