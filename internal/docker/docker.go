@@ -10,6 +10,27 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+type Labels map[string]string
+
+func (l *Labels) UnmarshalJSON(data []byte) error {
+	var m map[string]string
+	if err := json.Unmarshal(data, &m); err == nil {
+		*l = m
+		return nil
+	}
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	*l = make(Labels)
+	for _, pair := range strings.Split(s, ",") {
+		if k, v, ok := strings.Cut(pair, "="); ok {
+			(*l)[k] = v
+		}
+	}
+	return nil
+}
+
 type Container struct {
 	ID         string `json:"ID"`
 	Names      string `json:"Names"`
@@ -18,6 +39,15 @@ type Container struct {
 	Status     string `json:"Status"`
 	RunningFor string `json:"RunningFor"`
 	Ports      string `json:"Ports"`
+	Labels     Labels `json:"Labels"`
+}
+
+func (c Container) ComposeProject() string {
+	return c.Labels["com.docker.compose.project"]
+}
+
+func (c Container) ComposeService() string {
+	return c.Labels["com.docker.compose.service"]
 }
 
 type (
@@ -89,8 +119,26 @@ func Sort(containers []Container) []Container {
 	sorted := make([]Container, len(containers))
 	copy(sorted, containers)
 	sort.SliceStable(sorted, func(i, j int) bool {
-		ri, rj := sorted[i].State == "running", sorted[j].State == "running"
-		return ri && !rj
+		ci, cj := sorted[i], sorted[j]
+		ri, rj := ci.State == "running", cj.State == "running"
+		if ri != rj {
+			return ri
+		}
+		pi, pj := ci.ComposeProject(), cj.ComposeProject()
+		if pi != pj {
+			if pi == "" {
+				return false
+			}
+			if pj == "" {
+				return true
+			}
+			return pi < pj
+		}
+		si, sj := ci.ComposeService(), cj.ComposeService()
+		if si != sj {
+			return si < sj
+		}
+		return ci.Names < cj.Names
 	})
 	return sorted
 }
