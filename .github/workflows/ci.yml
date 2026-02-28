@@ -35,3 +35,6 @@ jobs:
 
       - name: Test
         run: go test ./...
+
+      - name: Integration Tests
+        run: go test -tags integration -v ./...
