@@ -179,7 +179,7 @@ func TestUpdate_StartMsgTriggersReload(t *testing.T) {
 	m := modelWithSorted([]docker.Container{stoppedContainer})
 	m.starting = true
 	result, cmd := m.Update(docker.StartMsg{})
-	got := result.(Model)
+	got := result.(App)
 	if got.starting {
 		t.Error("want starting=false")
 	}
@@ -195,10 +195,10 @@ func TestUpdate_StartMsgErrorSetsErr(t *testing.T) {
 	m := modelWithSorted([]docker.Container{stoppedContainer})
 	m.starting = true
 	got, cmd := m.Update(docker.StartMsg{Err: errors.New("no such container")})
-	if got.(Model).err == nil {
+	if got.(App).err == nil {
 		t.Error("want err set")
 	}
-	if got.(Model).loading {
+	if got.(App).loading {
 		t.Error("want no reload on error")
 	}
 	if cmd != nil {
@@ -210,7 +210,7 @@ func TestUpdate_StopMsgTriggersReload(t *testing.T) {
 	m := modelWithSorted([]docker.Container{runningContainer})
 	m.stopping = true
 	result, cmd := m.Update(docker.StopMsg{})
-	got := result.(Model)
+	got := result.(App)
 	if got.stopping {
 		t.Error("want stopping=false")
 	}
@@ -226,20 +226,20 @@ func TestUpdate_StopMsgErrorSetsErr(t *testing.T) {
 	m := modelWithSorted([]docker.Container{runningContainer})
 	m.stopping = true
 	got, _ := m.Update(docker.StopMsg{Err: errors.New("failed")})
-	if got.(Model).err == nil {
+	if got.(App).err == nil {
 		t.Error("want err set")
 	}
-	if got.(Model).loading {
+	if got.(App).loading {
 		t.Error("want no reload on error")
 	}
 }
 
-func update(m Model, msg tea.Msg) Model {
+func update(m App, msg tea.Msg) App {
 	result, _ := m.Update(msg)
-	return result.(Model)
+	return result.(App)
 }
 
-func confirming(action string, c docker.Container) Model {
+func confirming(action string, c docker.Container) App {
 	m := modelWithSorted([]docker.Container{c})
 	m.confirming = true
 	m.confirmAction = action

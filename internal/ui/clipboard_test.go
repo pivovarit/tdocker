@@ -10,8 +10,8 @@ import (
 func TestUpdate_CKeySetsCopiedName(t *testing.T) {
 	m := modelWithSorted([]docker.Container{runningContainer})
 	got, cmd := m.Update(runeKey("c"))
-	if got.(Model).copiedName != runningContainer.Names {
-		t.Errorf("want copiedName=%q, got %q", runningContainer.Names, got.(Model).copiedName)
+	if got.(App).copiedName != runningContainer.Names {
+		t.Errorf("want copiedName=%q, got %q", runningContainer.Names, got.(App).copiedName)
 	}
 	if cmd == nil {
 		t.Error("want non-nil clipboard cmd")
