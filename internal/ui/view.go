@@ -27,11 +27,11 @@ func (m App) View() string {
 	b.WriteString("\n")
 
 	switch {
-	case m.stopping:
+	case m.op == OpStopping:
 		b.WriteString(emptyStyle.Render("Stopping container…"))
-	case m.starting:
+	case m.op == OpStarting:
 		b.WriteString(emptyStyle.Render("Starting container…"))
-	case m.deleting:
+	case m.op == OpDeleting:
 		b.WriteString(emptyStyle.Render("Deleting container…"))
 	case m.loading:
 		b.WriteString(emptyStyle.Render("Fetching containers…"))
@@ -118,7 +118,7 @@ func (m App) View() string {
 				keyStyle.Render("esc") + "/" + keyStyle.Render("t") + " close · " +
 				keyStyle.Render("q") + " quit",
 		))
-	case m.confirming:
+	case m.op == OpConfirming:
 		verb := "Stop"
 		switch m.confirmAction {
 		case "start":
