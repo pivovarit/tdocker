@@ -15,6 +15,16 @@ const (
 	statsPanelHeight   = 9
 )
 
+type Operation int
+
+const (
+	OpNone Operation = iota
+	OpConfirming
+	OpStopping
+	OpStarting
+	OpDeleting
+)
+
 type App struct {
 	table            table.Model
 	containers       []docker.Container
@@ -22,10 +32,7 @@ type App struct {
 	viewportStart    int
 	showAll          bool
 	loading          bool
-	stopping         bool
-	starting         bool
-	deleting         bool
-	confirming       bool
+	op               Operation
 	confirmAction    string
 	confirmID        string
 	confirmName      string
@@ -169,24 +176,24 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 		}
-		if m.confirming {
+		if m.op == OpConfirming {
 			switch msg.String() {
 			case "y", "Y":
-				m.confirming = false
+				m.op = OpNone
 				m.err = nil
 				switch m.confirmAction {
 				case "stop":
-					m.stopping = true
+					m.op = OpStopping
 					return m, docker.StopContainer(m.confirmID)
 				case "start":
-					m.starting = true
+					m.op = OpStarting
 					return m, docker.StartContainer(m.confirmID)
 				case "delete":
-					m.deleting = true
+					m.op = OpDeleting
 					return m, docker.DeleteContainer(m.confirmID)
 				}
 			case "n", "N", "esc", "q":
-				m.confirming = false
+				m.op = OpNone
 			}
 			return m, nil
 		}
@@ -244,7 +251,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cursor := m.table.Cursor()
 			filtered := m.filtered()
 			if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State == "running" {
-				m.confirming = true
+				m.op = OpConfirming
 				m.confirmAction = "stop"
 				m.confirmID = filtered[cursor].ID
 				m.confirmName = filtered[cursor].Names
@@ -254,7 +261,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cursor := m.table.Cursor()
 			filtered := m.filtered()
 			if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State != "running" {
-				m.confirming = true
+				m.op = OpConfirming
 				m.confirmAction = "start"
 				m.confirmID = filtered[cursor].ID
 				m.confirmName = filtered[cursor].Names
@@ -264,7 +271,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cursor := m.table.Cursor()
 			filtered := m.filtered()
 			if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State != "running" {
-				m.confirming = true
+				m.op = OpConfirming
 				m.confirmAction = "delete"
 				m.confirmID = filtered[cursor].ID
 				m.confirmName = filtered[cursor].Names
@@ -328,7 +335,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case docker.StopMsg:
-		m.stopping = false
+		m.op = OpNone
 		if msg.Err != nil {
 			m.err = msg.Err
 			return m, nil
@@ -337,7 +344,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, docker.FetchContainers(m.showAll)
 
 	case docker.StartMsg:
-		m.starting = false
+		m.op = OpNone
 		if msg.Err != nil {
 			m.err = msg.Err
 			return m, nil
@@ -346,7 +353,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, docker.FetchContainers(m.showAll)
 
 	case docker.DeleteMsg:
-		m.deleting = false
+		m.op = OpNone
 		if msg.Err != nil {
 			m.err = msg.Err
 			return m, nil
