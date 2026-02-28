@@ -1,6 +1,6 @@
 # tdocker
 
-A terminal UI for `docker ps`.
+A terminal UI for Docker container management. It displays your running (or all) containers in an interactive table, lets you navigate, filter, and inspect them, and provides quick actions - exec into a shell, view logs, start/stop/delete containers - all without leaving the terminal.
 
 ### Keybindings
 
