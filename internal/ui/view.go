@@ -2,7 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/pivovarit/tdocker/internal/docker"
@@ -274,69 +273,17 @@ func (m App) renderStatsPanel() string {
 
 func buildInspectLines(d *docker.InspectData, width int) []string {
 	var lines []string
-	add := func(s string) { lines = append(lines, s) }
-
-	add(inspectSectionStyle.Render("Image"))
-	digest := d.ImageDigest
-	if width > 4 && len(digest) > width-4 {
-		digest = digest[:width-5] + "…"
-	}
-	add("  " + inspectValueStyle.Render(digest))
-	add("")
-
-	add(inspectSectionStyle.Render("Ports"))
-	if len(d.Ports) == 0 {
-		add("  " + inspectValueStyle.Render("(none)"))
-	} else {
-		portKeys := make([]string, 0, len(d.Ports))
-		for k := range d.Ports {
-			portKeys = append(portKeys, k)
-		}
-		sort.Strings(portKeys)
-		for _, containerPort := range portKeys {
-			bindings := d.Ports[containerPort]
-			if len(bindings) == 0 {
-				add("  " + keyStyle.Render(containerPort) + "  " + inspectValueStyle.Render("→  (not published)"))
-			} else {
-				for _, b := range bindings {
-					host := b.HostIP + ":" + b.HostPort
-					add("  " + keyStyle.Render(containerPort) + "  " + inspectValueStyle.Render("→  "+host))
-				}
-			}
+	for _, l := range d.Lines(width) {
+		switch l.Kind {
+		case docker.InspectLineSection:
+			lines = append(lines, inspectSectionStyle.Render(l.Key))
+		case docker.InspectLineKeyValue:
+			lines = append(lines, "  "+keyStyle.Render(l.Key)+"  "+inspectValueStyle.Render(l.Value))
+		case docker.InspectLineValue:
+			lines = append(lines, "  "+inspectValueStyle.Render(l.Value))
+		case docker.InspectLineBlank:
+			lines = append(lines, "")
 		}
 	}
-	add("")
-
-	add(inspectSectionStyle.Render("Environment"))
-	if len(d.Env) == 0 {
-		add("  " + inspectValueStyle.Render("(none)"))
-	} else {
-		for _, e := range d.Env {
-			if idx := strings.Index(e, "="); idx > 0 {
-				add("  " + keyStyle.Render(e[:idx]+"=") + inspectValueStyle.Render(e[idx+1:]))
-			} else {
-				add("  " + inspectValueStyle.Render(e))
-			}
-		}
-	}
-	add("")
-
-	add(inspectSectionStyle.Render("Mounts"))
-	if len(d.Mounts) == 0 {
-		add("  " + inspectValueStyle.Render("(none)"))
-	} else {
-		for _, mount := range d.Mounts {
-			rw := "ro"
-			if mount.RW {
-				rw = "rw"
-			}
-			src := mount.Source
-			if src == "" {
-				src = "(" + mount.Type + ")"
-			}
-			add("  " + keyStyle.Render(src) + "  " + inspectValueStyle.Render("→  "+mount.Destination+"  ("+rw+")"))
-		}
-	}
-
 	return lines
 }

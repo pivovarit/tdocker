@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
+	"sort"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -31,6 +32,94 @@ type InspectData struct {
 type InspectMsg struct {
 	Data *InspectData
 	Err  error
+}
+
+type InspectLineKind int
+
+const (
+	InspectLineSection InspectLineKind = iota
+	InspectLineKeyValue
+	InspectLineValue
+	InspectLineBlank
+)
+
+type InspectLine struct {
+	Kind  InspectLineKind
+	Key   string
+	Value string
+}
+
+func (d *InspectData) Lines(width int) []InspectLine {
+	var out []InspectLine
+	section := func(title string) { out = append(out, InspectLine{Kind: InspectLineSection, Key: title}) }
+	kv := func(key, value string) {
+		out = append(out, InspectLine{Kind: InspectLineKeyValue, Key: key, Value: value})
+	}
+	val := func(value string) { out = append(out, InspectLine{Kind: InspectLineValue, Value: value}) }
+	blank := func() { out = append(out, InspectLine{Kind: InspectLineBlank}) }
+
+	section("Image")
+	digest := d.ImageDigest
+	if width > 4 && len(digest) > width-4 {
+		digest = digest[:width-5] + "…"
+	}
+	val(digest)
+	blank()
+
+	section("Ports")
+	if len(d.Ports) == 0 {
+		val("(none)")
+	} else {
+		portKeys := make([]string, 0, len(d.Ports))
+		for k := range d.Ports {
+			portKeys = append(portKeys, k)
+		}
+		sort.Strings(portKeys)
+		for _, containerPort := range portKeys {
+			bindings := d.Ports[containerPort]
+			if len(bindings) == 0 {
+				kv(containerPort, "→  (not published)")
+			} else {
+				for _, b := range bindings {
+					kv(containerPort, "→  "+b.HostIP+":"+b.HostPort)
+				}
+			}
+		}
+	}
+	blank()
+
+	section("Environment")
+	if len(d.Env) == 0 {
+		val("(none)")
+	} else {
+		for _, e := range d.Env {
+			if idx := strings.Index(e, "="); idx > 0 {
+				kv(e[:idx]+"=", e[idx+1:])
+			} else {
+				val(e)
+			}
+		}
+	}
+	blank()
+
+	section("Mounts")
+	if len(d.Mounts) == 0 {
+		val("(none)")
+	} else {
+		for _, mount := range d.Mounts {
+			rw := "ro"
+			if mount.RW {
+				rw = "rw"
+			}
+			src := mount.Source
+			if src == "" {
+				src = "(" + mount.Type + ")"
+			}
+			kv(src, "→  "+mount.Destination+"  ("+rw+")")
+		}
+	}
+
+	return out
 }
 
 type inspectRaw struct {
