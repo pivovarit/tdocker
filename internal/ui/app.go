@@ -26,27 +26,29 @@ const (
 )
 
 type App struct {
-	table            table.Model
-	containers       []docker.Container
-	sorted           []docker.Container
-	viewportStart    int
-	showAll          bool
-	loading          bool
-	op               Operation
-	confirmAction    string
-	confirmID        string
-	confirmName      string
-	filtering        bool
-	filterQuery      string
-	err              error
-	width            int
-	height           int
-	logsVisible      bool
-	logsLines        []string
-	logsContainer    string
-	logsScrollOffset int
-	logsAutoScroll   bool
-	logsStop         func()
+	table              table.Model
+	containers         []docker.Container
+	sorted             []docker.Container
+	filteredContainers []docker.Container
+	filteredQuery      string
+	viewportStart      int
+	showAll            bool
+	loading            bool
+	op                 Operation
+	confirmAction      string
+	confirmID          string
+	confirmName        string
+	filtering          bool
+	filterQuery        string
+	err                error
+	width              int
+	height             int
+	logsVisible        bool
+	logsLines          []string
+	logsContainer      string
+	logsScrollOffset   int
+	logsAutoScroll     bool
+	logsStop           func()
 
 	inspectVisible   bool
 	inspectLines     []string
@@ -74,8 +76,17 @@ func (m App) Init() tea.Cmd {
 }
 
 func (m App) filtered() []docker.Container {
+	if m.filteredQuery == m.filterQuery && m.filteredContainers != nil {
+		return m.filteredContainers
+	}
+	return m.computeFilter().filteredContainers
+}
+
+func (m App) computeFilter() App {
+	m.filteredQuery = m.filterQuery
 	if m.filterQuery == "" {
-		return m.sorted
+		m.filteredContainers = m.sorted
+		return m
 	}
 	q := strings.ToLower(m.filterQuery)
 	var out []docker.Container
@@ -88,11 +99,13 @@ func (m App) filtered() []docker.Container {
 			out = append(out, c)
 		}
 	}
-	return out
+	m.filteredContainers = out
+	return m
 }
 
 func (m App) rebuildTable() App {
-	m.table = buildTable(m.filtered(), m.width)
+	m = m.computeFilter()
+	m.table = buildTable(m.filteredContainers, m.width)
 	m.table.SetHeight(m.tableHeight())
 	m.viewportStart = 0
 	return m
