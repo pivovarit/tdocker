@@ -1,14 +1,24 @@
 package docker
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os/exec"
 	"sort"
 	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+)
+
+const (
+	timeoutFetch = 10 * time.Second
+	timeoutStop  = 30 * time.Second
+	timeoutStart = 15 * time.Second
+	timeoutRM    = 10 * time.Second
+	timeoutDebug = 5 * time.Second
 )
 
 type Labels map[string]string
@@ -73,7 +83,9 @@ func FetchContainers(all bool) tea.Cmd {
 		if all {
 			args = append(args, "-a")
 		}
-		out, err := exec.Command("docker", args...).CombinedOutput()
+		ctx, cancel := context.WithTimeout(context.Background(), timeoutFetch)
+		defer cancel()
+		out, err := exec.CommandContext(ctx, "docker", args...).CombinedOutput()
 		if err != nil {
 			return ErrMsg{fmt.Errorf("docker ps: %w\n%s", err, strings.TrimSpace(string(out)))}
 		}
@@ -93,7 +105,9 @@ func FetchContainers(all bool) tea.Cmd {
 
 func StopContainer(id string) tea.Cmd {
 	return func() tea.Msg {
-		out, err := exec.Command("docker", "stop", id).CombinedOutput()
+		ctx, cancel := context.WithTimeout(context.Background(), timeoutStop)
+		defer cancel()
+		out, err := exec.CommandContext(ctx, "docker", "stop", id).CombinedOutput()
 		if err != nil {
 			return StopMsg{fmt.Errorf("docker stop: %w\n%s", err, strings.TrimSpace(string(out)))}
 		}
@@ -103,7 +117,9 @@ func StopContainer(id string) tea.Cmd {
 
 func StartContainer(id string) tea.Cmd {
 	return func() tea.Msg {
-		out, err := exec.Command("docker", "start", id).CombinedOutput()
+		ctx, cancel := context.WithTimeout(context.Background(), timeoutStart)
+		defer cancel()
+		out, err := exec.CommandContext(ctx, "docker", "start", id).CombinedOutput()
 		if err != nil {
 			return StartMsg{fmt.Errorf("docker start: %w\n%s", err, strings.TrimSpace(string(out)))}
 		}
@@ -113,7 +129,9 @@ func StartContainer(id string) tea.Cmd {
 
 func DeleteContainer(id string) tea.Cmd {
 	return func() tea.Msg {
-		out, err := exec.Command("docker", "rm", id).CombinedOutput()
+		ctx, cancel := context.WithTimeout(context.Background(), timeoutRM)
+		defer cancel()
+		out, err := exec.CommandContext(ctx, "docker", "rm", id).CombinedOutput()
 		if err != nil {
 			return DeleteMsg{ID: id, Err: fmt.Errorf("docker rm: %w\n%s", err, strings.TrimSpace(string(out)))}
 		}
@@ -130,7 +148,9 @@ func ExecContainer(id string) tea.Cmd {
 
 func CheckDebugAvailable(id string) tea.Cmd {
 	return func() tea.Msg {
-		cmd := exec.Command("docker", "debug", "--help")
+		ctx, cancel := context.WithTimeout(context.Background(), timeoutDebug)
+		defer cancel()
+		cmd := exec.CommandContext(ctx, "docker", "debug", "--help")
 		cmd.Stdout = io.Discard
 		cmd.Stderr = io.Discard
 		return DebugAvailableMsg{ID: id, Available: cmd.Run() == nil}

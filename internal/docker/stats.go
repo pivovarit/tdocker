@@ -1,13 +1,17 @@
 package docker
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os/exec"
 	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+const timeoutStats = 10 * time.Second
 
 type StatsEntry struct {
 	CPUPerc  string `json:"CPUPerc"`
@@ -25,7 +29,9 @@ type StatsMsg struct {
 
 func FetchStats(id string) tea.Cmd {
 	return func() tea.Msg {
-		out, err := exec.Command("docker", "stats", "--no-stream", "--format", "{{json .}}", id).CombinedOutput()
+		ctx, cancel := context.WithTimeout(context.Background(), timeoutStats)
+		defer cancel()
+		out, err := exec.CommandContext(ctx, "docker", "stats", "--no-stream", "--format", "{{json .}}", id).CombinedOutput()
 		if err != nil {
 			return StatsMsg{Err: fmt.Errorf("docker stats: %w\n%s", err, strings.TrimSpace(string(out)))}
 		}
