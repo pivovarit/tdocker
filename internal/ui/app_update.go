@@ -18,6 +18,12 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		m.copiedName = ""
+		if msg.String() == "q" || msg.String() == "ctrl+c" {
+			if m.logsVisible {
+				m = m.closeLogs()
+			}
+			return m, tea.Quit
+		}
 		if m.logsVisible {
 			return m.handleLogsKey(msg)
 		}
