@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"io"
+	"log"
 	"os/exec"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -31,8 +32,18 @@ func StartLogs(id string) (tea.Cmd, func()) {
 	}
 
 	go func() {
-		cmd.Wait()
-		pw.Close()
+		err := cmd.Wait()
+		contextCancelled := ctx.Err() != nil
+		cancel()
+		if err != nil && !contextCancelled {
+			if cerr := pw.CloseWithError(err); cerr != nil {
+				log.Printf("pipe close: %v", cerr)
+			}
+		} else {
+			if cerr := pw.Close(); cerr != nil {
+				log.Printf("pipe close: %v", cerr)
+			}
+		}
 	}()
 
 	scanner := bufio.NewScanner(pr)
@@ -47,7 +58,9 @@ func StartLogs(id string) (tea.Cmd, func()) {
 
 	stop := func() {
 		cancel()
-		pr.Close()
+		if cerr := pw.Close(); cerr != nil {
+			log.Printf("pipe close: %v", cerr)
+		}
 	}
 
 	return readNext, stop

@@ -111,7 +111,7 @@ func buildTableName(containers []docker.Container, i int) string {
 		return "┬ " + label
 	case prev && next:
 		return "├ " + label
-	case prev && !next:
+	case prev:
 		return "└ " + label
 	default:
 		return label

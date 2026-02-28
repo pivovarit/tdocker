@@ -360,6 +360,13 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, msg.Next
 
 	case docker.LogsEndMsg:
+		if !m.logsVisible {
+			return m, nil
+		}
+		if msg.Err != nil {
+			m.err = msg.Err
+			m = m.closeLogs()
+		}
 		return m, nil
 
 	case docker.InspectMsg:
