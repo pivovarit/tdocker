@@ -1,14 +1,18 @@
 package docker
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os/exec"
 	"sort"
 	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+const timeoutInspect = 10 * time.Second
 
 type PortBinding struct {
 	HostIP   string `json:"HostIp"`
@@ -135,7 +139,9 @@ type inspectRaw struct {
 
 func InspectContainer(id string) tea.Cmd {
 	return func() tea.Msg {
-		out, err := exec.Command("docker", "inspect", id).CombinedOutput()
+		ctx, cancel := context.WithTimeout(context.Background(), timeoutInspect)
+		defer cancel()
+		out, err := exec.CommandContext(ctx, "docker", "inspect", id).CombinedOutput()
 		if err != nil {
 			return InspectMsg{Err: fmt.Errorf("docker inspect: %w\n%s", err, strings.TrimSpace(string(out)))}
 		}
