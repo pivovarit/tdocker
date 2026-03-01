@@ -49,6 +49,36 @@ func TestUpdate_CKeyOnEmptyListDoesNothing(t *testing.T) {
 	}
 }
 
+func TestClipExec_SuccessReturnsMsgWithName(t *testing.T) {
+	cmd := clipExec("web", "abc123", "cat")
+	msg := cmd()
+	got, ok := msg.(clipboardMsg)
+	if !ok {
+		t.Fatalf("want clipboardMsg, got %T", msg)
+	}
+	if got.name != "web" {
+		t.Errorf("want name=%q, got %q", "web", got.name)
+	}
+	if got.err != nil {
+		t.Errorf("want nil error, got %v", got.err)
+	}
+}
+
+func TestClipExec_FailureReturnsMsgWithError(t *testing.T) {
+	cmd := clipExec("web", "abc123", "__nonexistent_binary__")
+	msg := cmd()
+	got, ok := msg.(clipboardMsg)
+	if !ok {
+		t.Fatalf("want clipboardMsg, got %T", msg)
+	}
+	if got.err == nil {
+		t.Error("want error when command not found")
+	}
+	if got.name != "" {
+		t.Errorf("want empty name on failure, got %q", got.name)
+	}
+}
+
 func TestUpdate_AnyKeyClearsCopiedName(t *testing.T) {
 	keys := []tea.Msg{
 		runeKey("r"),
