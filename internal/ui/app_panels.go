@@ -36,7 +36,7 @@ func (m App) closeStats() App {
 }
 
 func (m App) tableHeight() int {
-	reserved := 8
+	reserved := tableChrome
 	if m.logsVisible {
 		reserved += logsPanelHeight
 	}

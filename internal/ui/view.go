@@ -71,8 +71,14 @@ func (m App) View() string {
 			if containerIdx >= len(filtered) {
 				break
 			}
-			if filtered[containerIdx].State != "running" && containerIdx != cursor {
-				lines[i] = stoppedRowStyle.Render(line)
+			if containerIdx != cursor {
+				switch filtered[containerIdx].State {
+				case "paused":
+					lines[i] = pausedRowStyle.Render(line)
+				case "running":
+				default:
+					lines[i] = stoppedRowStyle.Render(line)
+				}
 			}
 		}
 		b.WriteString(tableStyle.Render(strings.Join(lines, "\n")))

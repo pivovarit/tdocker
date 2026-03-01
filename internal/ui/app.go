@@ -13,6 +13,19 @@ const (
 	logsPanelHeight    = 15
 	inspectPanelHeight = 20
 	statsPanelHeight   = 9
+
+	chromeTitle        = 1
+	chromeTitleMargin  = 1
+	chromeTitleNewline = 1
+	chromeBorderTop    = 1
+	chromeBorderBottom = 1
+	chromeHelpNewline  = 1
+	chromeHelpMargin   = 1
+	chromeHelp         = 1
+
+	tableChrome = chromeTitle + chromeTitleMargin + chromeTitleNewline +
+		chromeBorderTop + chromeBorderBottom +
+		chromeHelpNewline + chromeHelpMargin + chromeHelp
 )
 
 type Operation int
