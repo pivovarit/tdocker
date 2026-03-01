@@ -33,8 +33,8 @@ func (m App) View() string {
 		leftPlain += ": " + fmt.Sprintf("%q", m.filterQuery)
 	}
 	rightPlain := ""
-	if m.currentContext != "" {
-		rightPlain = "ctx [X]: " + m.currentContext + " "
+	if m.ctxPicker.current != "" {
+		rightPlain = "ctx [X]: " + m.ctxPicker.current + " "
 	}
 
 	pad := 2
@@ -53,8 +53,8 @@ func (m App) View() string {
 		styledLeft += titleHintStyle.Render(": ") + titleStyle.Render(fmt.Sprintf("%q", m.filterQuery))
 	}
 	styledRight := ""
-	if m.currentContext != "" {
-		styledRight = titleHintStyle.Render("ctx [X]: ") + titleStyle.Render(m.currentContext) + " "
+	if m.ctxPicker.current != "" {
+		styledRight = titleHintStyle.Render("ctx [X]: ") + titleStyle.Render(m.ctxPicker.current) + " "
 	}
 
 	b.WriteString(styledLeft + strings.Repeat(" ", pad) + styledRight)
@@ -125,34 +125,34 @@ func (m App) View() string {
 		b.WriteString(tableStyle.Render(strings.Join(lines, "\n")))
 	}
 
-	if m.logsVisible {
+	if m.logs.visible {
 		b.WriteString("\n")
 		b.WriteString(m.renderLogsPanel())
 	}
 
-	if m.inspectVisible {
+	if m.inspect.visible {
 		b.WriteString("\n")
 		b.WriteString(m.renderInspectPanel())
 	}
 
-	if m.statsVisible {
+	if m.stats.visible {
 		b.WriteString("\n")
 		b.WriteString(m.renderStatsPanel())
 	}
 
-	if m.contextPickerVisible {
+	if m.ctxPicker.visible {
 		b.WriteString("\n")
 		b.WriteString(m.renderContextPicker())
 	}
 
-	if m.eventsVisible {
+	if m.events.visible {
 		b.WriteString("\n")
 		b.WriteString(m.renderEventsPanel())
 	}
 
 	b.WriteString("\n")
 	switch {
-	case m.eventsVisible:
+	case m.events.visible:
 		b.WriteString(helpStyle.Render(
 			"  ↑/↓ scroll · " +
 				keyStyle.Render("g") + " top · " +
@@ -160,7 +160,7 @@ func (m App) View() string {
 				keyStyle.Render("esc") + "/" + keyStyle.Render("v") + " close · " +
 				keyStyle.Render("q") + " quit",
 		))
-	case m.logsVisible:
+	case m.logs.visible:
 		b.WriteString(helpStyle.Render(
 			"  ↑/↓ scroll · " +
 				keyStyle.Render("g") + " top · " +
@@ -169,7 +169,7 @@ func (m App) View() string {
 				keyStyle.Render("esc") + "/" + keyStyle.Render("l") + " close · " +
 				keyStyle.Render("q") + " quit",
 		))
-	case m.inspectVisible:
+	case m.inspect.visible:
 		b.WriteString(helpStyle.Render(
 			"  ↑/↓ scroll · " +
 				keyStyle.Render("g") + " top · " +
@@ -177,7 +177,7 @@ func (m App) View() string {
 				keyStyle.Render("esc") + "/" + keyStyle.Render("i") + " close · " +
 				keyStyle.Render("q") + " quit",
 		))
-	case m.statsVisible:
+	case m.stats.visible:
 		b.WriteString(helpStyle.Render(
 			"  " + keyStyle.Render("r") + " refresh · " +
 				keyStyle.Render("esc") + "/" + keyStyle.Render("t") + " close · " +
@@ -202,7 +202,7 @@ func (m App) View() string {
 				keyStyle.Render("n") +
 				confirmStyle.Render(" to cancel"),
 		)
-	case m.contextPickerVisible:
+	case m.ctxPicker.visible:
 		b.WriteString(helpStyle.Render(
 			"  ↑/↓/j/k navigate · " +
 				keyStyle.Render("enter") + " switch · " +
@@ -260,19 +260,19 @@ func panelPad(b *strings.Builder, shown, maxLines int) {
 
 func (m App) renderLogsPanel() string {
 	logsModeLabel := " (last 200)"
-	if m.logsAllMode {
+	if m.logs.allMode {
 		logsModeLabel = " (all)"
 	}
-	return m.renderPanel(" Logs: "+m.logsContainer+logsModeLabel, func(b *strings.Builder) {
+	return m.renderPanel(" Logs: "+m.logs.container+logsModeLabel, func(b *strings.Builder) {
 		maxLines := logsPanelHeight - 2
-		start := m.logsScrollOffset
+		start := m.logs.scrollOffset
 		end := start + maxLines
-		if end > len(m.logsLines) {
-			end = len(m.logsLines)
+		if end > len(m.logs.lines) {
+			end = len(m.logs.lines)
 		}
 		shown := 0
 		for i := start; i < end; i++ {
-			b.WriteString(logsLineStyle.Render("  " + m.logsLines[i]))
+			b.WriteString(logsLineStyle.Render("  " + m.logs.lines[i]))
 			b.WriteString("\n")
 			shown++
 		}
@@ -281,22 +281,22 @@ func (m App) renderLogsPanel() string {
 }
 
 func (m App) renderInspectPanel() string {
-	return m.renderPanel(" Inspect: "+m.inspectContainer, func(b *strings.Builder) {
+	return m.renderPanel(" Inspect: "+m.inspect.container, func(b *strings.Builder) {
 		maxLines := inspectPanelHeight - 2
-		if len(m.inspectLines) == 0 {
+		if len(m.inspect.lines) == 0 {
 			b.WriteString(emptyStyle.Render("Loading…"))
 			b.WriteString("\n")
 			panelPad(b, 1, maxLines)
 			return
 		}
-		start := m.inspectOffset
+		start := m.inspect.offset
 		end := start + maxLines
-		if end > len(m.inspectLines) {
-			end = len(m.inspectLines)
+		if end > len(m.inspect.lines) {
+			end = len(m.inspect.lines)
 		}
 		shown := 0
 		for i := start; i < end; i++ {
-			b.WriteString(m.inspectLines[i])
+			b.WriteString(m.inspect.lines[i])
 			b.WriteString("\n")
 			shown++
 		}
@@ -305,16 +305,16 @@ func (m App) renderInspectPanel() string {
 }
 
 func (m App) renderStatsPanel() string {
-	return m.renderPanel(" Stats: "+m.statsContainer, func(b *strings.Builder) {
+	return m.renderPanel(" Stats: "+m.stats.container, func(b *strings.Builder) {
 		maxLines := statsPanelHeight - 2
-		if m.statsEntry == nil {
+		if m.stats.entry == nil {
 			b.WriteString(emptyStyle.Render("Loading…"))
 			b.WriteString("\n")
 			panelPad(b, 1, maxLines)
 			return
 		}
-		e := m.statsEntry
-		p := m.statsPrevEntry
+		e := m.stats.entry
+		p := m.stats.prevEntry
 
 		cpuTrend, memTrend, netTrend, blkTrend, pidTrend := "", "", "", "", ""
 		if p != nil {
@@ -415,12 +415,12 @@ func statsTrend(prev, curr string, parse func(string) (float64, bool)) string {
 
 func (m App) renderContextPicker() string {
 	return m.renderPanel(" Docker Contexts", func(b *strings.Builder) {
-		if len(m.contexts) == 0 {
+		if len(m.ctxPicker.contexts) == 0 {
 			b.WriteString(emptyStyle.Render("No contexts found."))
 			b.WriteString("\n")
 			return
 		}
-		for i, c := range m.contexts {
+		for i, c := range m.ctxPicker.contexts {
 			name := c.Name
 			label := "  " + name
 			if c.Description != "" {
@@ -433,9 +433,9 @@ func (m App) renderContextPicker() string {
 				}
 			}
 			switch {
-			case i == m.contextCursor && c.Current:
+			case i == m.ctxPicker.cursor && c.Current:
 				b.WriteString(contextCursorStyle.Render("* " + name + "  ✓"))
-			case i == m.contextCursor:
+			case i == m.ctxPicker.cursor:
 				b.WriteString(contextCursorStyle.Render(label))
 			case c.Current:
 				b.WriteString(contextActiveStyle.Render(label))
@@ -450,20 +450,20 @@ func (m App) renderContextPicker() string {
 func (m App) renderEventsPanel() string {
 	return m.renderPanel(" Events  (live)", func(b *strings.Builder) {
 		maxLines := eventsPanelHeight - 2
-		if len(m.eventsEvents) == 0 {
+		if len(m.events.events) == 0 {
 			b.WriteString(emptyStyle.Render("Waiting for events…"))
 			b.WriteString("\n")
 			panelPad(b, 1, maxLines)
 			return
 		}
-		start := m.eventsScrollOffset
+		start := m.events.scrollOffset
 		end := start + maxLines
-		if end > len(m.eventsEvents) {
-			end = len(m.eventsEvents)
+		if end > len(m.events.events) {
+			end = len(m.events.events)
 		}
 		shown := 0
 		for i := start; i < end; i++ {
-			ev := m.eventsEvents[i]
+			ev := m.events.events[i]
 			actionStyle := eventDimStyle
 			switch ev.Action {
 			case "start", "unpause", "create":

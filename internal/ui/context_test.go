@@ -30,20 +30,20 @@ func TestContextPicker_XKey_CallsFetchContexts(t *testing.T) {
 func TestContextPicker_ContextsMsg_SetsCurrentContext(t *testing.T) {
 	m := modelWithSorted(nil)
 	got := update(m, docker.ContextsMsg(testContexts))
-	if got.currentContext != "default" {
-		t.Errorf("want currentContext=%q, got %q", "default", got.currentContext)
+	if got.ctxPicker.current != "default" {
+		t.Errorf("want ctxPicker.current=%q, got %q", "default", got.ctxPicker.current)
 	}
-	if got.contextPickerVisible {
-		t.Error("want contextPickerVisible=false when not requested")
+	if got.ctxPicker.visible {
+		t.Error("want ctxPicker.visible=false when not requested")
 	}
 }
 
 func TestContextPicker_ContextsMsg_OpensPicker(t *testing.T) {
 	m := modelWithSorted(nil)
-	m.contextPickerRequested = true
+	m.ctxPicker.requested = true
 	got := update(m, docker.ContextsMsg(testContexts))
-	if !got.contextPickerVisible {
-		t.Error("want contextPickerVisible=true after ContextsMsg")
+	if !got.ctxPicker.visible {
+		t.Error("want ctxPicker.visible=true after ContextsMsg")
 	}
 }
 
@@ -53,78 +53,78 @@ func TestContextPicker_ContextsMsg_CursorOnCurrentContext(t *testing.T) {
 		{Name: "active", Current: true},
 	}
 	m := modelWithSorted(nil)
-	m.contextPickerRequested = true
+	m.ctxPicker.requested = true
 	got := update(m, docker.ContextsMsg(contexts))
-	if got.contextCursor != 1 {
-		t.Errorf("want contextCursor=1 (active context), got %d", got.contextCursor)
+	if got.ctxPicker.cursor != 1 {
+		t.Errorf("want ctxPicker.cursor=1 (active context), got %d", got.ctxPicker.cursor)
 	}
 }
 
 func TestContextPicker_EscClosesPicker(t *testing.T) {
 	m := modelWithSorted(nil)
-	m.contextPickerVisible = true
-	m.contexts = testContexts
+	m.ctxPicker.visible = true
+	m.ctxPicker.contexts = testContexts
 	got := update(m, tea.KeyMsg{Type: tea.KeyEsc})
-	if got.contextPickerVisible {
-		t.Error("want contextPickerVisible=false after esc")
+	if got.ctxPicker.visible {
+		t.Error("want ctxPicker.visible=false after esc")
 	}
-	if got.contexts != nil {
-		t.Error("want contexts cleared after esc")
+	if got.ctxPicker.contexts != nil {
+		t.Error("want ctxPicker.contexts cleared after esc")
 	}
 }
 
 func TestContextPicker_JKey_MovesCursorDown(t *testing.T) {
 	m := modelWithSorted(nil)
-	m.contextPickerVisible = true
-	m.contexts = testContexts
-	m.contextCursor = 0
+	m.ctxPicker.visible = true
+	m.ctxPicker.contexts = testContexts
+	m.ctxPicker.cursor = 0
 	got := update(m, runeKey("j"))
-	if got.contextCursor != 1 {
-		t.Errorf("want contextCursor=1 after j, got %d", got.contextCursor)
+	if got.ctxPicker.cursor != 1 {
+		t.Errorf("want ctxPicker.cursor=1 after j, got %d", got.ctxPicker.cursor)
 	}
 }
 
 func TestContextPicker_DownKey_MovesCursorDown(t *testing.T) {
 	m := modelWithSorted(nil)
-	m.contextPickerVisible = true
-	m.contexts = testContexts
-	m.contextCursor = 0
+	m.ctxPicker.visible = true
+	m.ctxPicker.contexts = testContexts
+	m.ctxPicker.cursor = 0
 	got := update(m, tea.KeyMsg{Type: tea.KeyDown})
-	if got.contextCursor != 1 {
-		t.Errorf("want contextCursor=1 after down, got %d", got.contextCursor)
+	if got.ctxPicker.cursor != 1 {
+		t.Errorf("want ctxPicker.cursor=1 after down, got %d", got.ctxPicker.cursor)
 	}
 }
 
 func TestContextPicker_KKey_MovesCursorUp(t *testing.T) {
 	m := modelWithSorted(nil)
-	m.contextPickerVisible = true
-	m.contexts = testContexts
-	m.contextCursor = 1
+	m.ctxPicker.visible = true
+	m.ctxPicker.contexts = testContexts
+	m.ctxPicker.cursor = 1
 	got := update(m, runeKey("k"))
-	if got.contextCursor != 0 {
-		t.Errorf("want contextCursor=0 after k, got %d", got.contextCursor)
+	if got.ctxPicker.cursor != 0 {
+		t.Errorf("want ctxPicker.cursor=0 after k, got %d", got.ctxPicker.cursor)
 	}
 }
 
 func TestContextPicker_CursorDoesNotUnderflow(t *testing.T) {
 	m := modelWithSorted(nil)
-	m.contextPickerVisible = true
-	m.contexts = testContexts
-	m.contextCursor = 0
+	m.ctxPicker.visible = true
+	m.ctxPicker.contexts = testContexts
+	m.ctxPicker.cursor = 0
 	got := update(m, runeKey("k"))
-	if got.contextCursor != 0 {
-		t.Errorf("want contextCursor=0 (no underflow), got %d", got.contextCursor)
+	if got.ctxPicker.cursor != 0 {
+		t.Errorf("want ctxPicker.cursor=0 (no underflow), got %d", got.ctxPicker.cursor)
 	}
 }
 
 func TestContextPicker_CursorDoesNotOverflow(t *testing.T) {
 	m := modelWithSorted(nil)
-	m.contextPickerVisible = true
-	m.contexts = testContexts
-	m.contextCursor = len(testContexts) - 1
+	m.ctxPicker.visible = true
+	m.ctxPicker.contexts = testContexts
+	m.ctxPicker.cursor = len(testContexts) - 1
 	got := update(m, runeKey("j"))
-	if got.contextCursor != len(testContexts)-1 {
-		t.Errorf("want contextCursor=%d (no overflow), got %d", len(testContexts)-1, got.contextCursor)
+	if got.ctxPicker.cursor != len(testContexts)-1 {
+		t.Errorf("want ctxPicker.cursor=%d (no overflow), got %d", len(testContexts)-1, got.ctxPicker.cursor)
 	}
 }
 
@@ -136,9 +136,9 @@ func TestContextPicker_Enter_CallsSwitchContext(t *testing.T) {
 		return func() tea.Msg { return nil }
 	}
 	m := modelWithMock(mc, nil)
-	m.contextPickerVisible = true
-	m.contexts = testContexts
-	m.contextCursor = 1
+	m.ctxPicker.visible = true
+	m.ctxPicker.contexts = testContexts
+	m.ctxPicker.cursor = 1
 	update(m, tea.KeyMsg{Type: tea.KeyEnter})
 	if gotName != "remote" {
 		t.Errorf("want SwitchContext(%q), got %q", "remote", gotName)
@@ -151,12 +151,12 @@ func TestContextPicker_SwitchMsg_ClosesAndRefreshes(t *testing.T) {
 		return func() tea.Msg { return nil }
 	}
 	m := modelWithMock(mc, nil)
-	m.contextPickerVisible = true
-	m.contexts = testContexts
+	m.ctxPicker.visible = true
+	m.ctxPicker.contexts = testContexts
 	got, cmd := m.Update(docker.ContextSwitchMsg{})
 	app := got.(App)
-	if app.contextPickerVisible {
-		t.Error("want contextPickerVisible=false after switch")
+	if app.ctxPicker.visible {
+		t.Error("want ctxPicker.visible=false after switch")
 	}
 	if !app.loading {
 		t.Error("want loading=true after switch")
@@ -168,13 +168,13 @@ func TestContextPicker_SwitchMsg_ClosesAndRefreshes(t *testing.T) {
 
 func TestContextPicker_SwitchMsg_ErrorSetsErr(t *testing.T) {
 	m := modelWithSorted(nil)
-	m.contextPickerVisible = true
-	m.contexts = testContexts
+	m.ctxPicker.visible = true
+	m.ctxPicker.contexts = testContexts
 	got := update(m, docker.ContextSwitchMsg{Err: errors.New("permission denied")})
 	if got.err == nil {
 		t.Error("want err set on switch failure")
 	}
-	if got.contextPickerVisible {
-		t.Error("want contextPickerVisible=false even on error")
+	if got.ctxPicker.visible {
+		t.Error("want ctxPicker.visible=false even on error")
 	}
 }

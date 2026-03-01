@@ -1,66 +1,47 @@
 package ui
 
 func (m App) closeLogs() App {
-	if m.logsCancel != nil {
-		m.logsCancel()
-		m.logsCancel = nil
+	if m.logs.cancel != nil {
+		m.logs.cancel()
 	}
-	m.logsVisible = false
-	m.logsLines = nil
-	m.logsContainer = ""
-	m.logsContainerID = ""
-	m.logsScrollOffset = 0
-	m.logsAutoScroll = true
-	m.logsAllMode = false
+	m.logs = logsState{autoScroll: true}
 	m.table.SetHeight(m.tableHeight())
 	return m
 }
 
 func (m App) closeInspect() App {
-	m.inspectVisible = false
-	m.inspectLines = nil
-	m.inspectContainer = ""
-	m.inspectOffset = 0
+	m.inspect = inspectState{}
 	m.table.SetHeight(m.tableHeight())
 	return m
 }
 
 func (m App) closeStats() App {
-	m.statsVisible = false
-	m.statsEntry = nil
-	m.statsPrevEntry = nil
-	m.statsContainer = ""
-	m.statsContainerID = ""
-	m.statsFetching = false
+	m.stats = statsState{}
 	m.table.SetHeight(m.tableHeight())
 	return m
 }
 
 func (m App) closeEvents() App {
-	if m.eventsCancel != nil {
-		m.eventsCancel()
-		m.eventsCancel = nil
+	if m.events.cancel != nil {
+		m.events.cancel()
 	}
-	m.eventsVisible = false
-	m.eventsEvents = nil
-	m.eventsScrollOffset = 0
-	m.eventsAutoScroll = true
+	m.events = eventsState{autoScroll: true}
 	m.table.SetHeight(m.tableHeight())
 	return m
 }
 
 func (m App) tableHeight() int {
 	reserved := tableChrome
-	if m.logsVisible {
+	if m.logs.visible {
 		reserved += logsPanelHeight
 	}
-	if m.inspectVisible {
+	if m.inspect.visible {
 		reserved += inspectPanelHeight
 	}
-	if m.statsVisible {
+	if m.stats.visible {
 		reserved += statsPanelHeight
 	}
-	if m.eventsVisible {
+	if m.events.visible {
 		reserved += eventsPanelHeight
 	}
 	h := m.height - reserved
