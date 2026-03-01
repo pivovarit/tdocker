@@ -27,6 +27,9 @@ var (
 	stoppedRowStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#52525B"))
 
+	pausedRowStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#92400E"))
+
 	emptyStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#334155")).
 			MarginLeft(2).
