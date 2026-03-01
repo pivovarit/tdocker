@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -76,4 +77,84 @@ func (m App) renderStatsPanel() string {
 		row("PIDs", e.PIDs, pidTrend)
 		panelPad(b, 1+statsRows, maxLines)
 	})
+}
+
+func parsePercent(s string) (float64, bool) {
+	s = strings.TrimSuffix(strings.TrimSpace(s), "%")
+	v, err := strconv.ParseFloat(s, 64)
+	return v, err == nil
+}
+
+func parseByteSize(s string) (float64, bool) {
+	s = strings.TrimSpace(s)
+	i := 0
+	for i < len(s) && (s[i] == '.' || (s[i] >= '0' && s[i] <= '9')) {
+		i++
+	}
+	if i == 0 {
+		return 0, false
+	}
+	num, err := strconv.ParseFloat(s[:i], 64)
+	if err != nil {
+		return 0, false
+	}
+	switch strings.TrimSpace(s[i:]) {
+	case "B":
+		return num, true
+	case "kB":
+		return num * 1e3, true
+	case "MB":
+		return num * 1e6, true
+	case "GB":
+		return num * 1e9, true
+	case "TB":
+		return num * 1e12, true
+	case "KiB":
+		return num * 1024, true
+	case "MiB":
+		return num * 1024 * 1024, true
+	case "GiB":
+		return num * 1024 * 1024 * 1024, true
+	case "TiB":
+		return num * 1024 * 1024 * 1024 * 1024, true
+	default:
+		return num, true
+	}
+}
+
+func parseSizeFirst(s string) (float64, bool) {
+	if idx := strings.Index(s, " / "); idx != -1 {
+		s = s[:idx]
+	}
+	return parseByteSize(strings.TrimSpace(s))
+}
+
+func parseNumber(s string) (float64, bool) {
+	v, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
+	return v, err == nil
+}
+
+const (
+	trendRelThreshold = 0.01
+	trendAbsMinimum   = 0.001
+)
+
+func statsTrend(prev, curr string, parse func(string) (float64, bool)) string {
+	p, ok1 := parse(prev)
+	c, ok2 := parse(curr)
+	if !ok1 || !ok2 {
+		return ""
+	}
+	th := p * trendRelThreshold
+	if th < trendAbsMinimum {
+		th = trendAbsMinimum
+	}
+	d := c - p
+	if d > th {
+		return " " + trendUpStyle.Render("↑")
+	}
+	if d < -th {
+		return " " + trendDownStyle.Render("↓")
+	}
+	return " " + trendSteadyStyle.Render("·")
 }
