@@ -173,7 +173,7 @@ func (m App) View() string {
 				prefix = keyStyle.Render("["+m.filterQuery+"]") + " · " + keyStyle.Render("esc") + " clear · "
 			}
 			b.WriteString(helpStyle.Render(
-				"  " + prefix + "↑/↓ navigate · " +
+				"  " + prefix + "↑/↓/j/k navigate · " +
 					keyStyle.Render("/") + " filter · " +
 					keyStyle.Render("c") + " copy · " +
 					keyStyle.Render("e") + " exec · " +

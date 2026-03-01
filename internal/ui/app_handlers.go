@@ -240,6 +240,13 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 	}
 
+	switch msg.String() {
+	case "j":
+		msg = tea.KeyMsg{Type: tea.KeyDown}
+	case "k":
+		msg = tea.KeyMsg{Type: tea.KeyUp}
+	}
+
 	var cmd tea.Cmd
 	m.table, cmd = m.table.Update(msg)
 	cursor := m.table.Cursor()
