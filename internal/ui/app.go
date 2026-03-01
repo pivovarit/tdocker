@@ -78,47 +78,6 @@ func (s scrollState) bottom(contentLen, viewHeight int) scrollState {
 	return s
 }
 
-type logsState struct {
-	visible     bool
-	lines       []string
-	container   string
-	containerID string
-	scroll      scrollState
-	allMode     bool
-	gen         int
-	cancel      context.CancelFunc
-}
-
-type inspectState struct {
-	visible   bool
-	lines     []string
-	container string
-	scroll    scrollState
-}
-
-type statsState struct {
-	visible     bool
-	container   string
-	containerID string
-	entry       *docker.StatsEntry
-	prevEntry   *docker.StatsEntry
-	fetching    bool
-}
-
-type eventsState struct {
-	visible bool
-	events  []docker.Event
-	scroll  scrollState
-}
-
-type ctxPickerState struct {
-	visible   bool
-	requested bool
-	contexts  []docker.DockerContext
-	cursor    int
-	current   string
-}
-
 type App struct {
 	client        docker.Client
 	table         table.Model
