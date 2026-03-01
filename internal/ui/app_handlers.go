@@ -215,8 +215,7 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) {
 			c := filtered[cursor]
-			m.copiedName = c.Names
-			return m, copyToClipboard(c.ID)
+			return m, copyToClipboard(c.Names, c.ID)
 		}
 	case "t":
 		cursor := m.table.Cursor()
