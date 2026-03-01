@@ -14,6 +14,7 @@ const (
 	inspectPanelHeight = 20
 	statsPanelHeight   = 9
 	eventsPanelHeight  = 12
+	logsTailDefault    = "200"
 
 	chromeTitle        = 1
 	chromeTitleMargin  = 1

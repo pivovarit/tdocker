@@ -3,6 +3,7 @@ package docker
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os/exec"
@@ -12,6 +13,16 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+var ErrDaemonUnavailable = errors.New("docker daemon unavailable")
+
+func isDaemonUnavailable(out []byte) bool {
+	s := string(out)
+	return strings.Contains(s, "Cannot connect to the Docker daemon") ||
+		strings.Contains(s, "Is the docker daemon running") ||
+		strings.Contains(s, "connection refused") ||
+		(strings.Contains(s, "no such file or directory") && strings.Contains(s, "docker.sock"))
+}
 
 const (
 	timeoutFetch   = 10 * time.Second
@@ -99,6 +110,9 @@ func FetchContainers(all bool) tea.Cmd {
 		defer cancel()
 		out, err := exec.CommandContext(ctx, "docker", args...).CombinedOutput()
 		if err != nil {
+			if isDaemonUnavailable(out) {
+				return ErrMsg{fmt.Errorf("docker ps: %w\n%s", ErrDaemonUnavailable, strings.TrimSpace(string(out)))}
+			}
 			return ErrMsg{fmt.Errorf("docker ps: %w\n%s", err, strings.TrimSpace(string(out)))}
 		}
 		var containers []Container
@@ -222,6 +236,9 @@ func FetchContexts() tea.Cmd {
 		defer cancel()
 		out, err := exec.CommandContext(ctx, "docker", "context", "ls", "--format", "{{json .}}").CombinedOutput()
 		if err != nil {
+			if isDaemonUnavailable(out) {
+				return ErrMsg{fmt.Errorf("docker context ls: %w\n%s", ErrDaemonUnavailable, strings.TrimSpace(string(out)))}
+			}
 			return ErrMsg{fmt.Errorf("docker context ls: %w\n%s", err, strings.TrimSpace(string(out)))}
 		}
 		var contexts []DockerContext

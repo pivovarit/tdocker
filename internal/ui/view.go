@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -9,11 +10,7 @@ import (
 )
 
 func errorHintFor(err error) string {
-	msg := err.Error()
-	if strings.Contains(msg, "Cannot connect to the Docker daemon") ||
-		strings.Contains(msg, "Is the docker daemon running") ||
-		strings.Contains(msg, "connection refused") ||
-		(strings.Contains(msg, "no such file or directory") && strings.Contains(msg, "docker.sock")) {
+	if errors.Is(err, docker.ErrDaemonUnavailable) {
 		return "Is Docker running? Check that the daemon is started and your socket path is correct."
 	}
 	return ""
@@ -393,15 +390,24 @@ func parseNumber(s string) (float64, bool) {
 	return v, err == nil
 }
 
+const (
+	// trendRelThreshold is the minimum relative change (1%) required to
+	// show an up/down trend arrow instead of a steady dot.
+	trendRelThreshold = 0.01
+	// trendAbsMinimum prevents noise on near-zero values where the relative
+	// threshold would be smaller than measurement precision.
+	trendAbsMinimum = 0.001
+)
+
 func statsTrend(prev, curr string, parse func(string) (float64, bool)) string {
 	p, ok1 := parse(prev)
 	c, ok2 := parse(curr)
 	if !ok1 || !ok2 {
 		return ""
 	}
-	th := p * 0.01
-	if th < 0.001 {
-		th = 0.001
+	th := p * trendRelThreshold
+	if th < trendAbsMinimum {
+		th = trendAbsMinimum
 	}
 	d := c - p
 	if d > th {
