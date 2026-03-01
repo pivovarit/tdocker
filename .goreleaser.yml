@@ -10,6 +10,9 @@ builds:
     ldflags:
       - -s -w -trimpath
 
+release:
+  draft: true
+
 archives:
   - format: tar.gz
     name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
