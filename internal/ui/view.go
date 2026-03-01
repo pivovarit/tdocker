@@ -100,6 +100,7 @@ func (m App) View() string {
 			"  ↑/↓ scroll · " +
 				keyStyle.Render("g") + " top · " +
 				keyStyle.Render("G") + " bottom · " +
+				keyStyle.Render("f") + " toggle all · " +
 				keyStyle.Render("esc") + "/" + keyStyle.Render("l") + " close · " +
 				keyStyle.Render("q") + " quit",
 		))
@@ -176,7 +177,11 @@ func (m App) renderLogsPanel() string {
 
 	b.WriteString(logsDividerStyle.Render(strings.Repeat("─", w)))
 	b.WriteString("\n")
-	b.WriteString(logsTitleStyle.Render(" Logs: " + m.logsContainer))
+	logsModeLabel := " (last 200)"
+	if m.logsAllMode {
+		logsModeLabel = " (all)"
+	}
+	b.WriteString(logsTitleStyle.Render(" Logs: " + m.logsContainer + logsModeLabel))
 	b.WriteString("\n")
 
 	maxLines := logsPanelHeight - 2

@@ -8,8 +8,10 @@ func (m App) closeLogs() App {
 	m.logsVisible = false
 	m.logsLines = nil
 	m.logsContainer = ""
+	m.logsContainerID = ""
 	m.logsScrollOffset = 0
 	m.logsAutoScroll = true
+	m.logsAllMode = false
 	m.table.SetHeight(m.tableHeight())
 	return m
 }
