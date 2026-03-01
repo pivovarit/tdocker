@@ -39,7 +39,8 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyPressMsg:
 		m.copiedName = ""
-		if msg.String() == "q" || msg.String() == "ctrl+c" {
+		m.warnMsg = ""
+		if msg.String() == keyQuit || msg.String() == keyForceQuit {
 			if m.logs.visible {
 				m = m.closeLogs()
 			}
@@ -222,7 +223,8 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, msg.Next
 		}
 		var debounceCmd tea.Cmd
-		if !m.loading && !m.pendingRefresh && isContainerLifecycleEvent(msg.Event) {
+		opIdle := m.op == OpNone || m.op == OpConfirming
+		if !m.loading && !m.pendingRefresh && opIdle && isContainerLifecycleEvent(msg.Event) {
 			m.pendingRefresh = true
 			debounceCmd = tea.Tick(300*time.Millisecond, func(time.Time) tea.Msg {
 				return autoRefreshMsg{}

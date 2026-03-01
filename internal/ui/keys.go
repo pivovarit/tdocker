@@ -1,0 +1,24 @@
+package ui
+
+const (
+	keyQuit         = "q"
+	keyForceQuit    = "ctrl+c"
+	keyRefresh      = "r"
+	keyToggleAll    = "A"
+	keyFilter       = "/"
+	keyLogs         = "l"
+	keyStop         = "S"
+	keyStart        = "s"
+	keyRestart      = "R"
+	keyDelete       = "D"
+	keyExec         = "e"
+	keyDebug        = "x"
+	keyContext      = "X"
+	keyInspect      = "i"
+	keyCopy         = "c"
+	keyStats        = "t"
+	keyEvents       = "v"
+	keyVimDown      = "j"
+	keyVimUp        = "k"
+	keyScrollBottom = "G"
+)
