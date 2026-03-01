@@ -10,6 +10,7 @@ type Client interface {
 	FetchContainers(all bool) tea.Cmd
 	StopContainer(id string) tea.Cmd
 	StartContainer(id string) tea.Cmd
+	RestartContainer(id string) tea.Cmd
 	DeleteContainer(id string) tea.Cmd
 	ExecContainer(id string) tea.Cmd
 	CheckDebugAvailable(id string) tea.Cmd

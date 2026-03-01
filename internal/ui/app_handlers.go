@@ -121,6 +121,9 @@ func (m App) handleConfirmKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		case "start":
 			m.op = OpStarting
 			return m, m.client.StartContainer(m.confirmID)
+		case "restart":
+			m.op = OpRestarting
+			return m, m.client.RestartContainer(m.confirmID)
 		case "delete":
 			m.op = OpDeleting
 			return m, m.client.DeleteContainer(m.confirmID)
@@ -188,7 +191,7 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.table.SetHeight(m.tableHeight())
 			return m, firstLine
 		}
-	case "s":
+	case "S":
 		cursor := m.table.Cursor()
 		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State == "running" {
@@ -198,7 +201,7 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.confirmName = filtered[cursor].Names
 			return m, nil
 		}
-	case "S":
+	case "s":
 		cursor := m.table.Cursor()
 		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State != "running" {
@@ -208,7 +211,17 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.confirmName = filtered[cursor].Names
 			return m, nil
 		}
-	case "d":
+	case "R":
+		cursor := m.table.Cursor()
+		filtered := m.filtered()
+		if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State == "running" {
+			m.op = OpConfirming
+			m.confirmAction = "restart"
+			m.confirmID = filtered[cursor].ID
+			m.confirmName = filtered[cursor].Names
+			return m, nil
+		}
+	case "D":
 		cursor := m.table.Cursor()
 		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State != "running" {

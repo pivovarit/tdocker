@@ -35,6 +35,7 @@ const (
 	OpConfirming
 	OpStopping
 	OpStarting
+	OpRestarting
 	OpDeleting
 )
 

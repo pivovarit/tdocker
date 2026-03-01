@@ -27,8 +27,7 @@ func (m App) View() string {
 
 	filtered := m.filtered()
 
-	// Plain text for right-alignment width calculation
-	leftPlain := " tdocker  ·  " + mode + " [A]  ·  / filter"
+	leftPlain := " tdocker  ·  " + mode + " [A]  ·  / filter  ·  r refresh"
 	if m.filterQuery != "" {
 		leftPlain += ": " + fmt.Sprintf("%q", m.filterQuery)
 	}
@@ -48,7 +47,8 @@ func (m App) View() string {
 	sep := titleHintStyle.Render("  ·  ")
 	styledLeft := titleStyle.Render(" tdocker") + sep +
 		titleStyle.Render(mode) + titleHintStyle.Render(" [A]") + sep +
-		titleHintStyle.Render("/ filter")
+		titleHintStyle.Render("/ filter") + sep +
+		titleHintStyle.Render("r refresh")
 	if m.filterQuery != "" {
 		styledLeft += titleHintStyle.Render(": ") + titleStyle.Render(fmt.Sprintf("%q", m.filterQuery))
 	}
@@ -65,6 +65,8 @@ func (m App) View() string {
 		b.WriteString(emptyStyle.Render("Stopping container…"))
 	case m.op == OpStarting:
 		b.WriteString(emptyStyle.Render("Starting container…"))
+	case m.op == OpRestarting:
+		b.WriteString(emptyStyle.Render("Restarting container…"))
 	case m.op == OpDeleting:
 		b.WriteString(emptyStyle.Render("Deleting container…"))
 	case m.loading:
@@ -173,6 +175,8 @@ func (m App) View() string {
 		switch m.confirmAction {
 		case "start":
 			verb = "Start"
+		case "restart":
+			verb = "Restart"
 		case "delete":
 			verb = "Delete"
 		}
@@ -210,13 +214,13 @@ func (m App) View() string {
 					keyStyle.Render("l") + " logs · " +
 					keyStyle.Render("i") + " inspect · " +
 					keyStyle.Render("e") + " exec · " +
-					keyStyle.Render("s") + " stop · " +
-					keyStyle.Render("S") + " start · " +
-					keyStyle.Render("d") + " delete · " +
+					keyStyle.Render("S") + " stop · " +
+					keyStyle.Render("s") + " start · " +
+					keyStyle.Render("R") + " restart · " +
+					keyStyle.Render("D") + " delete · " +
 					keyStyle.Render("t") + " stats · " +
-					keyStyle.Render("c") + " copy · " +
-					keyStyle.Render("x") + " debug · " +
-					keyStyle.Render("r") + " refresh",
+					keyStyle.Render("c") + " copy id · " +
+					keyStyle.Render("x") + " debug",
 			))
 		}
 	}

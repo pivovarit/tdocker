@@ -17,6 +17,7 @@ const (
 	timeoutFetch   = 10 * time.Second
 	timeoutStop    = 30 * time.Second
 	timeoutStart   = 15 * time.Second
+	timeoutRestart = 30 * time.Second
 	timeoutRM      = 10 * time.Second
 	timeoutDebug   = 5 * time.Second
 	timeoutContext = 10 * time.Second
@@ -67,6 +68,7 @@ type (
 	ErrMsg        struct{ Err error }
 	StopMsg       struct{ Err error }
 	StartMsg      struct{ Err error }
+	RestartMsg    struct{ Err error }
 	DeleteMsg     struct {
 		ID  string
 		Err error
@@ -134,6 +136,18 @@ func StartContainer(id string) tea.Cmd {
 			return StartMsg{fmt.Errorf("docker start: %w\n%s", err, strings.TrimSpace(string(out)))}
 		}
 		return StartMsg{}
+	}
+}
+
+func RestartContainer(id string) tea.Cmd {
+	return func() tea.Msg {
+		ctx, cancel := context.WithTimeout(context.Background(), timeoutRestart)
+		defer cancel()
+		out, err := exec.CommandContext(ctx, "docker", "restart", id).CombinedOutput()
+		if err != nil {
+			return RestartMsg{fmt.Errorf("docker restart: %w\n%s", err, strings.TrimSpace(string(out)))}
+		}
+		return RestartMsg{}
 	}
 }
 
