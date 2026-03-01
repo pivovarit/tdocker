@@ -43,7 +43,7 @@ func TestClient_AKey_TogglesShowAllBeforeFetch(t *testing.T) {
 	}
 	m := modelWithMock(mc, nil)
 	m.showAll = false
-	update(m, runeKey("a"))
+	update(m, runeKey("A"))
 	if !gotAll {
 		t.Error("want FetchContainers called with all=true after toggling from false")
 	}

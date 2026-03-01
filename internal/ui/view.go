@@ -26,17 +26,39 @@ func (m App) View() string {
 	}
 
 	filtered := m.filtered()
-	countStr := fmt.Sprintf("%d", len(m.containers))
+
+	// Plain text for right-alignment width calculation
+	leftPlain := " tdocker  ·  " + mode + " [A]  ·  / filter"
 	if m.filterQuery != "" {
-		countStr = fmt.Sprintf("%d/%d", len(filtered), len(m.containers))
+		leftPlain += ": " + fmt.Sprintf("%q", m.filterQuery)
+	}
+	rightPlain := ""
+	if m.currentContext != "" {
+		rightPlain = "ctx [X]: " + m.currentContext + " "
 	}
 
-	title := fmt.Sprintf(" tdocker  ·  %s container(s)  ·  showing %s", countStr, mode)
-	if m.filterQuery != "" {
-		title += fmt.Sprintf("  ·  filter: %q", m.filterQuery)
+	pad := 2
+	if rightPlain != "" && m.width > 0 {
+		if p := m.width - len([]rune(leftPlain)) - len([]rune(rightPlain)); p > pad {
+			pad = p
+		}
 	}
-	b.WriteString(titleStyle.Render(title))
-	b.WriteString("\n")
+
+	// Styled segments
+	sep := titleHintStyle.Render("  ·  ")
+	styledLeft := titleStyle.Render(" tdocker") + sep +
+		titleStyle.Render(mode) + titleHintStyle.Render(" [A]") + sep +
+		titleHintStyle.Render("/ filter")
+	if m.filterQuery != "" {
+		styledLeft += titleHintStyle.Render(": ") + titleStyle.Render(fmt.Sprintf("%q", m.filterQuery))
+	}
+	styledRight := ""
+	if m.currentContext != "" {
+		styledRight = titleHintStyle.Render("ctx [X]: ") + titleStyle.Render(m.currentContext) + " "
+	}
+
+	b.WriteString(styledLeft + strings.Repeat(" ", pad) + styledRight)
+	b.WriteString("\n\n")
 
 	switch {
 	case m.op == OpStopping:
@@ -66,7 +88,7 @@ func (m App) View() string {
 		b.WriteString(emptyStyle.Render(msg))
 		b.WriteString("\n")
 		b.WriteString(helpStyle.Render("  Press " +
-			keyStyle.Render("a") + " to toggle all containers, " +
+			keyStyle.Render("A") + " to toggle all containers, " +
 			keyStyle.Render("r") + " to refresh, " +
 			keyStyle.Render("q") + " to quit."))
 		return b.String()
@@ -116,6 +138,11 @@ func (m App) View() string {
 		b.WriteString(m.renderStatsPanel())
 	}
 
+	if m.contextPickerVisible {
+		b.WriteString("\n")
+		b.WriteString(m.renderContextPicker())
+	}
+
 	b.WriteString("\n")
 	switch {
 	case m.logsVisible:
@@ -158,6 +185,12 @@ func (m App) View() string {
 				keyStyle.Render("n") +
 				confirmStyle.Render(" to cancel"),
 		)
+	case m.contextPickerVisible:
+		b.WriteString(helpStyle.Render(
+			"  ↑/↓/j/k navigate · " +
+				keyStyle.Render("enter") + " switch · " +
+				keyStyle.Render("esc") + " cancel",
+		))
 	case m.filtering:
 		b.WriteString(helpStyle.Render(
 			"  / " + keyStyle.Render(m.filterQuery+"▌") + " · esc/enter exit",
@@ -173,20 +206,17 @@ func (m App) View() string {
 				prefix = keyStyle.Render("["+m.filterQuery+"]") + " · " + keyStyle.Render("esc") + " clear · "
 			}
 			b.WriteString(helpStyle.Render(
-				"  " + prefix + "↑/↓/j/k navigate · " +
-					keyStyle.Render("/") + " filter · " +
-					keyStyle.Render("c") + " copy · " +
-					keyStyle.Render("e") + " exec · " +
-					keyStyle.Render("x") + " debug · " +
-					keyStyle.Render("i") + " inspect · " +
-					keyStyle.Render("t") + " stats · " +
+				"  " + prefix +
 					keyStyle.Render("l") + " logs · " +
+					keyStyle.Render("i") + " inspect · " +
+					keyStyle.Render("e") + " exec · " +
 					keyStyle.Render("s") + " stop · " +
 					keyStyle.Render("S") + " start · " +
 					keyStyle.Render("d") + " delete · " +
-					keyStyle.Render("a") + " toggle all · " +
-					keyStyle.Render("r") + " refresh · " +
-					keyStyle.Render("q") + " quit",
+					keyStyle.Render("t") + " stats · " +
+					keyStyle.Render("c") + " copy · " +
+					keyStyle.Render("x") + " debug · " +
+					keyStyle.Render("r") + " refresh",
 			))
 		}
 	}
@@ -295,6 +325,48 @@ func (m App) renderStatsPanel() string {
 	b.WriteString(row("Net I/O", e.NetIO))
 	b.WriteString(row("Block I/O", e.BlockIO))
 	b.WriteString(row("PIDs", e.PIDs))
+
+	return b.String()
+}
+
+func (m App) renderContextPicker() string {
+	var b strings.Builder
+
+	b.WriteString(logsDividerStyle.Render(strings.Repeat("─", m.width)))
+	b.WriteString("\n")
+	b.WriteString(logsTitleStyle.Render(" Docker Contexts"))
+	b.WriteString("\n")
+
+	if len(m.contexts) == 0 {
+		b.WriteString(emptyStyle.Render("No contexts found."))
+		b.WriteString("\n")
+		return b.String()
+	}
+
+	for i, c := range m.contexts {
+		name := c.Name
+		label := "  " + name
+		if c.Description != "" {
+			label += "  " + c.Description
+		}
+		if c.Current {
+			label = "* " + name
+			if c.Description != "" {
+				label += "  " + c.Description
+			}
+		}
+		switch {
+		case i == m.contextCursor && c.Current:
+			b.WriteString(contextCursorStyle.Render("* " + name + "  ✓"))
+		case i == m.contextCursor:
+			b.WriteString(contextCursorStyle.Render(label))
+		case c.Current:
+			b.WriteString(contextActiveStyle.Render(label))
+		default:
+			b.WriteString(logsLineStyle.Render(label))
+		}
+		b.WriteString("\n")
+	}
 
 	return b.String()
 }

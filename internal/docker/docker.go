@@ -14,11 +14,12 @@ import (
 )
 
 const (
-	timeoutFetch = 10 * time.Second
-	timeoutStop  = 30 * time.Second
-	timeoutStart = 15 * time.Second
-	timeoutRM    = 10 * time.Second
-	timeoutDebug = 5 * time.Second
+	timeoutFetch   = 10 * time.Second
+	timeoutStop    = 30 * time.Second
+	timeoutStart   = 15 * time.Second
+	timeoutRM      = 10 * time.Second
+	timeoutDebug   = 5 * time.Second
+	timeoutContext = 10 * time.Second
 )
 
 type Labels map[string]string
@@ -75,7 +76,16 @@ type (
 		ID        string
 		Available bool
 	}
+	ContextsMsg      []DockerContext
+	ContextSwitchMsg struct{ Err error }
 )
+
+type DockerContext struct {
+	Name           string `json:"Name"`
+	Current        bool   `json:"Current"`
+	Description    string `json:"Description"`
+	DockerEndpoint string `json:"DockerEndpoint"`
+}
 
 func FetchContainers(all bool) tea.Cmd {
 	return func() tea.Msg {
@@ -190,4 +200,38 @@ func Sort(containers []Container) []Container {
 		return ci.Names < cj.Names
 	})
 	return sorted
+}
+
+func FetchContexts() tea.Cmd {
+	return func() tea.Msg {
+		ctx, cancel := context.WithTimeout(context.Background(), timeoutContext)
+		defer cancel()
+		out, err := exec.CommandContext(ctx, "docker", "context", "ls", "--format", "{{json .}}").CombinedOutput()
+		if err != nil {
+			return ErrMsg{fmt.Errorf("docker context ls: %w\n%s", err, strings.TrimSpace(string(out)))}
+		}
+		var contexts []DockerContext
+		for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+			if line == "" {
+				continue
+			}
+			var c DockerContext
+			if err := json.Unmarshal([]byte(line), &c); err == nil {
+				contexts = append(contexts, c)
+			}
+		}
+		return ContextsMsg(contexts)
+	}
+}
+
+func SwitchContext(name string) tea.Cmd {
+	return func() tea.Msg {
+		ctx, cancel := context.WithTimeout(context.Background(), timeoutContext)
+		defer cancel()
+		out, err := exec.CommandContext(ctx, "docker", "context", "use", name).CombinedOutput()
+		if err != nil {
+			return ContextSwitchMsg{Err: fmt.Errorf("docker context use: %w\n%s", err, strings.TrimSpace(string(out)))}
+		}
+		return ContextSwitchMsg{}
+	}
 }

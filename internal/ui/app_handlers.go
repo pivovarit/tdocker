@@ -87,6 +87,28 @@ func (m App) handleStatsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+func (m App) handleContextKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "esc":
+		m.contextPickerVisible = false
+		m.contexts = nil
+		m.contextCursor = 0
+	case "up", "k":
+		if m.contextCursor > 0 {
+			m.contextCursor--
+		}
+	case "down", "j":
+		if m.contextCursor < len(m.contexts)-1 {
+			m.contextCursor++
+		}
+	case "enter":
+		if len(m.contexts) > 0 {
+			return m, m.client.SwitchContext(m.contexts[m.contextCursor].Name)
+		}
+	}
+	return m, nil
+}
+
 func (m App) handleConfirmKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "y", "Y":
@@ -134,7 +156,7 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.loading = true
 		m.err = nil
 		return m, m.client.FetchContainers(m.showAll)
-	case "a":
+	case "A":
 		m.showAll = !m.showAll
 		m.loading = true
 		m.err = nil
@@ -208,6 +230,9 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if cursor >= 0 && cursor < len(filtered) {
 			return m, m.client.CheckDebugAvailable(filtered[cursor].ID)
 		}
+	case "X":
+		m.contextPickerRequested = true
+		return m, m.client.FetchContexts()
 	case "i":
 		cursor := m.table.Cursor()
 		filtered := m.filtered()

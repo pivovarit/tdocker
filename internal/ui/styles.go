@@ -5,8 +5,10 @@ import "github.com/charmbracelet/lipgloss"
 var (
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("#38BDF8")).
-			MarginBottom(1)
+			Foreground(lipgloss.Color("#38BDF8"))
+
+	titleHintStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#64748B"))
 
 	tableStyle = lipgloss.NewStyle().
 			BorderStyle(lipgloss.RoundedBorder()).
@@ -59,4 +61,12 @@ var (
 
 	inspectValueStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#CBD5E1"))
+
+	contextActiveStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#4ADE80")).
+				Bold(true)
+
+	contextCursorStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#F0F9FF")).
+				Background(lipgloss.Color("#0369A1"))
 )

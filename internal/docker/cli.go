@@ -20,3 +20,5 @@ func (CLI) FetchStats(id string) tea.Cmd          { return FetchStats(id) }
 func (CLI) StartLogs(ctx context.Context, id string, tail string, gen int) tea.Cmd {
 	return StartLogs(ctx, id, tail, gen)
 }
+func (CLI) FetchContexts() tea.Cmd            { return FetchContexts() }
+func (CLI) SwitchContext(name string) tea.Cmd { return SwitchContext(name) }

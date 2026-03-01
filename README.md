@@ -24,7 +24,7 @@ git clone https://github.com/pivovarit/tdocker && cd tdocker && go run .
 |-----|--------|
 | `↑` / `↓` | Navigate |
 | `/` | Filter containers |
-| `a` | Toggle all / running only |
+| `A` | Toggle all / running only |
 | `c` | Copy container ID to clipboard |
 | `e` | Exec into container (`sh`) |
 | `x` | Open debug shell (`docker debug`) |

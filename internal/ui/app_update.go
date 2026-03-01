@@ -49,6 +49,9 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.filtering {
 			return m.handleFilterKey(msg)
 		}
+		if m.contextPickerVisible {
+			return m.handleContextKey(msg)
+		}
 		return m.handleMainKey(msg)
 
 	case docker.ContainersMsg:
@@ -171,6 +174,35 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.statsFetching = true
 		return m, m.client.FetchStats(m.statsContainerID)
+
+	case docker.ContextsMsg:
+		m.contexts = []docker.DockerContext(msg)
+		for i, c := range m.contexts {
+			if c.Current {
+				m.currentContext = c.Name
+				if m.contextPickerRequested {
+					m.contextCursor = i
+				}
+				break
+			}
+		}
+		if m.contextPickerRequested {
+			m.contextPickerVisible = true
+			m.contextPickerRequested = false
+		}
+		return m, nil
+
+	case docker.ContextSwitchMsg:
+		m.contextPickerVisible = false
+		m.contexts = nil
+		m.contextCursor = 0
+		if msg.Err != nil {
+			m.err = msg.Err
+			return m, nil
+		}
+		m.loading = true
+		m.err = nil
+		return m, tea.Batch(m.client.FetchContainers(m.showAll), m.client.FetchContexts())
 	}
 
 	var cmd tea.Cmd
