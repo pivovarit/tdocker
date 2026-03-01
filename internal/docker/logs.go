@@ -18,8 +18,8 @@ type (
 	LogsEndMsg struct{ Err error }
 )
 
-func StartLogs(ctx context.Context, id string) tea.Cmd {
-	cmd := exec.CommandContext(ctx, "docker", "logs", "--follow", "--tail", "200", id)
+func StartLogs(ctx context.Context, id string, tail string) tea.Cmd {
+	cmd := exec.CommandContext(ctx, "docker", "logs", "--follow", "--tail", tail, id)
 	pr, pw := io.Pipe()
 	cmd.Stdout = pw
 	cmd.Stderr = pw

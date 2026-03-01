@@ -47,8 +47,10 @@ type App struct {
 	logsVisible        bool
 	logsLines          []string
 	logsContainer      string
+	logsContainerID    string
 	logsScrollOffset   int
 	logsAutoScroll     bool
+	logsAllMode        bool
 	logsCancel         context.CancelFunc
 
 	inspectVisible   bool

@@ -10,6 +10,21 @@ func (m App) handleLogsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "esc", "l":
 		m = m.closeLogs()
+	case "f":
+		if m.logsCancel != nil {
+			m.logsCancel()
+		}
+		m.logsAllMode = !m.logsAllMode
+		m.logsLines = nil
+		m.logsScrollOffset = 0
+		m.logsAutoScroll = true
+		ctx, cancel := context.WithCancel(context.Background())
+		m.logsCancel = cancel
+		tail := "200"
+		if m.logsAllMode {
+			tail = "all"
+		}
+		return m, m.client.StartLogs(ctx, m.logsContainerID, tail)
 	case "up", "k":
 		if m.logsScrollOffset > 0 {
 			m.logsScrollOffset--
@@ -130,13 +145,15 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) {
 			m.logsContainer = filtered[cursor].Names
+			m.logsContainerID = filtered[cursor].ID
 			m.logsLines = nil
 			m.logsScrollOffset = 0
 			m.logsAutoScroll = true
+			m.logsAllMode = false
 			m.logsVisible = true
 			ctx, cancel := context.WithCancel(context.Background())
 			m.logsCancel = cancel
-			firstLine := m.client.StartLogs(ctx, filtered[cursor].ID)
+			firstLine := m.client.StartLogs(ctx, filtered[cursor].ID, "200")
 			m.table.SetHeight(m.tableHeight())
 			return m, firstLine
 		}
