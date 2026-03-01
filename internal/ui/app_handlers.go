@@ -110,11 +110,15 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "R":
 		cursor := m.table.Cursor()
 		filtered := m.filtered()
-		if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State == "running" {
+		if cursor >= 0 && cursor < len(filtered) {
 			m.op = OpConfirming
-			m.confirmAction = "restart"
 			m.confirmID = filtered[cursor].ID
 			m.confirmName = filtered[cursor].Names
+			if filtered[cursor].State == "running" {
+				m.confirmAction = "restart"
+			} else {
+				m.confirmAction = "start"
+			}
 			return m, nil
 		}
 	case "D":
