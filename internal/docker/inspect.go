@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
@@ -78,7 +78,7 @@ func (d *InspectData) Lines(width int) []InspectLine {
 		for k := range d.Ports {
 			portKeys = append(portKeys, k)
 		}
-		sort.Strings(portKeys)
+		slices.Sort(portKeys)
 		for _, containerPort := range portKeys {
 			bindings := d.Ports[containerPort]
 			if len(bindings) == 0 {

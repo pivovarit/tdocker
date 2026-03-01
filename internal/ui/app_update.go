@@ -3,6 +3,7 @@ package ui
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -204,13 +205,10 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case docker.ContextsMsg:
 		m.ctxPicker.contexts = []docker.DockerContext(msg)
-		for i, c := range m.ctxPicker.contexts {
-			if c.Current {
-				m.ctxPicker.current = c.Name
-				if m.ctxPicker.requested {
-					m.ctxPicker.cursor = i
-				}
-				break
+		if i := slices.IndexFunc(m.ctxPicker.contexts, func(c docker.DockerContext) bool { return c.Current }); i >= 0 {
+			m.ctxPicker.current = m.ctxPicker.contexts[i].Name
+			if m.ctxPicker.requested {
+				m.ctxPicker.cursor = i
 			}
 		}
 		if m.ctxPicker.requested {

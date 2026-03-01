@@ -50,13 +50,11 @@ func (m App) renderInspectPanel() string {
 		if end > len(m.inspect.lines) {
 			end = len(m.inspect.lines)
 		}
-		shown := 0
-		for i := start; i < end; i++ {
-			b.WriteString(m.inspect.lines[i])
+		for _, line := range m.inspect.lines[start:end] {
+			b.WriteString(line)
 			b.WriteString("\n")
-			shown++
 		}
-		panelPad(b, shown, maxLines)
+		panelPad(b, end-start, maxLines)
 	})
 }
 
