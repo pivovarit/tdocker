@@ -16,7 +16,8 @@ func buildTable(containers []docker.Container, width int) table.Model {
 		overhead    = 16
 	)
 
-	nameW, imageW, statusW, portsW := 4, 5, 6, 5
+	nameW, imageW, statusW, portsW := 4, 5, 6, 0
+	hasPorts := false
 	for i, c := range containers {
 		if w := len([]rune(buildTableName(containers, i))); w > nameW {
 			nameW = w
@@ -27,15 +28,17 @@ func buildTable(containers []docker.Container, width int) table.Model {
 		if w := len([]rune(c.Status)); w > statusW {
 			statusW = w
 		}
-		if w := len([]rune(c.Ports)); w > portsW {
-			portsW = w
+		if c.Ports != "" {
+			hasPorts = true
+			if w := len([]rune(c.Ports)); w > portsW {
+				portsW = w
+			}
 		}
 	}
 
 	nameW = min(nameW, 50)
 	imageW = min(imageW, 40)
 	statusW = min(statusW, 20)
-	portsW = min(portsW, 60)
 
 	remaining := width - idW - stateW - runningForW - overhead
 	if remaining < 40 {
@@ -43,10 +46,17 @@ func buildTable(containers []docker.Container, width int) table.Model {
 	}
 
 	leftover := max(remaining-nameW, 20)
-	total := imageW + statusW + portsW
-	imageW = max(leftover*imageW/total, 5)
-	statusW = max(leftover*statusW/total, 6)
-	portsW = max(leftover-imageW-statusW, 5)
+	if hasPorts {
+		portsW = min(portsW, 60)
+		total := imageW + statusW + portsW
+		imageW = max(leftover*imageW/total, 5)
+		statusW = max(leftover*statusW/total, 6)
+		portsW = max(leftover-imageW-statusW, 5)
+	} else {
+		total := imageW + statusW
+		imageW = max(leftover*imageW/total, 5)
+		statusW = max(leftover-imageW, 6)
+	}
 
 	cols := []table.Column{
 		{Title: "ID", Width: idW},
@@ -55,20 +65,25 @@ func buildTable(containers []docker.Container, width int) table.Model {
 		{Title: "State", Width: stateW},
 		{Title: "Status", Width: statusW},
 		{Title: "Running for", Width: runningForW},
-		{Title: "Ports", Width: portsW},
+	}
+	if hasPorts {
+		cols = append(cols, table.Column{Title: "Ports", Width: portsW})
 	}
 
 	rows := make([]table.Row, len(containers))
 	for i, c := range containers {
-		rows[i] = table.Row{
+		row := table.Row{
 			trunc(c.ID, idW),
 			trunc(buildTableName(containers, i), nameW),
 			trunc(c.Image, imageW),
 			trunc(c.State, stateW),
 			trunc(c.Status, statusW),
 			trunc(c.RunningFor, runningForW),
-			trunc(c.Ports, portsW),
 		}
+		if hasPorts {
+			row = append(row, trunc(c.Ports, portsW))
+		}
+		rows[i] = row
 	}
 
 	t := table.New(
