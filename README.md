@@ -18,6 +18,17 @@ https://github.com/user-attachments/assets/0bc1f303-46e1-4aa4-a755-72e769eeb3fd
 git clone https://github.com/pivovarit/tdocker && cd tdocker && go run .
 ```
 
+### Tested on
+
+| Component | Version |
+|-----------|---------|
+| macOS | 26.3 (Sequoia) |
+| Docker Desktop | 29.2.1 |
+| Go | 1.26 |
+| Architecture | arm64 (Apple Silicon) |
+
+Clipboard integration is supported on macOS (`pbcopy`), Windows (`clip`), Linux/X11 (`xclip`), Linux/Wayland (`wl-copy`), and SSH/headless via OSC 52.
+
 ### Keybindings
 
 | Key | Action |

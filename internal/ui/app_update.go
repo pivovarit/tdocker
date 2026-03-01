@@ -58,6 +58,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		selectedID := m.currentSelectedID()
 		m.containers = msg
 		m.sorted = docker.Sort(m.containers)
+		m.containersByID = indexContainers(m.containers)
 		m.loading = false
 		m.err = nil
 		m = m.rebuildTable(selectedID)
@@ -110,6 +111,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.containers = kept
 		m.sorted = docker.Sort(m.containers)
+		m.containersByID = indexContainers(m.containers)
 		m = m.rebuildTable(selectedID)
 		return m, nil
 
