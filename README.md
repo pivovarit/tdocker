@@ -31,8 +31,9 @@ git clone https://github.com/pivovarit/tdocker && cd tdocker && go run .
 | `i` | Inspect container |
 | `t` | Show stats |
 | `l` | View logs |
-| `s` | Stop container |
-| `S` | Start container |
-| `d` | Delete container |
+| `S` | Stop container |
+| `s` | Start container |
+| `R` | Restart container |
+| `D` | Delete container |
 | `r` | Refresh |
 | `q` / `Ctrl+C` | Quit |

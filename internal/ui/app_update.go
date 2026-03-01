@@ -86,6 +86,15 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.loading = true
 		return m, m.client.FetchContainers(m.showAll)
 
+	case docker.RestartMsg:
+		m.op = OpNone
+		if msg.Err != nil {
+			m.err = msg.Err
+			return m, nil
+		}
+		m.loading = true
+		return m, m.client.FetchContainers(m.showAll)
+
 	case docker.DeleteMsg:
 		m.op = OpNone
 		if msg.Err != nil {

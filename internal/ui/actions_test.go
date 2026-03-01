@@ -13,9 +13,9 @@ var (
 	stoppedContainer = docker.Container{ID: "stop222", Names: "db", Image: "postgres", State: "exited"}
 )
 
-func TestUpdate_SKeyOnRunningEntersStopConfirm(t *testing.T) {
+func TestUpdate_ShiftSOnRunningEntersStopConfirm(t *testing.T) {
 	m := modelWithSorted([]docker.Container{runningContainer})
-	got := update(m, runeKey("s"))
+	got := update(m, runeKey("S"))
 	if got.op != OpConfirming {
 		t.Fatal("want op=OpConfirming")
 	}
@@ -27,17 +27,17 @@ func TestUpdate_SKeyOnRunningEntersStopConfirm(t *testing.T) {
 	}
 }
 
-func TestUpdate_SKeyOnStoppedDoesNothing(t *testing.T) {
+func TestUpdate_ShiftSOnStoppedDoesNothing(t *testing.T) {
 	m := modelWithSorted([]docker.Container{stoppedContainer})
-	got := update(m, runeKey("s"))
+	got := update(m, runeKey("S"))
 	if got.op == OpConfirming {
 		t.Error("want op!=OpConfirming for non-running container")
 	}
 }
 
-func TestUpdate_ShiftSOnStoppedEntersStartConfirm(t *testing.T) {
+func TestUpdate_SKeyOnStoppedEntersStartConfirm(t *testing.T) {
 	m := modelWithSorted([]docker.Container{stoppedContainer})
-	got := update(m, runeKey("S"))
+	got := update(m, runeKey("s"))
 	if got.op != OpConfirming {
 		t.Fatal("want op=OpConfirming")
 	}
@@ -49,9 +49,9 @@ func TestUpdate_ShiftSOnStoppedEntersStartConfirm(t *testing.T) {
 	}
 }
 
-func TestUpdate_ShiftSOnRunningDoesNothing(t *testing.T) {
+func TestUpdate_SKeyOnRunningDoesNothing(t *testing.T) {
 	m := modelWithSorted([]docker.Container{runningContainer})
-	got := update(m, runeKey("S"))
+	got := update(m, runeKey("s"))
 	if got.op == OpConfirming {
 		t.Error("want op!=OpConfirming for running container")
 	}
@@ -59,7 +59,7 @@ func TestUpdate_ShiftSOnRunningDoesNothing(t *testing.T) {
 
 func TestUpdate_DKeyOnStoppedEntersDeleteConfirm(t *testing.T) {
 	m := modelWithSorted([]docker.Container{stoppedContainer})
-	got := update(m, runeKey("d"))
+	got := update(m, runeKey("D"))
 	if got.op != OpConfirming {
 		t.Fatal("want op=OpConfirming")
 	}
@@ -73,7 +73,7 @@ func TestUpdate_DKeyOnStoppedEntersDeleteConfirm(t *testing.T) {
 
 func TestUpdate_DKeyOnRunningDoesNothing(t *testing.T) {
 	m := modelWithSorted([]docker.Container{runningContainer})
-	got := update(m, runeKey("d"))
+	got := update(m, runeKey("D"))
 	if got.op == OpConfirming {
 		t.Error("want op!=OpConfirming for running container")
 	}
