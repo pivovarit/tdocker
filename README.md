@@ -14,6 +14,14 @@ https://github.com/user-attachments/assets/0bc1f303-46e1-4aa4-a755-72e769eeb3fd
 
 ### Getting started
 
+Install with `go install`:
+
+```
+go install github.com/pivovarit/tdocker@latest
+```
+
+Or run directly from source:
+
 ```
 git clone https://github.com/pivovarit/tdocker && cd tdocker && go run .
 ```
