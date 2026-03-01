@@ -7,6 +7,17 @@ import (
 	"github.com/pivovarit/tdocker/internal/docker"
 )
 
+func errorHintFor(err error) string {
+	msg := err.Error()
+	if strings.Contains(msg, "Cannot connect to the Docker daemon") ||
+		strings.Contains(msg, "Is the docker daemon running") ||
+		strings.Contains(msg, "connection refused") ||
+		(strings.Contains(msg, "no such file or directory") && strings.Contains(msg, "docker.sock")) {
+		return "Is Docker running? Check that the daemon is started and your socket path is correct."
+	}
+	return ""
+}
+
 func (m App) View() string {
 	var b strings.Builder
 	mode := "running"
@@ -20,9 +31,11 @@ func (m App) View() string {
 		countStr = fmt.Sprintf("%d/%d", len(filtered), len(m.containers))
 	}
 
-	b.WriteString(titleStyle.Render(
-		fmt.Sprintf(" tdocker  ·  %s container(s)  ·  showing %s", countStr, mode),
-	))
+	title := fmt.Sprintf(" tdocker  ·  %s container(s)  ·  showing %s", countStr, mode)
+	if m.filterQuery != "" {
+		title += fmt.Sprintf("  ·  filter: %q", m.filterQuery)
+	}
+	b.WriteString(titleStyle.Render(title))
 	b.WriteString("\n")
 
 	switch {
@@ -38,6 +51,10 @@ func (m App) View() string {
 	case m.err != nil:
 		b.WriteString(errorStyle.Render("  Error: " + m.err.Error()))
 		b.WriteString("\n")
+		if hint := errorHintFor(m.err); hint != "" {
+			b.WriteString(helpStyle.Render("  " + hint))
+			b.WriteString("\n")
+		}
 		b.WriteString(helpStyle.Render("  Press " + keyStyle.Render("r") + " to retry, " + keyStyle.Render("q") + " to quit."))
 		return b.String()
 
@@ -134,7 +151,7 @@ func (m App) View() string {
 		}
 		b.WriteString(
 			confirmStyle.Render("  "+verb+" ") +
-				keyStyle.Render(m.confirmName) +
+				confirmNameStyle.Render(m.confirmName) +
 				confirmStyle.Render("? press ") +
 				keyStyle.Render("y") +
 				confirmStyle.Render(" to confirm, ") +
