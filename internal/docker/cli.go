@@ -17,6 +17,6 @@ func (CLI) CheckDebugAvailable(id string) tea.Cmd { return CheckDebugAvailable(i
 func (CLI) DebugContainer(id string) tea.Cmd      { return DebugContainer(id) }
 func (CLI) InspectContainer(id string) tea.Cmd    { return InspectContainer(id) }
 func (CLI) FetchStats(id string) tea.Cmd          { return FetchStats(id) }
-func (CLI) StartLogs(ctx context.Context, id string, tail string) tea.Cmd {
-	return StartLogs(ctx, id, tail)
+func (CLI) StartLogs(ctx context.Context, id string, tail string, gen int) tea.Cmd {
+	return StartLogs(ctx, id, tail, gen)
 }

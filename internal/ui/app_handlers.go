@@ -18,13 +18,14 @@ func (m App) handleLogsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.logsLines = nil
 		m.logsScrollOffset = 0
 		m.logsAutoScroll = true
+		m.logsGen++
 		ctx, cancel := context.WithCancel(context.Background())
 		m.logsCancel = cancel
 		tail := "200"
 		if m.logsAllMode {
 			tail = "all"
 		}
-		return m, m.client.StartLogs(ctx, m.logsContainerID, tail)
+		return m, m.client.StartLogs(ctx, m.logsContainerID, tail, m.logsGen)
 	case "up", "k":
 		if m.logsScrollOffset > 0 {
 			m.logsScrollOffset--
@@ -74,9 +75,13 @@ func (m App) handleStatsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "esc", "t":
 		m = m.closeStats()
 	case "r":
+		if m.statsFetching {
+			return m, nil
+		}
 		m.loading = true
 		m.err = nil
 		m.statsEntry = nil
+		m.statsFetching = true
 		return m, tea.Batch(m.client.FetchContainers(m.showAll), m.client.FetchStats(m.statsContainerID))
 	}
 	return m, nil
@@ -151,9 +156,10 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.logsAutoScroll = true
 			m.logsAllMode = false
 			m.logsVisible = true
+			m.logsGen++
 			ctx, cancel := context.WithCancel(context.Background())
 			m.logsCancel = cancel
-			firstLine := m.client.StartLogs(ctx, filtered[cursor].ID, "200")
+			firstLine := m.client.StartLogs(ctx, filtered[cursor].ID, "200", m.logsGen)
 			m.table.SetHeight(m.tableHeight())
 			return m, firstLine
 		}
@@ -225,6 +231,7 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.statsEntry = nil
 			m.statsContainer = filtered[cursor].Names
 			m.statsContainerID = filtered[cursor].ID
+			m.statsFetching = true
 			m.table.SetHeight(m.tableHeight())
 			return m, m.client.FetchStats(filtered[cursor].ID)
 		}

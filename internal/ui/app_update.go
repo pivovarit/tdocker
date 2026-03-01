@@ -108,7 +108,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case docker.LogsLineMsg:
-		if !m.logsVisible {
+		if !m.logsVisible || msg.Gen != m.logsGen {
 			return m, nil
 		}
 		m.logsLines = append(m.logsLines, msg.Line)
@@ -118,7 +118,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, msg.Next
 
 	case docker.LogsEndMsg:
-		if !m.logsVisible {
+		if !m.logsVisible || msg.Gen != m.logsGen {
 			return m, nil
 		}
 		if msg.Err != nil {
@@ -151,6 +151,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.client.FetchContainers(m.showAll)
 
 	case docker.StatsMsg:
+		m.statsFetching = false
 		if !m.statsVisible {
 			return m, nil
 		}
@@ -163,9 +164,10 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, statsTickCmd()
 
 	case statsTickMsg:
-		if !m.statsVisible {
+		if !m.statsVisible || m.statsFetching {
 			return m, nil
 		}
+		m.statsFetching = true
 		return m, m.client.FetchStats(m.statsContainerID)
 	}
 
