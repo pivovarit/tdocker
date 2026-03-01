@@ -40,61 +40,81 @@ const (
 	OpDeleting
 )
 
-type App struct {
-	client           docker.Client
-	table            table.Model
-	containers       []docker.Container
-	sorted           []docker.Container
-	viewportStart    int
-	showAll          bool
-	loading          bool
-	op               Operation
-	confirmAction    string
-	confirmID        string
-	confirmName      string
-	filtering        bool
-	filterQuery      string
-	err              error
-	width            int
-	height           int
-	logsVisible      bool
-	logsLines        []string
-	logsContainer    string
-	logsContainerID  string
-	logsScrollOffset int
-	logsAutoScroll   bool
-	logsAllMode      bool
-	logsGen          int
-	logsCancel       context.CancelFunc
+type logsState struct {
+	visible      bool
+	lines        []string
+	container    string
+	containerID  string
+	scrollOffset int
+	autoScroll   bool
+	allMode      bool
+	gen          int
+	cancel       context.CancelFunc
+}
 
-	inspectVisible   bool
-	inspectLines     []string
-	inspectContainer string
-	inspectOffset    int
+type inspectState struct {
+	visible   bool
+	lines     []string
+	container string
+	offset    int
+}
+
+type statsState struct {
+	visible     bool
+	container   string
+	containerID string
+	entry       *docker.StatsEntry
+	prevEntry   *docker.StatsEntry
+	fetching    bool
+}
+
+type eventsState struct {
+	visible      bool
+	events       []docker.Event
+	scrollOffset int
+	autoScroll   bool
+	gen          int
+	cancel       context.CancelFunc
+}
+
+type ctxPickerState struct {
+	visible   bool
+	requested bool
+	contexts  []docker.DockerContext
+	cursor    int
+	current   string
+}
+
+type App struct {
+	client        docker.Client
+	table         table.Model
+	containers    []docker.Container
+	sorted        []docker.Container
+	viewportStart int
+	showAll       bool
+	loading       bool
+	op            Operation
+	confirmAction string
+	confirmID     string
+	confirmName   string
+	filtering     bool
+	filterQuery   string
+	err           error
+	width         int
+	height        int
+
+	logs    logsState
+	inspect inspectState
 
 	copiedName string
 
-	contextPickerVisible   bool
-	contextPickerRequested bool
-	contexts               []docker.DockerContext
-	contextCursor          int
-	currentContext         string
+	ctxPicker ctxPickerState
 
-	statsVisible     bool
-	statsContainer   string
-	statsContainerID string
-	statsEntry       *docker.StatsEntry
-	statsPrevEntry   *docker.StatsEntry
-	statsFetching    bool
+	stats statsState
 
 	containersByID map[string]docker.Container
 
-	eventsVisible      bool
-	eventsEvents       []docker.Event
-	eventsScrollOffset int
-	eventsAutoScroll   bool
-	eventsGen          int
-	eventsCancel       context.CancelFunc
+	events eventsState
 }
 
 func New() App {
@@ -107,6 +127,8 @@ func newWithClient(c docker.Client) App {
 		loading: true,
 		showAll: true,
 		table:   buildTable(nil, 120),
+		logs:    logsState{autoScroll: true},
+		events:  eventsState{autoScroll: true},
 	}
 }
 

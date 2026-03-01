@@ -10,20 +10,20 @@ import (
 
 func logsOpen(mc *stubClient, c docker.Container) App {
 	m := modelWithMock(mc, []docker.Container{c})
-	m.logsVisible = true
-	m.logsContainerID = c.ID
-	m.logsContainer = c.Names
+	m.logs.visible = true
+	m.logs.containerID = c.ID
+	m.logs.container = c.Names
 	return m
 }
 
 func logsOpenWithLines(lines []string) App {
 	m := modelWithSorted([]docker.Container{runningContainer})
-	m.logsVisible = true
-	m.logsContainerID = runningContainer.ID
-	m.logsContainer = runningContainer.Names
-	m.logsLines = lines
-	m.logsScrollOffset = 0
-	m.logsAutoScroll = false
+	m.logs.visible = true
+	m.logs.containerID = runningContainer.ID
+	m.logs.container = runningContainer.Names
+	m.logs.lines = lines
+	m.logs.scrollOffset = 0
+	m.logs.autoScroll = false
 	return m
 }
 
@@ -49,7 +49,7 @@ func TestLogs_FToggle_SwitchesBackToTail200(t *testing.T) {
 		return func() tea.Msg { return nil }
 	}
 	m := logsOpen(mc, runningContainer)
-	m.logsAllMode = true
+	m.logs.allMode = true
 	update(m, runeKey("f"))
 	if gotTail != "200" {
 		t.Errorf("want tail=%q after toggling back, got %q", "200", gotTail)
@@ -59,10 +59,10 @@ func TestLogs_FToggle_SwitchesBackToTail200(t *testing.T) {
 func TestLogs_FToggle_ClearsLines(t *testing.T) {
 	mc := newStubClient()
 	m := logsOpen(mc, runningContainer)
-	m.logsLines = []string{"line1", "line2", "line3"}
+	m.logs.lines = []string{"line1", "line2", "line3"}
 	got := update(m, runeKey("f"))
-	if len(got.logsLines) != 0 {
-		t.Errorf("want logsLines cleared after f-toggle, got %d lines", len(got.logsLines))
+	if len(got.logs.lines) != 0 {
+		t.Errorf("want logs.lines cleared after f-toggle, got %d lines", len(got.logs.lines))
 	}
 }
 
@@ -74,7 +74,7 @@ func TestLogs_FToggle_IncrementsGen(t *testing.T) {
 		return func() tea.Msg { return nil }
 	}
 	m := logsOpen(mc, runningContainer)
-	m.logsGen = 3
+	m.logs.gen = 3
 	update(m, runeKey("f"))
 	if gotGen != 4 {
 		t.Errorf("want gen=4 after f-toggle, got %d", gotGen)
@@ -98,24 +98,24 @@ func TestLogs_FToggle_PassesContainerID(t *testing.T) {
 func TestLogs_GKey_ScrollsToTopAndDisablesAutoScroll(t *testing.T) {
 	lines := make([]string, 20)
 	m := logsOpenWithLines(lines)
-	m.logsScrollOffset = 10
-	m.logsAutoScroll = true
+	m.logs.scrollOffset = 10
+	m.logs.autoScroll = true
 	got := update(m, runeKey("g"))
-	if got.logsScrollOffset != 0 {
-		t.Errorf("want logsScrollOffset=0, got %d", got.logsScrollOffset)
+	if got.logs.scrollOffset != 0 {
+		t.Errorf("want logs.scrollOffset=0, got %d", got.logs.scrollOffset)
 	}
-	if got.logsAutoScroll {
-		t.Error("want logsAutoScroll=false after g")
+	if got.logs.autoScroll {
+		t.Error("want logs.autoScroll=false after g")
 	}
 }
 
 func TestLogs_HomeKey_ScrollsToTop(t *testing.T) {
 	lines := make([]string, 20)
 	m := logsOpenWithLines(lines)
-	m.logsScrollOffset = 7
+	m.logs.scrollOffset = 7
 	got := update(m, tea.KeyMsg{Type: tea.KeyHome})
-	if got.logsScrollOffset != 0 {
-		t.Errorf("want logsScrollOffset=0 after Home, got %d", got.logsScrollOffset)
+	if got.logs.scrollOffset != 0 {
+		t.Errorf("want logs.scrollOffset=0 after Home, got %d", got.logs.scrollOffset)
 	}
 }
 
@@ -124,11 +124,11 @@ func TestLogs_ShiftGKey_ScrollsToBottomAndEnablesAutoScroll(t *testing.T) {
 	m := logsOpenWithLines(lines)
 	got := update(m, runeKey("G"))
 	want := max(0, len(lines)-(logsPanelHeight-2))
-	if got.logsScrollOffset != want {
-		t.Errorf("want logsScrollOffset=%d after G, got %d", want, got.logsScrollOffset)
+	if got.logs.scrollOffset != want {
+		t.Errorf("want logs.scrollOffset=%d after G, got %d", want, got.logs.scrollOffset)
 	}
-	if !got.logsAutoScroll {
-		t.Error("want logsAutoScroll=true after G")
+	if !got.logs.autoScroll {
+		t.Error("want logs.autoScroll=true after G")
 	}
 }
 
@@ -137,16 +137,16 @@ func TestLogs_EndKey_ScrollsToBottom(t *testing.T) {
 	m := logsOpenWithLines(lines)
 	got := update(m, tea.KeyMsg{Type: tea.KeyEnd})
 	want := max(0, len(lines)-(logsPanelHeight-2))
-	if got.logsScrollOffset != want {
-		t.Errorf("want logsScrollOffset=%d after End, got %d", want, got.logsScrollOffset)
+	if got.logs.scrollOffset != want {
+		t.Errorf("want logs.scrollOffset=%d after End, got %d", want, got.logs.scrollOffset)
 	}
 }
 
 func TestLogs_GKey_OnFewLines_StaysAtZero(t *testing.T) {
 	m := logsOpenWithLines([]string{"only one line"})
-	m.logsScrollOffset = 0
+	m.logs.scrollOffset = 0
 	got := update(m, runeKey("G"))
-	if got.logsScrollOffset != 0 {
-		t.Errorf("want logsScrollOffset=0 when few lines, got %d", got.logsScrollOffset)
+	if got.logs.scrollOffset != 0 {
+		t.Errorf("want logs.scrollOffset=0 when few lines, got %d", got.logs.scrollOffset)
 	}
 }

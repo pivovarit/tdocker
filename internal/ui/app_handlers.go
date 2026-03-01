@@ -11,40 +11,40 @@ func (m App) handleLogsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "esc", "l":
 		m = m.closeLogs()
 	case "f":
-		if m.logsCancel != nil {
-			m.logsCancel()
+		if m.logs.cancel != nil {
+			m.logs.cancel()
 		}
-		m.logsAllMode = !m.logsAllMode
-		m.logsLines = nil
-		m.logsScrollOffset = 0
-		m.logsAutoScroll = true
-		m.logsGen++
+		m.logs.allMode = !m.logs.allMode
+		m.logs.lines = nil
+		m.logs.scrollOffset = 0
+		m.logs.autoScroll = true
+		m.logs.gen++
 		ctx, cancel := context.WithCancel(context.Background())
-		m.logsCancel = cancel
+		m.logs.cancel = cancel
 		tail := "200"
-		if m.logsAllMode {
+		if m.logs.allMode {
 			tail = "all"
 		}
-		return m, m.client.StartLogs(ctx, m.logsContainerID, tail, m.logsGen)
+		return m, m.client.StartLogs(ctx, m.logs.containerID, tail, m.logs.gen)
 	case "up", "k":
-		if m.logsScrollOffset > 0 {
-			m.logsScrollOffset--
-			m.logsAutoScroll = false
+		if m.logs.scrollOffset > 0 {
+			m.logs.scrollOffset--
+			m.logs.autoScroll = false
 		}
 	case "down", "j":
-		maxOffset := max(0, len(m.logsLines)-(logsPanelHeight-2))
-		if m.logsScrollOffset < maxOffset {
-			m.logsScrollOffset++
+		maxOffset := max(0, len(m.logs.lines)-(logsPanelHeight-2))
+		if m.logs.scrollOffset < maxOffset {
+			m.logs.scrollOffset++
 		}
-		if m.logsScrollOffset >= maxOffset {
-			m.logsAutoScroll = true
+		if m.logs.scrollOffset >= maxOffset {
+			m.logs.autoScroll = true
 		}
 	case "g", "home":
-		m.logsScrollOffset = 0
-		m.logsAutoScroll = false
+		m.logs.scrollOffset = 0
+		m.logs.autoScroll = false
 	case "G", "end":
-		m.logsScrollOffset = max(0, len(m.logsLines)-(logsPanelHeight-2))
-		m.logsAutoScroll = true
+		m.logs.scrollOffset = max(0, len(m.logs.lines)-(logsPanelHeight-2))
+		m.logs.autoScroll = true
 	}
 	return m, nil
 }
@@ -54,18 +54,18 @@ func (m App) handleInspectKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "esc", "i":
 		m = m.closeInspect()
 	case "up", "k":
-		if m.inspectOffset > 0 {
-			m.inspectOffset--
+		if m.inspect.offset > 0 {
+			m.inspect.offset--
 		}
 	case "down", "j":
-		maxOff := max(0, len(m.inspectLines)-(inspectPanelHeight-2))
-		if m.inspectOffset < maxOff {
-			m.inspectOffset++
+		maxOff := max(0, len(m.inspect.lines)-(inspectPanelHeight-2))
+		if m.inspect.offset < maxOff {
+			m.inspect.offset++
 		}
 	case "g", "home":
-		m.inspectOffset = 0
+		m.inspect.offset = 0
 	case "G", "end":
-		m.inspectOffset = max(0, len(m.inspectLines)-(inspectPanelHeight-2))
+		m.inspect.offset = max(0, len(m.inspect.lines)-(inspectPanelHeight-2))
 	}
 	return m, nil
 }
@@ -75,24 +75,24 @@ func (m App) handleEventsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "esc", "v":
 		m = m.closeEvents()
 	case "up", "k":
-		if m.eventsScrollOffset > 0 {
-			m.eventsScrollOffset--
-			m.eventsAutoScroll = false
+		if m.events.scrollOffset > 0 {
+			m.events.scrollOffset--
+			m.events.autoScroll = false
 		}
 	case "down", "j":
-		maxOffset := max(0, len(m.eventsEvents)-(eventsPanelHeight-2))
-		if m.eventsScrollOffset < maxOffset {
-			m.eventsScrollOffset++
+		maxOffset := max(0, len(m.events.events)-(eventsPanelHeight-2))
+		if m.events.scrollOffset < maxOffset {
+			m.events.scrollOffset++
 		}
-		if m.eventsScrollOffset >= maxOffset {
-			m.eventsAutoScroll = true
+		if m.events.scrollOffset >= maxOffset {
+			m.events.autoScroll = true
 		}
 	case "g", "home":
-		m.eventsScrollOffset = 0
-		m.eventsAutoScroll = false
+		m.events.scrollOffset = 0
+		m.events.autoScroll = false
 	case "G", "end":
-		m.eventsScrollOffset = max(0, len(m.eventsEvents)-(eventsPanelHeight-2))
-		m.eventsAutoScroll = true
+		m.events.scrollOffset = max(0, len(m.events.events)-(eventsPanelHeight-2))
+		m.events.autoScroll = true
 	}
 	return m, nil
 }
@@ -102,17 +102,17 @@ func (m App) handleStatsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "esc", "t":
 		m = m.closeStats()
 	case "r":
-		if m.statsFetching {
+		if m.stats.fetching {
 			return m, nil
 		}
 		m.loading = true
 		m.err = nil
-		if m.statsEntry != nil {
-			m.statsPrevEntry = m.statsEntry
+		if m.stats.entry != nil {
+			m.stats.prevEntry = m.stats.entry
 		}
-		m.statsEntry = nil
-		m.statsFetching = true
-		return m, tea.Batch(m.client.FetchContainers(m.showAll), m.client.FetchStats(m.statsContainerID))
+		m.stats.entry = nil
+		m.stats.fetching = true
+		return m, tea.Batch(m.client.FetchContainers(m.showAll), m.client.FetchStats(m.stats.containerID))
 	}
 	return m, nil
 }
@@ -120,20 +120,20 @@ func (m App) handleStatsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m App) handleContextKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
-		m.contextPickerVisible = false
-		m.contexts = nil
-		m.contextCursor = 0
+		m.ctxPicker.visible = false
+		m.ctxPicker.contexts = nil
+		m.ctxPicker.cursor = 0
 	case "up", "k":
-		if m.contextCursor > 0 {
-			m.contextCursor--
+		if m.ctxPicker.cursor > 0 {
+			m.ctxPicker.cursor--
 		}
 	case "down", "j":
-		if m.contextCursor < len(m.contexts)-1 {
-			m.contextCursor++
+		if m.ctxPicker.cursor < len(m.ctxPicker.contexts)-1 {
+			m.ctxPicker.cursor++
 		}
 	case "enter":
-		if len(m.contexts) > 0 {
-			return m, m.client.SwitchContext(m.contexts[m.contextCursor].Name)
+		if len(m.ctxPicker.contexts) > 0 {
+			return m, m.client.SwitchContext(m.ctxPicker.contexts[m.ctxPicker.cursor].Name)
 		}
 	}
 	return m, nil
@@ -207,17 +207,17 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		cursor := m.table.Cursor()
 		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) {
-			m.logsContainer = filtered[cursor].Names
-			m.logsContainerID = filtered[cursor].ID
-			m.logsLines = nil
-			m.logsScrollOffset = 0
-			m.logsAutoScroll = true
-			m.logsAllMode = false
-			m.logsVisible = true
-			m.logsGen++
+			m.logs.container = filtered[cursor].Names
+			m.logs.containerID = filtered[cursor].ID
+			m.logs.lines = nil
+			m.logs.scrollOffset = 0
+			m.logs.autoScroll = true
+			m.logs.allMode = false
+			m.logs.visible = true
+			m.logs.gen++
 			ctx, cancel := context.WithCancel(context.Background())
-			m.logsCancel = cancel
-			firstLine := m.client.StartLogs(ctx, filtered[cursor].ID, "200", m.logsGen)
+			m.logs.cancel = cancel
+			firstLine := m.client.StartLogs(ctx, filtered[cursor].ID, "200", m.logs.gen)
 			m.table.SetHeight(m.tableHeight())
 			return m, firstLine
 		}
@@ -274,16 +274,16 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, m.client.CheckDebugAvailable(filtered[cursor].ID)
 		}
 	case "X":
-		m.contextPickerRequested = true
+		m.ctxPicker.requested = true
 		return m, m.client.FetchContexts()
 	case "i":
 		cursor := m.table.Cursor()
 		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) {
-			m.inspectVisible = true
-			m.inspectLines = nil
-			m.inspectOffset = 0
-			m.inspectContainer = filtered[cursor].Names
+			m.inspect.visible = true
+			m.inspect.lines = nil
+			m.inspect.offset = 0
+			m.inspect.container = filtered[cursor].Names
 			m.table.SetHeight(m.tableHeight())
 			return m, m.client.InspectContainer(filtered[cursor].ID)
 		}
@@ -298,27 +298,27 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		cursor := m.table.Cursor()
 		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State == "running" {
-			m.statsVisible = true
-			m.statsEntry = nil
-			m.statsContainer = filtered[cursor].Names
-			m.statsContainerID = filtered[cursor].ID
-			m.statsFetching = true
+			m.stats.visible = true
+			m.stats.entry = nil
+			m.stats.container = filtered[cursor].Names
+			m.stats.containerID = filtered[cursor].ID
+			m.stats.fetching = true
 			m.table.SetHeight(m.tableHeight())
 			return m, m.client.FetchStats(filtered[cursor].ID)
 		}
 	case "v":
-		if m.eventsVisible {
+		if m.events.visible {
 			m = m.closeEvents()
 		} else {
-			m.eventsVisible = true
-			m.eventsEvents = nil
-			m.eventsScrollOffset = 0
-			m.eventsAutoScroll = true
-			m.eventsGen++
+			m.events.visible = true
+			m.events.events = nil
+			m.events.scrollOffset = 0
+			m.events.autoScroll = true
+			m.events.gen++
 			ctx, cancel := context.WithCancel(context.Background())
-			m.eventsCancel = cancel
+			m.events.cancel = cancel
 			m.table.SetHeight(m.tableHeight())
-			return m, m.client.StartEvents(ctx, m.eventsGen)
+			return m, m.client.StartEvents(ctx, m.events.gen)
 		}
 	}
 

@@ -40,21 +40,21 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		m.copiedName = ""
 		if msg.String() == "q" || msg.String() == "ctrl+c" {
-			if m.logsVisible {
+			if m.logs.visible {
 				m = m.closeLogs()
 			}
 			return m, tea.Quit
 		}
-		if m.logsVisible {
+		if m.logs.visible {
 			return m.handleLogsKey(msg)
 		}
-		if m.inspectVisible {
+		if m.inspect.visible {
 			return m.handleInspectKey(msg)
 		}
-		if m.statsVisible {
+		if m.stats.visible {
 			return m.handleStatsKey(msg)
 		}
-		if m.eventsVisible {
+		if m.events.visible {
 			return m.handleEventsKey(msg)
 		}
 		if m.op == OpConfirming {
@@ -63,7 +63,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.filtering {
 			return m.handleFilterKey(msg)
 		}
-		if m.contextPickerVisible {
+		if m.ctxPicker.visible {
 			return m.handleContextKey(msg)
 		}
 		return m.handleMainKey(msg)
@@ -138,17 +138,17 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case docker.LogsLineMsg:
-		if !m.logsVisible || msg.Gen != m.logsGen {
+		if !m.logs.visible || msg.Gen != m.logs.gen {
 			return m, nil
 		}
-		m.logsLines = append(m.logsLines, msg.Line)
-		if m.logsAutoScroll {
-			m.logsScrollOffset = max(0, len(m.logsLines)-(logsPanelHeight-2))
+		m.logs.lines = append(m.logs.lines, msg.Line)
+		if m.logs.autoScroll {
+			m.logs.scrollOffset = max(0, len(m.logs.lines)-(logsPanelHeight-2))
 		}
 		return m, msg.Next
 
 	case docker.LogsEndMsg:
-		if !m.logsVisible || msg.Gen != m.logsGen {
+		if !m.logs.visible || msg.Gen != m.logs.gen {
 			return m, nil
 		}
 		if msg.Err != nil {
@@ -158,7 +158,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case docker.InspectMsg:
-		if !m.inspectVisible {
+		if !m.inspect.visible {
 			return m, nil
 		}
 		if msg.Err != nil {
@@ -166,7 +166,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m = m.closeInspect()
 			return m, nil
 		}
-		m.inspectLines = buildInspectLines(msg.Data, m.width)
+		m.inspect.lines = buildInspectLines(msg.Data, m.width)
 		return m, nil
 
 	case docker.DebugAvailableMsg:
@@ -181,8 +181,8 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.client.FetchContainers(m.showAll)
 
 	case docker.StatsMsg:
-		m.statsFetching = false
-		if !m.statsVisible {
+		m.stats.fetching = false
+		if !m.stats.visible {
 			return m, nil
 		}
 		if msg.Err != nil {
@@ -190,47 +190,47 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m = m.closeStats()
 			return m, nil
 		}
-		if m.statsEntry != nil {
-			m.statsPrevEntry = m.statsEntry
+		if m.stats.entry != nil {
+			m.stats.prevEntry = m.stats.entry
 		}
-		m.statsEntry = &msg.Entry
+		m.stats.entry = &msg.Entry
 		return m, statsTickCmd()
 
 	case statsTickMsg:
-		if !m.statsVisible || m.statsFetching {
+		if !m.stats.visible || m.stats.fetching {
 			return m, nil
 		}
-		m.statsFetching = true
-		return m, m.client.FetchStats(m.statsContainerID)
+		m.stats.fetching = true
+		return m, m.client.FetchStats(m.stats.containerID)
 
 	case docker.ContextsMsg:
-		m.contexts = []docker.DockerContext(msg)
-		for i, c := range m.contexts {
+		m.ctxPicker.contexts = []docker.DockerContext(msg)
+		for i, c := range m.ctxPicker.contexts {
 			if c.Current {
-				m.currentContext = c.Name
-				if m.contextPickerRequested {
-					m.contextCursor = i
+				m.ctxPicker.current = c.Name
+				if m.ctxPicker.requested {
+					m.ctxPicker.cursor = i
 				}
 				break
 			}
 		}
-		if m.contextPickerRequested {
-			m.contextPickerVisible = true
-			m.contextPickerRequested = false
+		if m.ctxPicker.requested {
+			m.ctxPicker.visible = true
+			m.ctxPicker.requested = false
 		}
 		return m, nil
 
 	case docker.EventLineMsg:
-		if !m.eventsVisible || msg.Gen != m.eventsGen {
+		if !m.events.visible || msg.Gen != m.events.gen {
 			return m, msg.Next
 		}
 		const maxEvents = 500
-		if len(m.eventsEvents) >= maxEvents {
-			m.eventsEvents = m.eventsEvents[1:]
+		if len(m.events.events) >= maxEvents {
+			m.events.events = m.events.events[1:]
 		}
-		m.eventsEvents = append(m.eventsEvents, msg.Event)
-		if m.eventsAutoScroll {
-			m.eventsScrollOffset = max(0, len(m.eventsEvents)-(eventsPanelHeight-2))
+		m.events.events = append(m.events.events, msg.Event)
+		if m.events.autoScroll {
+			m.events.scrollOffset = max(0, len(m.events.events)-(eventsPanelHeight-2))
 		}
 		var refreshCmd tea.Cmd
 		if !m.loading && isContainerLifecycleEvent(msg.Event) {
@@ -240,7 +240,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(msg.Next, refreshCmd)
 
 	case docker.EventEndMsg:
-		if !m.eventsVisible || msg.Gen != m.eventsGen {
+		if !m.events.visible || msg.Gen != m.events.gen {
 			return m, nil
 		}
 		if msg.Err != nil {
@@ -250,9 +250,9 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case docker.ContextSwitchMsg:
-		m.contextPickerVisible = false
-		m.contexts = nil
-		m.contextCursor = 0
+		m.ctxPicker.visible = false
+		m.ctxPicker.contexts = nil
+		m.ctxPicker.cursor = 0
 		if msg.Err != nil {
 			m.err = msg.Err
 			return m, nil
