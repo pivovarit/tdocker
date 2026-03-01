@@ -115,13 +115,15 @@ func (m App) handleFilterKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.filtering = false
 	case tea.KeyBackspace, tea.KeyDelete:
 		if len(m.filterQuery) > 0 {
+			selectedID := m.currentSelectedID()
 			runes := []rune(m.filterQuery)
 			m.filterQuery = string(runes[:len(runes)-1])
-			m = m.rebuildTable()
+			m = m.rebuildTable(selectedID)
 		}
 	case tea.KeyRunes:
+		selectedID := m.currentSelectedID()
 		m.filterQuery += string(msg.Runes)
-		m = m.rebuildTable()
+		m = m.rebuildTable(selectedID)
 	}
 	return m, nil
 }
@@ -142,8 +144,9 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case "esc":
 		if m.filterQuery != "" {
+			selectedID := m.currentSelectedID()
 			m.filterQuery = ""
-			m = m.rebuildTable()
+			m = m.rebuildTable(selectedID)
 		}
 	case "l":
 		cursor := m.table.Cursor()

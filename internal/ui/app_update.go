@@ -23,7 +23,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m = m.rebuildTable()
+		m = m.rebuildTable(m.currentSelectedID())
 		return m, nil
 
 	case tea.KeyMsg:
@@ -52,11 +52,12 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleMainKey(msg)
 
 	case docker.ContainersMsg:
+		selectedID := m.currentSelectedID()
 		m.containers = msg
 		m.sorted = docker.Sort(m.containers)
 		m.loading = false
 		m.err = nil
-		m = m.rebuildTable()
+		m = m.rebuildTable(selectedID)
 		return m, nil
 
 	case docker.ErrMsg:
@@ -88,6 +89,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.err = msg.Err
 			return m, nil
 		}
+		selectedID := m.currentSelectedID()
 		kept := m.containers[:0]
 		for _, c := range m.containers {
 			if c.ID != msg.ID {
@@ -96,7 +98,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.containers = kept
 		m.sorted = docker.Sort(m.containers)
-		m = m.rebuildTable()
+		m = m.rebuildTable(selectedID)
 		return m, nil
 
 	case clipboardMsg:
