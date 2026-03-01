@@ -17,4 +17,6 @@ type Client interface {
 	InspectContainer(id string) tea.Cmd
 	FetchStats(id string) tea.Cmd
 	StartLogs(ctx context.Context, id string, tail string, gen int) tea.Cmd
+	FetchContexts() tea.Cmd
+	SwitchContext(name string) tea.Cmd
 }

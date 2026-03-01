@@ -72,6 +72,12 @@ type App struct {
 
 	copiedName string
 
+	contextPickerVisible   bool
+	contextPickerRequested bool
+	contexts               []docker.DockerContext
+	contextCursor          int
+	currentContext         string
+
 	statsVisible     bool
 	statsContainer   string
 	statsContainerID string
@@ -93,7 +99,7 @@ func newWithClient(c docker.Client) App {
 }
 
 func (m App) Init() tea.Cmd {
-	return m.client.FetchContainers(m.showAll)
+	return tea.Batch(m.client.FetchContainers(m.showAll), m.client.FetchContexts())
 }
 
 func (m App) filtered() []docker.Container {
