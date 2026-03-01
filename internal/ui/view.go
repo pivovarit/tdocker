@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/pivovarit/tdocker/internal/docker"
@@ -319,18 +320,104 @@ func (m App) renderStatsPanel() string {
 	}
 
 	e := m.statsEntry
-	row := func(label, value string) string {
-		return "  " + inspectSectionStyle.Render(fmt.Sprintf("%-10s", label)) + "  " + inspectValueStyle.Render(value) + "\n"
+	p := m.statsPrevEntry
+
+	cpuTrend, memTrend, netTrend, blkTrend, pidTrend := "", "", "", "", ""
+	if p != nil {
+		cpuTrend = statsTrend(p.CPUPerc, e.CPUPerc, parsePercent)
+		memTrend = statsTrend(p.MemPerc, e.MemPerc, parsePercent)
+		netTrend = statsTrend(p.NetIO, e.NetIO, parseSizeFirst)
+		blkTrend = statsTrend(p.BlockIO, e.BlockIO, parseSizeFirst)
+		pidTrend = statsTrend(p.PIDs, e.PIDs, parseNumber)
+	}
+
+	row := func(label, value, trend string) string {
+		return "  " + inspectSectionStyle.Render(fmt.Sprintf("%-10s", label)) + "  " + inspectValueStyle.Render(value) + trend + "\n"
 	}
 
 	b.WriteString("\n")
-	b.WriteString(row("CPU", e.CPUPerc))
-	b.WriteString(row("Memory", e.MemUsage+"  ("+e.MemPerc+")"))
-	b.WriteString(row("Net I/O", e.NetIO))
-	b.WriteString(row("Block I/O", e.BlockIO))
-	b.WriteString(row("PIDs", e.PIDs))
+	b.WriteString(row("CPU", e.CPUPerc, cpuTrend))
+	b.WriteString(row("Memory", e.MemUsage+"  ("+e.MemPerc+")", memTrend))
+	b.WriteString(row("Net I/O", e.NetIO, netTrend))
+	b.WriteString(row("Block I/O", e.BlockIO, blkTrend))
+	b.WriteString(row("PIDs", e.PIDs, pidTrend))
 
 	return b.String()
+}
+
+func parsePercent(s string) (float64, bool) {
+	s = strings.TrimSuffix(strings.TrimSpace(s), "%")
+	v, err := strconv.ParseFloat(s, 64)
+	return v, err == nil
+}
+
+func parseByteSize(s string) (float64, bool) {
+	s = strings.TrimSpace(s)
+	i := 0
+	for i < len(s) && (s[i] == '.' || (s[i] >= '0' && s[i] <= '9')) {
+		i++
+	}
+	if i == 0 {
+		return 0, false
+	}
+	num, err := strconv.ParseFloat(s[:i], 64)
+	if err != nil {
+		return 0, false
+	}
+	switch strings.TrimSpace(s[i:]) {
+	case "B":
+		return num, true
+	case "kB":
+		return num * 1e3, true
+	case "MB":
+		return num * 1e6, true
+	case "GB":
+		return num * 1e9, true
+	case "TB":
+		return num * 1e12, true
+	case "KiB":
+		return num * 1024, true
+	case "MiB":
+		return num * 1024 * 1024, true
+	case "GiB":
+		return num * 1024 * 1024 * 1024, true
+	case "TiB":
+		return num * 1024 * 1024 * 1024 * 1024, true
+	default:
+		return num, true
+	}
+}
+
+func parseSizeFirst(s string) (float64, bool) {
+	if idx := strings.Index(s, " / "); idx != -1 {
+		s = s[:idx]
+	}
+	return parseByteSize(strings.TrimSpace(s))
+}
+
+func parseNumber(s string) (float64, bool) {
+	v, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
+	return v, err == nil
+}
+
+func statsTrend(prev, curr string, parse func(string) (float64, bool)) string {
+	p, ok1 := parse(prev)
+	c, ok2 := parse(curr)
+	if !ok1 || !ok2 {
+		return ""
+	}
+	th := p * 0.01
+	if th < 0.001 {
+		th = 0.001
+	}
+	d := c - p
+	if d > th {
+		return " " + trendUpStyle.Render("↑")
+	}
+	if d < -th {
+		return " " + trendDownStyle.Render("↓")
+	}
+	return " " + trendSteadyStyle.Render("·")
 }
 
 func (m App) renderContextPicker() string {

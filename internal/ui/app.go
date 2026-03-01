@@ -83,6 +83,7 @@ type App struct {
 	statsContainer   string
 	statsContainerID string
 	statsEntry       *docker.StatsEntry
+	statsPrevEntry   *docker.StatsEntry
 	statsFetching    bool
 }
 

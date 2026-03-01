@@ -69,4 +69,15 @@ var (
 	contextCursorStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#F0F9FF")).
 				Background(lipgloss.Color("#0369A1"))
+
+	trendUpStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#F87171")).
+			Bold(true)
+
+	trendDownStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#4ADE80")).
+			Bold(true)
+
+	trendSteadyStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#475569"))
 )
