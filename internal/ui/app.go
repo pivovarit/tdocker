@@ -85,6 +85,8 @@ type App struct {
 	statsEntry       *docker.StatsEntry
 	statsPrevEntry   *docker.StatsEntry
 	statsFetching    bool
+
+	containersByID map[string]docker.Container
 }
 
 func New() App {
@@ -130,6 +132,19 @@ func (m App) currentSelectedID() string {
 	return ""
 }
 
+func (m App) containerByID(id string) (docker.Container, bool) {
+	c, ok := m.containersByID[id]
+	return c, ok
+}
+
+func indexContainers(cs []docker.Container) map[string]docker.Container {
+	idx := make(map[string]docker.Container, len(cs))
+	for _, c := range cs {
+		idx[c.ID] = c
+	}
+	return idx
+}
+
 func (m App) rebuildTable(selectedID string) App {
 	filtered := m.filtered()
 
@@ -138,13 +153,15 @@ func (m App) rebuildTable(selectedID string) App {
 	m.viewportStart = 0
 
 	if selectedID != "" {
-		for i, c := range filtered {
-			if c.ID == selectedID {
-				m.table.SetCursor(i)
-				if h := m.tableHeight(); h > 0 && i >= h {
-					m.viewportStart = i - h + 1
+		if _, ok := m.containersByID[selectedID]; ok {
+			for i, c := range filtered {
+				if c.ID == selectedID {
+					m.table.SetCursor(i)
+					if h := m.tableHeight(); h > 0 && i >= h {
+						m.viewportStart = i - h + 1
+					}
+					break
 				}
-				break
 			}
 		}
 	}

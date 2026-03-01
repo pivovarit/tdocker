@@ -44,7 +44,6 @@ func (m App) View() string {
 		}
 	}
 
-	// Styled segments
 	sep := titleHintStyle.Render("  ·  ")
 	styledLeft := titleStyle.Render(" tdocker") + sep +
 		titleStyle.Render(mode) + titleHintStyle.Render(" [A]") + sep +
@@ -229,120 +228,100 @@ func (m App) View() string {
 	return b.String()
 }
 
-func (m App) renderLogsPanel() string {
+func (m App) renderPanel(title string, body func(*strings.Builder)) string {
 	var b strings.Builder
-	w := m.width
-
-	b.WriteString(logsDividerStyle.Render(strings.Repeat("─", w)))
+	b.WriteString(logsDividerStyle.Render(strings.Repeat("─", m.width)))
 	b.WriteString("\n")
+	b.WriteString(logsTitleStyle.Render(title))
+	b.WriteString("\n")
+	body(&b)
+	return b.String()
+}
+
+func panelPad(b *strings.Builder, shown, maxLines int) {
+	for ; shown < maxLines; shown++ {
+		b.WriteString("\n")
+	}
+}
+
+func (m App) renderLogsPanel() string {
 	logsModeLabel := " (last 200)"
 	if m.logsAllMode {
 		logsModeLabel = " (all)"
 	}
-	b.WriteString(logsTitleStyle.Render(" Logs: " + m.logsContainer + logsModeLabel))
-	b.WriteString("\n")
-
-	maxLines := logsPanelHeight - 2
-	start := m.logsScrollOffset
-	end := start + maxLines
-	if end > len(m.logsLines) {
-		end = len(m.logsLines)
-	}
-
-	shown := 0
-	for i := start; i < end; i++ {
-		b.WriteString(logsLineStyle.Render("  " + m.logsLines[i]))
-		b.WriteString("\n")
-		shown++
-	}
-	for ; shown < maxLines; shown++ {
-		b.WriteString("\n")
-	}
-
-	return b.String()
+	return m.renderPanel(" Logs: "+m.logsContainer+logsModeLabel, func(b *strings.Builder) {
+		maxLines := logsPanelHeight - 2
+		start := m.logsScrollOffset
+		end := start + maxLines
+		if end > len(m.logsLines) {
+			end = len(m.logsLines)
+		}
+		shown := 0
+		for i := start; i < end; i++ {
+			b.WriteString(logsLineStyle.Render("  " + m.logsLines[i]))
+			b.WriteString("\n")
+			shown++
+		}
+		panelPad(b, shown, maxLines)
+	})
 }
 
 func (m App) renderInspectPanel() string {
-	var b strings.Builder
-	w := m.width
-
-	b.WriteString(logsDividerStyle.Render(strings.Repeat("─", w)))
-	b.WriteString("\n")
-	b.WriteString(logsTitleStyle.Render(" Inspect: " + m.inspectContainer))
-	b.WriteString("\n")
-
-	maxLines := inspectPanelHeight - 2
-
-	if len(m.inspectLines) == 0 {
-		b.WriteString(emptyStyle.Render("Loading…"))
-		b.WriteString("\n")
-		for i := 1; i < maxLines; i++ {
+	return m.renderPanel(" Inspect: "+m.inspectContainer, func(b *strings.Builder) {
+		maxLines := inspectPanelHeight - 2
+		if len(m.inspectLines) == 0 {
+			b.WriteString(emptyStyle.Render("Loading…"))
 			b.WriteString("\n")
+			panelPad(b, 1, maxLines)
+			return
 		}
-		return b.String()
-	}
-
-	start := m.inspectOffset
-	end := start + maxLines
-	if end > len(m.inspectLines) {
-		end = len(m.inspectLines)
-	}
-
-	shown := 0
-	for i := start; i < end; i++ {
-		b.WriteString(m.inspectLines[i])
-		b.WriteString("\n")
-		shown++
-	}
-	for ; shown < maxLines; shown++ {
-		b.WriteString("\n")
-	}
-
-	return b.String()
+		start := m.inspectOffset
+		end := start + maxLines
+		if end > len(m.inspectLines) {
+			end = len(m.inspectLines)
+		}
+		shown := 0
+		for i := start; i < end; i++ {
+			b.WriteString(m.inspectLines[i])
+			b.WriteString("\n")
+			shown++
+		}
+		panelPad(b, shown, maxLines)
+	})
 }
 
 func (m App) renderStatsPanel() string {
-	var b strings.Builder
-	w := m.width
-
-	b.WriteString(logsDividerStyle.Render(strings.Repeat("─", w)))
-	b.WriteString("\n")
-	b.WriteString(logsTitleStyle.Render(" Stats: " + m.statsContainer))
-	b.WriteString("\n")
-
-	if m.statsEntry == nil {
-		b.WriteString(emptyStyle.Render("Loading…"))
-		b.WriteString("\n")
-		for i := 1; i < statsPanelHeight-2; i++ {
+	return m.renderPanel(" Stats: "+m.statsContainer, func(b *strings.Builder) {
+		maxLines := statsPanelHeight - 2
+		if m.statsEntry == nil {
+			b.WriteString(emptyStyle.Render("Loading…"))
 			b.WriteString("\n")
+			panelPad(b, 1, maxLines)
+			return
 		}
-		return b.String()
-	}
+		e := m.statsEntry
+		p := m.statsPrevEntry
 
-	e := m.statsEntry
-	p := m.statsPrevEntry
+		cpuTrend, memTrend, netTrend, blkTrend, pidTrend := "", "", "", "", ""
+		if p != nil {
+			cpuTrend = statsTrend(p.CPUPerc, e.CPUPerc, parsePercent)
+			memTrend = statsTrend(p.MemPerc, e.MemPerc, parsePercent)
+			netTrend = statsTrend(p.NetIO, e.NetIO, parseSizeFirst)
+			blkTrend = statsTrend(p.BlockIO, e.BlockIO, parseSizeFirst)
+			pidTrend = statsTrend(p.PIDs, e.PIDs, parseNumber)
+		}
 
-	cpuTrend, memTrend, netTrend, blkTrend, pidTrend := "", "", "", "", ""
-	if p != nil {
-		cpuTrend = statsTrend(p.CPUPerc, e.CPUPerc, parsePercent)
-		memTrend = statsTrend(p.MemPerc, e.MemPerc, parsePercent)
-		netTrend = statsTrend(p.NetIO, e.NetIO, parseSizeFirst)
-		blkTrend = statsTrend(p.BlockIO, e.BlockIO, parseSizeFirst)
-		pidTrend = statsTrend(p.PIDs, e.PIDs, parseNumber)
-	}
+		row := func(label, value, trend string) {
+			b.WriteString("  " + inspectSectionStyle.Render(fmt.Sprintf("%-10s", label)) + "  " + inspectValueStyle.Render(value) + trend + "\n")
+		}
 
-	row := func(label, value, trend string) string {
-		return "  " + inspectSectionStyle.Render(fmt.Sprintf("%-10s", label)) + "  " + inspectValueStyle.Render(value) + trend + "\n"
-	}
-
-	b.WriteString("\n")
-	b.WriteString(row("CPU", e.CPUPerc, cpuTrend))
-	b.WriteString(row("Memory", e.MemUsage+"  ("+e.MemPerc+")", memTrend))
-	b.WriteString(row("Net I/O", e.NetIO, netTrend))
-	b.WriteString(row("Block I/O", e.BlockIO, blkTrend))
-	b.WriteString(row("PIDs", e.PIDs, pidTrend))
-
-	return b.String()
+		b.WriteString("\n")
+		row("CPU", e.CPUPerc, cpuTrend)
+		row("Memory", e.MemUsage+"  ("+e.MemPerc+")", memTrend)
+		row("Net I/O", e.NetIO, netTrend)
+		row("Block I/O", e.BlockIO, blkTrend)
+		row("PIDs", e.PIDs, pidTrend)
+	})
 }
 
 func parsePercent(s string) (float64, bool) {
@@ -421,45 +400,37 @@ func statsTrend(prev, curr string, parse func(string) (float64, bool)) string {
 }
 
 func (m App) renderContextPicker() string {
-	var b strings.Builder
-
-	b.WriteString(logsDividerStyle.Render(strings.Repeat("─", m.width)))
-	b.WriteString("\n")
-	b.WriteString(logsTitleStyle.Render(" Docker Contexts"))
-	b.WriteString("\n")
-
-	if len(m.contexts) == 0 {
-		b.WriteString(emptyStyle.Render("No contexts found."))
-		b.WriteString("\n")
-		return b.String()
-	}
-
-	for i, c := range m.contexts {
-		name := c.Name
-		label := "  " + name
-		if c.Description != "" {
-			label += "  " + c.Description
+	return m.renderPanel(" Docker Contexts", func(b *strings.Builder) {
+		if len(m.contexts) == 0 {
+			b.WriteString(emptyStyle.Render("No contexts found."))
+			b.WriteString("\n")
+			return
 		}
-		if c.Current {
-			label = "* " + name
+		for i, c := range m.contexts {
+			name := c.Name
+			label := "  " + name
 			if c.Description != "" {
 				label += "  " + c.Description
 			}
+			if c.Current {
+				label = "* " + name
+				if c.Description != "" {
+					label += "  " + c.Description
+				}
+			}
+			switch {
+			case i == m.contextCursor && c.Current:
+				b.WriteString(contextCursorStyle.Render("* " + name + "  ✓"))
+			case i == m.contextCursor:
+				b.WriteString(contextCursorStyle.Render(label))
+			case c.Current:
+				b.WriteString(contextActiveStyle.Render(label))
+			default:
+				b.WriteString(logsLineStyle.Render(label))
+			}
+			b.WriteString("\n")
 		}
-		switch {
-		case i == m.contextCursor && c.Current:
-			b.WriteString(contextCursorStyle.Render("* " + name + "  ✓"))
-		case i == m.contextCursor:
-			b.WriteString(contextCursorStyle.Render(label))
-		case c.Current:
-			b.WriteString(contextActiveStyle.Render(label))
-		default:
-			b.WriteString(logsLineStyle.Render(label))
-		}
-		b.WriteString("\n")
-	}
-
-	return b.String()
+	})
 }
 
 func buildInspectLines(d *docker.InspectData, width int) []string {
