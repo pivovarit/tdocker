@@ -1,12 +1,22 @@
 # tdocker
 
-A terminal UI for Docker container management. It displays your running (or all) containers in an interactive table, lets you navigate, filter, and inspect them, and provides quick actions - exec into a shell, view logs, start/stop/delete containers - all without leaving the terminal.
+`tdocker` is an extremely lightweight zero-config `docker ps` alternative that you actually reach for dozens of times a day.
 
-
+The operations that used to require remembering container IDs and chaining CLI commands are now a single keypress: 
+- tail logs 
+- stop or restart a container
+- exec into a shell
+- copy an ID to the clipboard
+- inspect configuration, 
+- check CPU and memory usage
 
 https://github.com/user-attachments/assets/743ed68b-a001-4f3a-99a7-cd2e342ae9f6
 
+### Getting started
 
+```
+git clone https://github.com/pivovarit/tdocker && cd tdocker && go run .
+```
 
 ### Keybindings
 
