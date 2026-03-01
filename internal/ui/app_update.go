@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -9,6 +10,8 @@ import (
 )
 
 type statsTickMsg struct{}
+type autoRefreshMsg struct{}
+type bgEventsRestartMsg struct{ gen int }
 
 func isContainerLifecycleEvent(ev docker.Event) bool {
 	if ev.Type != "container" {
@@ -221,33 +224,51 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case docker.EventLineMsg:
-		if !m.events.visible || msg.Gen != m.events.gen {
+		if msg.Gen != m.bgEventsGen {
 			return m, msg.Next
 		}
-		const maxEvents = 500
-		if len(m.events.events) >= maxEvents {
-			m.events.events = m.events.events[1:]
+		var debounceCmd tea.Cmd
+		if !m.loading && !m.pendingRefresh && isContainerLifecycleEvent(msg.Event) {
+			m.pendingRefresh = true
+			debounceCmd = tea.Tick(300*time.Millisecond, func(time.Time) tea.Msg {
+				return autoRefreshMsg{}
+			})
 		}
-		m.events.events = append(m.events.events, msg.Event)
-		if m.events.scroll.autoScroll {
-			m.events.scroll.offset = max(0, len(m.events.events)-(eventsPanelHeight-2))
+		if m.events.visible {
+			const maxEvents = 500
+			if len(m.events.events) >= maxEvents {
+				m.events.events = m.events.events[1:]
+			}
+			m.events.events = append(m.events.events, msg.Event)
+			if m.events.scroll.autoScroll {
+				m.events.scroll.offset = max(0, len(m.events.events)-(eventsPanelHeight-2))
+			}
 		}
-		var refreshCmd tea.Cmd
-		if !m.loading && isContainerLifecycleEvent(msg.Event) {
-			m.loading = true
-			refreshCmd = m.client.FetchContainers(m.showAll)
-		}
-		return m, tea.Batch(msg.Next, refreshCmd)
+		return m, tea.Batch(msg.Next, debounceCmd)
 
-	case docker.EventEndMsg:
-		if !m.events.visible || msg.Gen != m.events.gen {
-			return m, nil
-		}
-		if msg.Err != nil {
-			m.err = msg.Err
-			m = m.closeEvents()
+	case autoRefreshMsg:
+		m.pendingRefresh = false
+		if !m.loading {
+			m.loading = true
+			return m, m.client.FetchContainers(m.showAll)
 		}
 		return m, nil
+
+	case docker.EventEndMsg:
+		if msg.Gen != m.bgEventsGen {
+			return m, nil
+		}
+		m.bgEventsGen++
+		newGen := m.bgEventsGen
+		return m, tea.Tick(2*time.Second, func(time.Time) tea.Msg {
+			return bgEventsRestartMsg{gen: newGen}
+		})
+
+	case bgEventsRestartMsg:
+		if msg.gen != m.bgEventsGen {
+			return m, nil
+		}
+		return m, m.client.StartEvents(context.Background(), m.bgEventsGen)
 
 	case docker.ContextSwitchMsg:
 		m.ctxPicker.visible = false

@@ -109,8 +109,6 @@ type eventsState struct {
 	visible bool
 	events  []docker.Event
 	scroll  scrollState
-	gen     int
-	cancel  context.CancelFunc
 }
 
 type ctxPickerState struct {
@@ -150,7 +148,9 @@ type App struct {
 
 	containersByID map[string]docker.Container
 
-	events eventsState
+	events         eventsState
+	bgEventsGen    int
+	pendingRefresh bool
 }
 
 func New() App {
@@ -159,17 +159,22 @@ func New() App {
 
 func newWithClient(c docker.Client) App {
 	return App{
-		client:  c,
-		loading: true,
-		showAll: true,
-		table:   buildTable(nil, 120),
-		logs:    logsState{scroll: scrollState{autoScroll: true}},
-		events:  eventsState{scroll: scrollState{autoScroll: true}},
+		client:      c,
+		loading:     true,
+		showAll:     true,
+		table:       buildTable(nil, 120),
+		logs:        logsState{scroll: scrollState{autoScroll: true}},
+		events:      eventsState{scroll: scrollState{autoScroll: true}},
+		bgEventsGen: 1,
 	}
 }
 
 func (m App) Init() tea.Cmd {
-	return tea.Batch(m.client.FetchContainers(m.showAll), m.client.FetchContexts())
+	return tea.Batch(
+		m.client.FetchContainers(m.showAll),
+		m.client.FetchContexts(),
+		m.client.StartEvents(context.Background(), m.bgEventsGen),
+	)
 }
 
 func (m App) filtered() []docker.Container {

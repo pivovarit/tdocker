@@ -22,9 +22,6 @@ func (m App) closeStats() App {
 }
 
 func (m App) closeEvents() App {
-	if m.events.cancel != nil {
-		m.events.cancel()
-	}
 	m.events = eventsState{scroll: scrollState{autoScroll: true}}
 	m.table.SetHeight(m.tableHeight())
 	return m

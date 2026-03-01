@@ -392,12 +392,8 @@ func parseNumber(s string) (float64, bool) {
 }
 
 const (
-	// trendRelThreshold is the minimum relative change (1%) required to
-	// show an up/down trend arrow instead of a steady dot.
 	trendRelThreshold = 0.01
-	// trendAbsMinimum prevents noise on near-zero values where the relative
-	// threshold would be smaller than measurement precision.
-	trendAbsMinimum = 0.001
+	trendAbsMinimum   = 0.001
 )
 
 func statsTrend(prev, curr string, parse func(string) (float64, bool)) string {
