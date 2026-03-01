@@ -18,6 +18,7 @@ release:
 archives:
   - formats:
       - tar.gz
+      - binary
     name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
 
 checksum:
