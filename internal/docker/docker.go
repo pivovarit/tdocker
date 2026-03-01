@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
@@ -129,52 +129,32 @@ func FetchContainers(all bool) tea.Cmd {
 	}
 }
 
-func StopContainer(id string) tea.Cmd {
+func runContainerCmd(id string, timeout time.Duration, subcmd string, mkMsg func(error) tea.Msg) tea.Cmd {
 	return func() tea.Msg {
-		ctx, cancel := context.WithTimeout(context.Background(), timeoutStop)
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
-		out, err := exec.CommandContext(ctx, "docker", "stop", id).CombinedOutput()
+		out, err := exec.CommandContext(ctx, "docker", subcmd, id).CombinedOutput()
 		if err != nil {
-			return StopMsg{fmt.Errorf("docker stop: %w\n%s", err, strings.TrimSpace(string(out)))}
+			return mkMsg(fmt.Errorf("docker %s: %w\n%s", subcmd, err, strings.TrimSpace(string(out))))
 		}
-		return StopMsg{}
+		return mkMsg(nil)
 	}
+}
+
+func StopContainer(id string) tea.Cmd {
+	return runContainerCmd(id, timeoutStop, "stop", func(err error) tea.Msg { return StopMsg{Err: err} })
 }
 
 func StartContainer(id string) tea.Cmd {
-	return func() tea.Msg {
-		ctx, cancel := context.WithTimeout(context.Background(), timeoutStart)
-		defer cancel()
-		out, err := exec.CommandContext(ctx, "docker", "start", id).CombinedOutput()
-		if err != nil {
-			return StartMsg{fmt.Errorf("docker start: %w\n%s", err, strings.TrimSpace(string(out)))}
-		}
-		return StartMsg{}
-	}
+	return runContainerCmd(id, timeoutStart, "start", func(err error) tea.Msg { return StartMsg{Err: err} })
 }
 
 func RestartContainer(id string) tea.Cmd {
-	return func() tea.Msg {
-		ctx, cancel := context.WithTimeout(context.Background(), timeoutRestart)
-		defer cancel()
-		out, err := exec.CommandContext(ctx, "docker", "restart", id).CombinedOutput()
-		if err != nil {
-			return RestartMsg{fmt.Errorf("docker restart: %w\n%s", err, strings.TrimSpace(string(out)))}
-		}
-		return RestartMsg{}
-	}
+	return runContainerCmd(id, timeoutRestart, "restart", func(err error) tea.Msg { return RestartMsg{Err: err} })
 }
 
 func DeleteContainer(id string) tea.Cmd {
-	return func() tea.Msg {
-		ctx, cancel := context.WithTimeout(context.Background(), timeoutRM)
-		defer cancel()
-		out, err := exec.CommandContext(ctx, "docker", "rm", id).CombinedOutput()
-		if err != nil {
-			return DeleteMsg{ID: id, Err: fmt.Errorf("docker rm: %w\n%s", err, strings.TrimSpace(string(out)))}
-		}
-		return DeleteMsg{ID: id}
-	}
+	return runContainerCmd(id, timeoutRM, "rm", func(err error) tea.Msg { return DeleteMsg{ID: id, Err: err} })
 }
 
 func ExecContainer(id string) tea.Cmd {
@@ -205,27 +185,29 @@ func DebugContainer(id string) tea.Cmd {
 func Sort(containers []Container) []Container {
 	sorted := make([]Container, len(containers))
 	copy(sorted, containers)
-	sort.SliceStable(sorted, func(i, j int) bool {
-		ci, cj := sorted[i], sorted[j]
-		ri, rj := ci.State == "running", cj.State == "running"
-		if ri != rj {
-			return ri
-		}
-		pi, pj := ci.ComposeProject(), cj.ComposeProject()
-		if pi != pj {
-			if pi == "" {
-				return false
+	slices.SortStableFunc(sorted, func(a, b Container) int {
+		ra, rb := a.State == "running", b.State == "running"
+		if ra != rb {
+			if ra {
+				return -1
 			}
-			if pj == "" {
-				return true
+			return 1
+		}
+		pa, pb := a.ComposeProject(), b.ComposeProject()
+		if pa != pb {
+			if pa == "" {
+				return 1
 			}
-			return pi < pj
+			if pb == "" {
+				return -1
+			}
+			return strings.Compare(pa, pb)
 		}
-		si, sj := ci.ComposeService(), cj.ComposeService()
-		if si != sj {
-			return si < sj
+		sa, sb := a.ComposeService(), b.ComposeService()
+		if sa != sb {
+			return strings.Compare(sa, sb)
 		}
-		return ci.Names < cj.Names
+		return strings.Compare(a.Names, b.Names)
 	})
 	return sorted
 }

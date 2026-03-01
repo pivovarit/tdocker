@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"slices"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/table"
@@ -148,13 +149,10 @@ func (m App) rebuildTable(selectedID string) App {
 
 	if selectedID != "" {
 		if _, ok := m.containersByID[selectedID]; ok {
-			for i, c := range filtered {
-				if c.ID == selectedID {
-					m.table.SetCursor(i)
-					if h := m.tableHeight(); h > 0 && i >= h {
-						m.viewportStart = i - h + 1
-					}
-					break
+			if i := slices.IndexFunc(filtered, func(c docker.Container) bool { return c.ID == selectedID }); i >= 0 {
+				m.table.SetCursor(i)
+				if h := m.tableHeight(); h > 0 && i >= h {
+					m.viewportStart = i - h + 1
 				}
 			}
 		}

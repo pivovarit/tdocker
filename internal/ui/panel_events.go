@@ -50,9 +50,7 @@ func (m App) renderEventsPanel() string {
 		if end > len(m.events.events) {
 			end = len(m.events.events)
 		}
-		shown := 0
-		for i := start; i < end; i++ {
-			ev := m.events.events[i]
+		for _, ev := range m.events.events[start:end] {
 			actionStyle := eventDimStyle
 			switch ev.Action {
 			case "start", "unpause", "create":
@@ -67,8 +65,7 @@ func (m App) renderEventsPanel() string {
 				actionStyle.Render(fmt.Sprintf("%-12s", ev.Action)) +
 				eventNameStyle.Render(ev.Name())
 			b.WriteString("  " + line + "\n")
-			shown++
 		}
-		panelPad(b, shown, maxLines)
+		panelPad(b, end-start, maxLines)
 	})
 }

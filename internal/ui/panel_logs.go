@@ -70,12 +70,10 @@ func (m App) renderLogsPanel() string {
 		if end > len(m.logs.lines) {
 			end = len(m.logs.lines)
 		}
-		shown := 0
-		for i := start; i < end; i++ {
-			b.WriteString(logsLineStyle.Render("  " + m.logs.lines[i]))
+		for _, line := range m.logs.lines[start:end] {
+			b.WriteString(logsLineStyle.Render("  " + line))
 			b.WriteString("\n")
-			shown++
 		}
-		panelPad(b, shown, maxLines)
+		panelPad(b, end-start, maxLines)
 	})
 }
