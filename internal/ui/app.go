@@ -26,33 +26,31 @@ const (
 )
 
 type App struct {
-	client             docker.Client
-	table              table.Model
-	containers         []docker.Container
-	sorted             []docker.Container
-	filteredContainers []docker.Container
-	filteredQuery      string
-	viewportStart      int
-	showAll            bool
-	loading            bool
-	op                 Operation
-	confirmAction      string
-	confirmID          string
-	confirmName        string
-	filtering          bool
-	filterQuery        string
-	err                error
-	width              int
-	height             int
-	logsVisible        bool
-	logsLines          []string
-	logsContainer      string
-	logsContainerID    string
-	logsScrollOffset   int
-	logsAutoScroll     bool
-	logsAllMode        bool
-	logsGen            int
-	logsCancel         context.CancelFunc
+	client           docker.Client
+	table            table.Model
+	containers       []docker.Container
+	sorted           []docker.Container
+	viewportStart    int
+	showAll          bool
+	loading          bool
+	op               Operation
+	confirmAction    string
+	confirmID        string
+	confirmName      string
+	filtering        bool
+	filterQuery      string
+	err              error
+	width            int
+	height           int
+	logsVisible      bool
+	logsLines        []string
+	logsContainer    string
+	logsContainerID  string
+	logsScrollOffset int
+	logsAutoScroll   bool
+	logsAllMode      bool
+	logsGen          int
+	logsCancel       context.CancelFunc
 
 	inspectVisible   bool
 	inspectLines     []string
@@ -86,17 +84,8 @@ func (m App) Init() tea.Cmd {
 }
 
 func (m App) filtered() []docker.Container {
-	if m.filteredQuery == m.filterQuery && m.filteredContainers != nil {
-		return m.filteredContainers
-	}
-	return m.computeFilter().filteredContainers
-}
-
-func (m App) computeFilter() App {
-	m.filteredQuery = m.filterQuery
 	if m.filterQuery == "" {
-		m.filteredContainers = m.sorted
-		return m
+		return m.sorted
 	}
 	q := strings.ToLower(m.filterQuery)
 	var out []docker.Container
@@ -109,25 +98,26 @@ func (m App) computeFilter() App {
 			out = append(out, c)
 		}
 	}
-	m.filteredContainers = out
-	return m
+	return out
 }
 
-func (m App) rebuildTable() App {
-	var selectedID string
-	if prev := m.filteredContainers; len(prev) > 0 {
-		if c := m.table.Cursor(); c >= 0 && c < len(prev) {
-			selectedID = prev[c].ID
-		}
+func (m App) currentSelectedID() string {
+	filtered := m.filtered()
+	if c := m.table.Cursor(); c >= 0 && c < len(filtered) {
+		return filtered[c].ID
 	}
+	return ""
+}
 
-	m = m.computeFilter()
-	m.table = buildTable(m.filteredContainers, m.width)
+func (m App) rebuildTable(selectedID string) App {
+	filtered := m.filtered()
+
+	m.table = buildTable(filtered, m.width)
 	m.table.SetHeight(m.tableHeight())
 	m.viewportStart = 0
 
 	if selectedID != "" {
-		for i, c := range m.filteredContainers {
+		for i, c := range filtered {
 			if c.ID == selectedID {
 				m.table.SetCursor(i)
 				if h := m.tableHeight(); h > 0 && i >= h {

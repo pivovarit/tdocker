@@ -19,7 +19,7 @@ func modelWithSorted(containers []docker.Container) App {
 	m.containers = containers
 	m.loading = false
 	m.width = 120
-	return m.rebuildTable()
+	return m.rebuildTable("")
 }
 
 func runeKey(s string) tea.KeyMsg {
