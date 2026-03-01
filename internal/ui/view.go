@@ -220,6 +220,9 @@ func (m App) helpBar() string {
 			"  / " + keyStyle.Render(m.filterQuery+"▌") + " · esc/enter exit",
 		)
 	default:
+		if m.warnMsg != "" {
+			return helpStyle.Render("  ") + eventWarnStyle.Render("⚠ "+m.warnMsg)
+		}
 		if m.copiedName != "" {
 			return helpStyle.Render(
 				"  " + confirmStyle.Render("✓ copied ID of ") + keyStyle.Render(m.copiedName),

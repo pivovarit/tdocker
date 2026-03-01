@@ -65,6 +65,7 @@ type App struct {
 	inspect inspectState
 
 	copiedName string
+	warnMsg    string
 
 	ctxPicker ctxPickerState
 

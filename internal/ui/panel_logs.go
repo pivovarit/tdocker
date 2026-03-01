@@ -51,8 +51,12 @@ func (m App) handleLogsKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case tea.KeyDown, 'j':
 		m.logs.scroll = m.logs.scroll.down(len(m.logs.lines), logsPanelHeight-2)
 	case 'g', tea.KeyHome:
-		m.logs.scroll = m.logs.scroll.top()
-	case 'G', tea.KeyEnd:
+		if msg.Text == keyScrollBottom {
+			m.logs.scroll = m.logs.scroll.bottom(len(m.logs.lines), logsPanelHeight-2)
+		} else {
+			m.logs.scroll = m.logs.scroll.top()
+		}
+	case tea.KeyEnd:
 		m.logs.scroll = m.logs.scroll.bottom(len(m.logs.lines), logsPanelHeight-2)
 	}
 	return m, nil

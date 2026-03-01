@@ -29,8 +29,12 @@ func (m App) handleInspectKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case tea.KeyDown, 'j':
 		m.inspect.scroll = m.inspect.scroll.down(len(m.inspect.lines), inspectPanelHeight-2)
 	case 'g', tea.KeyHome:
-		m.inspect.scroll = m.inspect.scroll.top()
-	case 'G', tea.KeyEnd:
+		if msg.Text == keyScrollBottom {
+			m.inspect.scroll = m.inspect.scroll.bottom(len(m.inspect.lines), inspectPanelHeight-2)
+		} else {
+			m.inspect.scroll = m.inspect.scroll.top()
+		}
+	case tea.KeyEnd:
 		m.inspect.scroll = m.inspect.scroll.bottom(len(m.inspect.lines), inspectPanelHeight-2)
 	}
 	return m, nil

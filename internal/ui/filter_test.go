@@ -2,6 +2,7 @@ package ui
 
 import (
 	"testing"
+	"unicode"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/pivovarit/tdocker/internal/docker"
@@ -24,7 +25,7 @@ func modelWithSorted(containers []docker.Container) App {
 
 func runeKey(s string) tea.KeyPressMsg {
 	r := []rune(s)
-	return tea.KeyPressMsg{Code: r[0], Text: s}
+	return tea.KeyPressMsg{Code: unicode.ToLower(r[0]), Text: s}
 }
 
 func TestFiltered_EmptyQuery(t *testing.T) {
