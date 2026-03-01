@@ -9,10 +9,6 @@ import (
 	"github.com/pivovarit/tdocker/internal/docker"
 )
 
-type statsTickMsg struct{}
-type autoRefreshMsg struct{}
-type bgEventsRestartMsg struct{ gen int }
-
 func isContainerLifecycleEvent(ev docker.Event) bool {
 	if ev.Type != "container" {
 		return false

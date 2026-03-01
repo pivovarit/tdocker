@@ -10,11 +10,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type clipboardMsg struct {
-	name string
-	err  error
-}
-
 func copyToClipboard(name, text string) tea.Cmd {
 	switch runtime.GOOS {
 	case "darwin":
