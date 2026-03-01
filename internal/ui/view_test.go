@@ -266,9 +266,12 @@ func TestParsePercent_Valid(t *testing.T) {
 		in   string
 		want float64
 	}{
+		{"0%", 0},
+		{"0.00%", 0},
 		{"1.00%", 1.0},
 		{"0.42%", 0.42},
 		{"100%", 100.0},
+		{"100.00%", 100.0},
 		{" 3.14% ", 3.14},
 	}
 	for _, tc := range cases {
@@ -283,7 +286,7 @@ func TestParsePercent_Valid(t *testing.T) {
 }
 
 func TestParsePercent_InvalidReturnsNotOk(t *testing.T) {
-	for _, s := range []string{"n/a", "", "abc%"} {
+	for _, s := range []string{"n/a", "", "abc%", "--", "-- / --"} {
 		if _, ok := parsePercent(s); ok {
 			t.Errorf("parsePercent(%q): want ok=false", s)
 		}
@@ -291,17 +294,26 @@ func TestParsePercent_InvalidReturnsNotOk(t *testing.T) {
 }
 
 func TestParseByteSize_Units(t *testing.T) {
+	const TiB = 1024 * 1024 * 1024 * 1024
 	cases := []struct {
 		in   string
 		want float64
 	}{
+		// SI
 		{"1B", 1},
+		{"0B", 0},
 		{"1kB", 1000},
 		{"1MB", 1e6},
 		{"1GB", 1e9},
+		{"1TB", 1e12},
+		// IEC
 		{"1KiB", 1024},
 		{"1MiB", 1024 * 1024},
 		{"1GiB", 1024 * 1024 * 1024},
+		{"1TiB", TiB},
+		// fractional
+		{"1.5MiB", 1.5 * 1024 * 1024},
+		{"2.5kB", 2500},
 	}
 	for _, tc := range cases {
 		v, ok := parseByteSize(tc.in)
@@ -315,43 +327,67 @@ func TestParseByteSize_Units(t *testing.T) {
 }
 
 func TestParseByteSize_InvalidReturnsNotOk(t *testing.T) {
-	for _, s := range []string{"", "abc", "n/a"} {
+	for _, s := range []string{"", "abc", "n/a", "--", "-- / --"} {
 		if _, ok := parseByteSize(s); ok {
 			t.Errorf("parseByteSize(%q): want ok=false", s)
 		}
 	}
 }
 
-func TestParseSizeFirst_TakesValueBeforeSlash(t *testing.T) {
-	v, ok := parseSizeFirst("500kB / 1MB")
-	if !ok {
-		t.Fatal("want ok=true")
+func TestParseSizeFirst_Valid(t *testing.T) {
+	cases := []struct {
+		in   string
+		want float64
+	}{
+		{"500kB / 1MB", 500_000},
+		{"0B / 0B", 0},
+		{"1.2GiB / 800MB", 1.2 * 1024 * 1024 * 1024},
+		{"2MiB", float64(2 * 1024 * 1024)}, // no slash
 	}
-	if abs(v-500000) > 0.001 {
-		t.Errorf("want 500000, got %v", v)
+	for _, tc := range cases {
+		v, ok := parseSizeFirst(tc.in)
+		if !ok {
+			t.Fatalf("parseSizeFirst(%q): want ok=true", tc.in)
+		}
+		if abs(v-tc.want) > 0.001 {
+			t.Errorf("parseSizeFirst(%q): want %v, got %v", tc.in, tc.want, v)
+		}
 	}
 }
 
-func TestParseSizeFirst_NoSlashParsesWholeString(t *testing.T) {
-	v, ok := parseSizeFirst("2MiB")
-	if !ok {
-		t.Fatal("want ok=true")
-	}
-	if abs(v-float64(2*1024*1024)) > 0.001 {
-		t.Errorf("want %v, got %v", float64(2*1024*1024), v)
+func TestParseSizeFirst_StoppedContainerDashDash(t *testing.T) {
+	// docker stats outputs "-- / --" for stopped containers
+	if _, ok := parseSizeFirst("-- / --"); ok {
+		t.Error("parseSizeFirst(\"-- / --\"): want ok=false for stopped-container placeholder")
 	}
 }
 
 func TestParseNumber_Valid(t *testing.T) {
-	v, ok := parseNumber("42")
-	if !ok || v != 42 {
-		t.Errorf("want 42/true, got %v/%v", v, ok)
+	cases := []struct {
+		in   string
+		want float64
+	}{
+		{"0", 0},
+		{"1", 1},
+		{"42", 42},
+		{" 7 ", 7},
+	}
+	for _, tc := range cases {
+		v, ok := parseNumber(tc.in)
+		if !ok {
+			t.Errorf("parseNumber(%q): want ok=true", tc.in)
+		}
+		if v != tc.want {
+			t.Errorf("parseNumber(%q): want %v, got %v", tc.in, tc.want, v)
+		}
 	}
 }
 
 func TestParseNumber_InvalidReturnsNotOk(t *testing.T) {
-	if _, ok := parseNumber("abc"); ok {
-		t.Error("want ok=false for non-numeric")
+	for _, s := range []string{"abc", "", "--", "n/a"} {
+		if _, ok := parseNumber(s); ok {
+			t.Errorf("parseNumber(%q): want ok=false", s)
+		}
 	}
 }
 
