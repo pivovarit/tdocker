@@ -28,6 +28,7 @@ func (m App) closeInspect() App {
 func (m App) closeStats() App {
 	m.statsVisible = false
 	m.statsEntry = nil
+	m.statsPrevEntry = nil
 	m.statsContainer = ""
 	m.statsContainerID = ""
 	m.statsFetching = false

@@ -174,6 +174,9 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m = m.closeStats()
 			return m, nil
 		}
+		if m.statsEntry != nil {
+			m.statsPrevEntry = m.statsEntry
+		}
 		m.statsEntry = &msg.Entry
 		return m, statsTickCmd()
 

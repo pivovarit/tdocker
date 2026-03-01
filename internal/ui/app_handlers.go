@@ -80,6 +80,9 @@ func (m App) handleStatsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		m.loading = true
 		m.err = nil
+		if m.statsEntry != nil {
+			m.statsPrevEntry = m.statsEntry
+		}
 		m.statsEntry = nil
 		m.statsFetching = true
 		return m, tea.Batch(m.client.FetchContainers(m.showAll), m.client.FetchStats(m.statsContainerID))
