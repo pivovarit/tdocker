@@ -12,7 +12,8 @@ import (
 const (
 	logsPanelHeight    = 15
 	inspectPanelHeight = 20
-	statsPanelHeight   = 9
+	statsRows          = 5
+	statsPanelHeight   = statsRows + 3
 	eventsPanelHeight  = 12
 	logsTailDefault    = "200"
 

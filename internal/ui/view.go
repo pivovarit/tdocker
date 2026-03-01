@@ -332,6 +332,7 @@ func (m App) renderStatsPanel() string {
 		row("Net I/O", e.NetIO, netTrend)
 		row("Block I/O", e.BlockIO, blkTrend)
 		row("PIDs", e.PIDs, pidTrend)
+		panelPad(b, 1+statsRows, maxLines)
 	})
 }
 
