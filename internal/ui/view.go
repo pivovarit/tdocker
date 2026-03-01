@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/pivovarit/tdocker/internal/docker"
 )
 
@@ -15,7 +16,7 @@ func errorHintFor(err error) string {
 	return ""
 }
 
-func (m App) View() string {
+func (m App) View() tea.View {
 	var b strings.Builder
 	mode := "running"
 	if m.showAll {
@@ -76,7 +77,9 @@ func (m App) View() string {
 			b.WriteString("\n")
 		}
 		b.WriteString(helpStyle.Render("  Press " + keyStyle.Render("r") + " to retry, " + keyStyle.Render("q") + " to quit."))
-		return b.String()
+		v := tea.NewView(b.String())
+		v.AltScreen = true
+		return v
 
 	case len(m.containers) == 0:
 		msg := "No running containers."
@@ -89,7 +92,9 @@ func (m App) View() string {
 			keyStyle.Render("A") + " to toggle all containers, " +
 			keyStyle.Render("r") + " to refresh, " +
 			keyStyle.Render("q") + " to quit."))
-		return b.String()
+		v := tea.NewView(b.String())
+		v.AltScreen = true
+		return v
 
 	case len(filtered) == 0:
 		b.WriteString(emptyStyle.Render(fmt.Sprintf("No containers match %q.", m.filterQuery)))
@@ -149,7 +154,9 @@ func (m App) View() string {
 	b.WriteString("\n")
 	b.WriteString(m.helpBar())
 
-	return b.String()
+	v := tea.NewView(b.String())
+	v.AltScreen = true
+	return v
 }
 
 func (m App) helpBar() string {

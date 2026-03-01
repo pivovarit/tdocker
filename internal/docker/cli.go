@@ -3,7 +3,7 @@ package docker
 import (
 	"context"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 func (CLI) InspectContainer(id string) tea.Cmd { return InspectContainer(id) }

@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/pivovarit/tdocker/internal/docker"
 )
 
@@ -24,11 +24,11 @@ func (m App) closeStats() App {
 	return m
 }
 
-func (m App) handleStatsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "esc", "t":
+func (m App) handleStatsKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	switch msg.Code {
+	case tea.KeyEsc, 't':
 		m = m.closeStats()
-	case "r":
+	case 'r':
 		if m.stats.fetching {
 			return m, nil
 		}

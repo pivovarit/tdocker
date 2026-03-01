@@ -3,8 +3,8 @@ package ui
 import (
 	"strings"
 
-	"github.com/charmbracelet/bubbles/table"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/table"
+	"charm.land/lipgloss/v2"
 	"github.com/pivovarit/tdocker/internal/docker"
 )
 
@@ -90,6 +90,7 @@ func buildTable(containers []docker.Container, width int) table.Model {
 		table.WithColumns(cols),
 		table.WithRows(rows),
 		table.WithFocused(true),
+		table.WithWidth(width),
 	)
 
 	s := table.DefaultStyles()

@@ -3,7 +3,7 @@ package ui
 import (
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/pivovarit/tdocker/internal/docker"
 )
 
@@ -22,8 +22,9 @@ func modelWithSorted(containers []docker.Container) App {
 	return m.rebuildTable("")
 }
 
-func runeKey(s string) tea.KeyMsg {
-	return tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(s)}
+func runeKey(s string) tea.KeyPressMsg {
+	r := []rune(s)
+	return tea.KeyPressMsg{Code: r[0], Text: s}
 }
 
 func TestFiltered_EmptyQuery(t *testing.T) {
@@ -142,7 +143,7 @@ func TestUpdate_FilteringBackspaceRemovesChar(t *testing.T) {
 	m := modelWithSorted(filterContainers)
 	m.filtering = true
 	m.filterQuery = "foo"
-	result, _ := m.Update(tea.KeyMsg{Type: tea.KeyBackspace})
+	result, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyBackspace})
 	if got := result.(App).filterQuery; got != "fo" {
 		t.Errorf("want %q, got %q", "fo", got)
 	}
@@ -152,7 +153,7 @@ func TestUpdate_FilteringBackspaceMultibyte(t *testing.T) {
 	m := modelWithSorted(filterContainers)
 	m.filtering = true
 	m.filterQuery = "日本語"
-	result, _ := m.Update(tea.KeyMsg{Type: tea.KeyBackspace})
+	result, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyBackspace})
 	if got := result.(App).filterQuery; got != "日本" {
 		t.Errorf("want %q, got %q", "日本", got)
 	}
@@ -161,7 +162,7 @@ func TestUpdate_FilteringBackspaceMultibyte(t *testing.T) {
 func TestUpdate_FilteringBackspaceOnEmpty(t *testing.T) {
 	m := modelWithSorted(filterContainers)
 	m.filtering = true
-	result, _ := m.Update(tea.KeyMsg{Type: tea.KeyBackspace})
+	result, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyBackspace})
 	if got := result.(App).filterQuery; got != "" {
 		t.Errorf("want empty query, got %q", got)
 	}
@@ -171,7 +172,7 @@ func TestUpdate_FilteringEscExitsKeepsQuery(t *testing.T) {
 	m := modelWithSorted(filterContainers)
 	m.filtering = true
 	m.filterQuery = "web"
-	result, _ := m.Update(tea.KeyMsg{Type: tea.KeyEsc})
+	result, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyEsc})
 	got := result.(App)
 	if got.filtering {
 		t.Error("want filtering=false after esc")
@@ -185,7 +186,7 @@ func TestUpdate_FilteringEnterExitsKeepsQuery(t *testing.T) {
 	m := modelWithSorted(filterContainers)
 	m.filtering = true
 	m.filterQuery = "web"
-	result, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	result, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
 	got := result.(App)
 	if got.filtering {
 		t.Error("want filtering=false after enter")
@@ -198,7 +199,7 @@ func TestUpdate_FilteringEnterExitsKeepsQuery(t *testing.T) {
 func TestUpdate_EscInNormalModeClearsQuery(t *testing.T) {
 	m := modelWithSorted(filterContainers)
 	m.filterQuery = "web"
-	result, _ := m.Update(tea.KeyMsg{Type: tea.KeyEsc})
+	result, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyEsc})
 	if got := result.(App).filterQuery; got != "" {
 		t.Errorf("want empty query after esc, got %q", got)
 	}
@@ -206,7 +207,7 @@ func TestUpdate_EscInNormalModeClearsQuery(t *testing.T) {
 
 func TestUpdate_EscInNormalModeNoopWhenEmpty(t *testing.T) {
 	m := modelWithSorted(filterContainers)
-	result, _ := m.Update(tea.KeyMsg{Type: tea.KeyEsc})
+	result, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyEsc})
 	if got := result.(App).filterQuery; got != "" {
 		t.Errorf("want empty query, got %q", got)
 	}

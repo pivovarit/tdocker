@@ -6,7 +6,7 @@ import (
 	"slices"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/pivovarit/tdocker/internal/docker"
 )
 
@@ -37,7 +37,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m = m.rebuildTable(m.currentSelectedID())
 		return m, nil
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		m.copiedName = ""
 		if msg.String() == "q" || msg.String() == "ctrl+c" {
 			if m.logs.visible {

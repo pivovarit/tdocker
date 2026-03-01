@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 type logsState struct {
@@ -27,11 +27,11 @@ func (m App) closeLogs() App {
 	return m
 }
 
-func (m App) handleLogsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "esc", "l":
+func (m App) handleLogsKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	switch msg.Code {
+	case tea.KeyEsc, 'l':
 		m = m.closeLogs()
-	case "f":
+	case 'f':
 		if m.logs.cancel != nil {
 			m.logs.cancel()
 		}
@@ -46,13 +46,13 @@ func (m App) handleLogsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			tail = "all"
 		}
 		return m, m.client.StartLogs(ctx, m.logs.containerID, tail, m.logs.gen)
-	case "up", "k":
+	case tea.KeyUp, 'k':
 		m.logs.scroll = m.logs.scroll.up()
-	case "down", "j":
+	case tea.KeyDown, 'j':
 		m.logs.scroll = m.logs.scroll.down(len(m.logs.lines), logsPanelHeight-2)
-	case "g", "home":
+	case 'g', tea.KeyHome:
 		m.logs.scroll = m.logs.scroll.top()
-	case "G", "end":
+	case 'G', tea.KeyEnd:
 		m.logs.scroll = m.logs.scroll.bottom(len(m.logs.lines), logsPanelHeight-2)
 	}
 	return m, nil
