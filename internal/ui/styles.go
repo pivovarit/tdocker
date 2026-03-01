@@ -39,6 +39,10 @@ var (
 			Foreground(lipgloss.Color("#FCD34D")).
 			Bold(true)
 
+	confirmNameStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#F8FAFC")).
+				Bold(true)
+
 	logsDividerStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#0369A1"))
 
