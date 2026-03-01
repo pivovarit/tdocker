@@ -339,7 +339,7 @@ func TestParseSizeFirst_Valid(t *testing.T) {
 		{"500kB / 1MB", 500_000},
 		{"0B / 0B", 0},
 		{"1.2GiB / 800MB", 1.2 * 1024 * 1024 * 1024},
-		{"2MiB", float64(2 * 1024 * 1024)}, // no slash
+		{"2MiB", float64(2 * 1024 * 1024)},
 	}
 	for _, tc := range cases {
 		v, ok := parseSizeFirst(tc.in)
