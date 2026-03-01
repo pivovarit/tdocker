@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/pivovarit/tdocker/internal/docker"
 )
 
@@ -20,17 +20,17 @@ func (m App) closeEvents() App {
 	return m
 }
 
-func (m App) handleEventsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "esc", "v":
+func (m App) handleEventsKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	switch msg.Code {
+	case tea.KeyEsc, 'v':
 		m = m.closeEvents()
-	case "up", "k":
+	case tea.KeyUp, 'k':
 		m.events.scroll = m.events.scroll.up()
-	case "down", "j":
+	case tea.KeyDown, 'j':
 		m.events.scroll = m.events.scroll.down(len(m.events.events), eventsPanelHeight-2)
-	case "g", "home":
+	case 'g', tea.KeyHome:
 		m.events.scroll = m.events.scroll.top()
-	case "G", "end":
+	case 'G', tea.KeyEnd:
 		m.events.scroll = m.events.scroll.bottom(len(m.events.events), eventsPanelHeight-2)
 	}
 	return m, nil

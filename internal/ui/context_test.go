@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/pivovarit/tdocker/internal/docker"
 )
 
@@ -64,7 +64,7 @@ func TestContextPicker_EscClosesPicker(t *testing.T) {
 	m := modelWithSorted(nil)
 	m.ctxPicker.visible = true
 	m.ctxPicker.contexts = testContexts
-	got := update(m, tea.KeyMsg{Type: tea.KeyEsc})
+	got := update(m, tea.KeyPressMsg{Code: tea.KeyEsc})
 	if got.ctxPicker.visible {
 		t.Error("want ctxPicker.visible=false after esc")
 	}
@@ -89,7 +89,7 @@ func TestContextPicker_DownKey_MovesCursorDown(t *testing.T) {
 	m.ctxPicker.visible = true
 	m.ctxPicker.contexts = testContexts
 	m.ctxPicker.cursor = 0
-	got := update(m, tea.KeyMsg{Type: tea.KeyDown})
+	got := update(m, tea.KeyPressMsg{Code: tea.KeyDown})
 	if got.ctxPicker.cursor != 1 {
 		t.Errorf("want ctxPicker.cursor=1 after down, got %d", got.ctxPicker.cursor)
 	}
@@ -139,7 +139,7 @@ func TestContextPicker_Enter_CallsSwitchContext(t *testing.T) {
 	m.ctxPicker.visible = true
 	m.ctxPicker.contexts = testContexts
 	m.ctxPicker.cursor = 1
-	update(m, tea.KeyMsg{Type: tea.KeyEnter})
+	update(m, tea.KeyPressMsg{Code: tea.KeyEnter})
 	if gotName != "remote" {
 		t.Errorf("want SwitchContext(%q), got %q", "remote", gotName)
 	}

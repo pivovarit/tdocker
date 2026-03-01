@@ -3,7 +3,7 @@ package ui
 import (
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/pivovarit/tdocker/internal/docker"
 )
 
@@ -15,21 +15,21 @@ type ctxPickerState struct {
 	current   string
 }
 
-func (m App) handleContextKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "esc":
+func (m App) handleContextKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	switch msg.Code {
+	case tea.KeyEsc:
 		m.ctxPicker.visible = false
 		m.ctxPicker.contexts = nil
 		m.ctxPicker.cursor = 0
-	case "up", "k":
+	case tea.KeyUp, 'k':
 		if m.ctxPicker.cursor > 0 {
 			m.ctxPicker.cursor--
 		}
-	case "down", "j":
+	case tea.KeyDown, 'j':
 		if m.ctxPicker.cursor < len(m.ctxPicker.contexts)-1 {
 			m.ctxPicker.cursor++
 		}
-	case "enter":
+	case tea.KeyEnter:
 		if len(m.ctxPicker.contexts) > 0 {
 			return m, m.client.SwitchContext(m.ctxPicker.contexts[m.ctxPicker.cursor].Name)
 		}

@@ -3,12 +3,12 @@ package ui
 import (
 	"context"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
-func (m App) handleConfirmKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "y", "Y":
+func (m App) handleConfirmKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	switch msg.Code {
+	case 'y', 'Y':
 		m.op = OpNone
 		m.err = nil
 		switch m.confirmAction {
@@ -25,14 +25,14 @@ func (m App) handleConfirmKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.op = OpDeleting
 			return m, m.client.DeleteContainer(m.confirmID)
 		}
-	case "n", "N", "esc":
+	case 'n', 'N', tea.KeyEsc:
 		m.op = OpNone
 	}
 	return m, nil
 }
 
-func (m App) handleFilterKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.Type {
+func (m App) handleFilterKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	switch msg.Code {
 	case tea.KeyEsc, tea.KeyEnter:
 		m.filtering = false
 	case tea.KeyBackspace, tea.KeyDelete:
@@ -42,35 +42,37 @@ func (m App) handleFilterKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.filterQuery = string(runes[:len(runes)-1])
 			m = m.rebuildTable(selectedID)
 		}
-	case tea.KeyRunes:
-		selectedID := m.currentSelectedID()
-		m.filterQuery += string(msg.Runes)
-		m = m.rebuildTable(selectedID)
+	default:
+		if len(msg.Text) > 0 {
+			selectedID := m.currentSelectedID()
+			m.filterQuery += msg.Text
+			m = m.rebuildTable(selectedID)
+		}
 	}
 	return m, nil
 }
 
-func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "r":
+func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	switch msg.Code {
+	case 'r':
 		m.loading = true
 		m.err = nil
 		return m, m.client.FetchContainers(m.showAll)
-	case "A":
+	case 'A':
 		m.showAll = !m.showAll
 		m.loading = true
 		m.err = nil
 		return m, m.client.FetchContainers(m.showAll)
-	case "/":
+	case '/':
 		m.filtering = true
 		return m, nil
-	case "esc":
+	case tea.KeyEsc:
 		if m.filterQuery != "" {
 			selectedID := m.currentSelectedID()
 			m.filterQuery = ""
 			m = m.rebuildTable(selectedID)
 		}
-	case "l":
+	case 'l':
 		cursor := m.table.Cursor()
 		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) {
@@ -87,7 +89,7 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.table.SetHeight(m.tableHeight())
 			return m, firstLine
 		}
-	case "S":
+	case 'S':
 		cursor := m.table.Cursor()
 		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State == "running" {
@@ -97,7 +99,7 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.confirmName = filtered[cursor].Names
 			return m, nil
 		}
-	case "s":
+	case 's':
 		cursor := m.table.Cursor()
 		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State != "running" {
@@ -107,7 +109,7 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.confirmName = filtered[cursor].Names
 			return m, nil
 		}
-	case "R":
+	case 'R':
 		cursor := m.table.Cursor()
 		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) {
@@ -121,7 +123,7 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 		}
-	case "D":
+	case 'D':
 		cursor := m.table.Cursor()
 		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State != "running" {
@@ -131,22 +133,22 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.confirmName = filtered[cursor].Names
 			return m, nil
 		}
-	case "e":
+	case 'e':
 		cursor := m.table.Cursor()
 		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State == "running" {
 			return m, m.client.ExecContainer(filtered[cursor].ID)
 		}
-	case "x":
+	case 'x':
 		cursor := m.table.Cursor()
 		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) {
 			return m, m.client.CheckDebugAvailable(filtered[cursor].ID)
 		}
-	case "X":
+	case 'X':
 		m.ctxPicker.requested = true
 		return m, m.client.FetchContexts()
-	case "i":
+	case 'i':
 		cursor := m.table.Cursor()
 		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) {
@@ -157,14 +159,14 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.table.SetHeight(m.tableHeight())
 			return m, m.client.InspectContainer(filtered[cursor].ID)
 		}
-	case "c":
+	case 'c':
 		cursor := m.table.Cursor()
 		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) {
 			c := filtered[cursor]
 			return m, copyToClipboard(c.Names, c.ID)
 		}
-	case "t":
+	case 't':
 		cursor := m.table.Cursor()
 		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State == "running" {
@@ -176,7 +178,7 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.table.SetHeight(m.tableHeight())
 			return m, m.client.FetchStats(filtered[cursor].ID)
 		}
-	case "v":
+	case 'v':
 		if m.events.visible {
 			m = m.closeEvents()
 		} else {
@@ -187,15 +189,16 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	switch msg.String() {
-	case "j":
-		msg = tea.KeyMsg{Type: tea.KeyDown}
-	case "k":
-		msg = tea.KeyMsg{Type: tea.KeyUp}
+	var tableMsg tea.Msg = msg
+	switch msg.Code {
+	case 'j':
+		tableMsg = tea.KeyPressMsg{Code: tea.KeyDown}
+	case 'k':
+		tableMsg = tea.KeyPressMsg{Code: tea.KeyUp}
 	}
 
 	var cmd tea.Cmd
-	m.table, cmd = m.table.Update(msg)
+	m.table, cmd = m.table.Update(tableMsg)
 	cursor := m.table.Cursor()
 	height := m.tableHeight()
 	if cursor < m.viewportStart {

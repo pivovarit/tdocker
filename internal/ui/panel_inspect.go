@@ -3,7 +3,7 @@ package ui
 import (
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/pivovarit/tdocker/internal/docker"
 )
 
@@ -20,17 +20,17 @@ func (m App) closeInspect() App {
 	return m
 }
 
-func (m App) handleInspectKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "esc", "i":
+func (m App) handleInspectKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	switch msg.Code {
+	case tea.KeyEsc, 'i':
 		m = m.closeInspect()
-	case "up", "k":
+	case tea.KeyUp, 'k':
 		m.inspect.scroll = m.inspect.scroll.up()
-	case "down", "j":
+	case tea.KeyDown, 'j':
 		m.inspect.scroll = m.inspect.scroll.down(len(m.inspect.lines), inspectPanelHeight-2)
-	case "g", "home":
+	case 'g', tea.KeyHome:
 		m.inspect.scroll = m.inspect.scroll.top()
-	case "G", "end":
+	case 'G', tea.KeyEnd:
 		m.inspect.scroll = m.inspect.scroll.bottom(len(m.inspect.lines), inspectPanelHeight-2)
 	}
 	return m, nil

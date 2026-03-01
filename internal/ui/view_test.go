@@ -390,7 +390,7 @@ func TestParseNumber_InvalidReturnsNotOk(t *testing.T) {
 func TestView_LoadingState(t *testing.T) {
 	m := viewApp()
 	m.loading = true
-	out := m.View()
+	out := m.View().Content
 	if !strings.Contains(out, "Fetching") {
 		t.Errorf("want 'Fetching' in loading view, got:\n%s", out)
 	}
@@ -400,7 +400,7 @@ func TestView_ErrorState(t *testing.T) {
 	m := viewApp()
 	m.loading = false
 	m.err = errSentinel("something went wrong")
-	out := m.View()
+	out := m.View().Content
 	if !strings.Contains(out, "something went wrong") {
 		t.Errorf("want error message in view, got:\n%s", out)
 	}
@@ -410,7 +410,7 @@ func TestView_EmptyRunningContainers(t *testing.T) {
 	m := viewApp()
 	m.loading = false
 	m.showAll = false
-	out := m.View()
+	out := m.View().Content
 	if !strings.Contains(out, "No running") {
 		t.Errorf("want 'No running containers' message, got:\n%s", out)
 	}
@@ -420,7 +420,7 @@ func TestView_EmptyAllContainers(t *testing.T) {
 	m := viewApp()
 	m.loading = false
 	m.showAll = true
-	out := m.View()
+	out := m.View().Content
 	if !strings.Contains(out, "No containers") {
 		t.Errorf("want 'No containers found' message, got:\n%s", out)
 	}
@@ -428,7 +428,7 @@ func TestView_EmptyAllContainers(t *testing.T) {
 
 func TestView_HelpBarContainsKeyBindings(t *testing.T) {
 	m := modelWithSorted([]docker.Container{runningContainer})
-	out := m.View()
+	out := m.View().Content
 	for _, key := range []string{"l", "i", "t", "v", "s", "S", "r"} {
 		if !strings.Contains(out, key) {
 			t.Errorf("want key %q in help bar, got:\n%s", key, out)

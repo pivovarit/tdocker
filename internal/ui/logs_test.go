@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/pivovarit/tdocker/internal/docker"
 )
 
@@ -111,7 +111,7 @@ func TestLogs_HomeKey_ScrollsToTop(t *testing.T) {
 	lines := make([]string, 20)
 	m := logsOpenWithLines(lines)
 	m.logs.scroll.offset = 7
-	got := update(m, tea.KeyMsg{Type: tea.KeyHome})
+	got := update(m, tea.KeyPressMsg{Code: tea.KeyHome})
 	if got.logs.scroll.offset != 0 {
 		t.Errorf("want logs.scroll.offset=0 after Home, got %d", got.logs.scroll.offset)
 	}
@@ -133,7 +133,7 @@ func TestLogs_ShiftGKey_ScrollsToBottomAndEnablesAutoScroll(t *testing.T) {
 func TestLogs_EndKey_ScrollsToBottom(t *testing.T) {
 	lines := make([]string, 20)
 	m := logsOpenWithLines(lines)
-	got := update(m, tea.KeyMsg{Type: tea.KeyEnd})
+	got := update(m, tea.KeyPressMsg{Code: tea.KeyEnd})
 	want := max(0, len(lines)-(logsPanelHeight-2))
 	if got.logs.scroll.offset != want {
 		t.Errorf("want logs.scroll.offset=%d after End, got %d", want, got.logs.scroll.offset)

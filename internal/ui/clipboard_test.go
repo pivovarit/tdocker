@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/pivovarit/tdocker/internal/docker"
 )
 
@@ -84,8 +84,8 @@ func TestUpdate_AnyKeyClearsCopiedName(t *testing.T) {
 		runeKey("r"),
 		runeKey("a"),
 		runeKey("/"),
-		tea.KeyMsg{Type: tea.KeyEsc},
-		tea.KeyMsg{Type: tea.KeyUp},
+		tea.KeyPressMsg{Code: tea.KeyEsc},
+		tea.KeyPressMsg{Code: tea.KeyUp},
 	}
 	for _, key := range keys {
 		m := modelWithSorted([]docker.Container{runningContainer})

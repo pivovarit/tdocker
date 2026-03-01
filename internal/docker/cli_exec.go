@@ -1,6 +1,6 @@
 package docker
 
-import tea "github.com/charmbracelet/bubbletea"
+import tea "charm.land/bubbletea/v2"
 
 func (CLI) ExecContainer(id string) tea.Cmd       { return ExecContainer(id) }
 func (CLI) CheckDebugAvailable(id string) tea.Cmd { return CheckDebugAvailable(id) }

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/pivovarit/tdocker/internal/docker"
 )
 
@@ -43,7 +43,7 @@ func TestUpdate_TKeyOnEmptyListDoesNothing(t *testing.T) {
 
 func TestUpdate_StatsEscClosesPanel(t *testing.T) {
 	m := statsPanel()
-	got := update(m, tea.KeyMsg{Type: tea.KeyEsc})
+	got := update(m, tea.KeyPressMsg{Code: tea.KeyEsc})
 	if got.stats.visible {
 		t.Error("want stats.visible=false after esc")
 	}
@@ -61,7 +61,7 @@ func TestUpdate_StatsCloseResetsState(t *testing.T) {
 	m := statsPanel()
 	entry := docker.StatsEntry{CPUPerc: "1.00%"}
 	m.stats.entry = &entry
-	got := update(m, tea.KeyMsg{Type: tea.KeyEsc})
+	got := update(m, tea.KeyPressMsg{Code: tea.KeyEsc})
 	if got.stats.entry != nil {
 		t.Error("want stats.entry=nil after close")
 	}

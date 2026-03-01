@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/pivovarit/tdocker/internal/docker"
 )
 
@@ -113,10 +113,10 @@ func TestUpdate_ConfirmYSetsDeletingFlag(t *testing.T) {
 }
 
 func TestUpdate_ConfirmCancelKeys(t *testing.T) {
-	cancelKeys := []tea.KeyMsg{
+	cancelKeys := []tea.Msg{
 		runeKey("n"),
 		runeKey("N"),
-		{Type: tea.KeyEsc},
+		tea.KeyPressMsg{Code: tea.KeyEsc},
 	}
 	for _, key := range cancelKeys {
 		m := confirming("stop", runningContainer)
