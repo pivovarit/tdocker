@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>tdocker - The docker ps you actually reach for</title>
+  <meta name="description" content="An extremely lightweight zero-config terminal UI for Docker container management. Navigate, inspect, exec, tail logs - all from the keyboard." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── Reset & Base ──────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+
+    :root {
+      --bg:        #080d14;
+      --surface:   #0c1220;
+      --surface2:  #101828;
+      --border:    #1a2d45;
+      --border2:   #0d2035;
+      --accent:    #38BDF8;
+      --accent2:   #7DD3FC;
+      --accent3:   #0369A1;
+      --accent-dim:#0c2d45;
+      --glow:      rgba(56,189,248,0.12);
+      --glow2:     rgba(56,189,248,0.06);
+      --text:      #e2e8f0;
+      --text2:     #94a3b8;
+      --text3:     #475569;
+      --stopped:   #52525b;
+      --error:     #f87171;
+      --green:     #4ade80;
+      --yellow:    #fcd34d;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+      --font-body: 'DM Sans', system-ui, sans-serif;
+      --radius:    8px;
+      --radius-lg: 14px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── Grain overlay ─────────────────────────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+      opacity: 0.028;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ─── Scrollbar ─────────────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent3); }
+
+    /* ─── Layout ────────────────────────────────────────────────────────────── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+    /* ─── Navigation ────────────────────────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(8,13,20,0.85);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid rgba(56,189,248,0.08);
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .nav-brand {
+      font-family: var(--font-mono);
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+    .nav-brand .t { color: var(--accent); }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text2);
+      text-decoration: none;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+
+    .nav-github {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--accent);
+      text-decoration: none;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      border: 1px solid rgba(56,189,248,0.25);
+      padding: 6px 14px;
+      border-radius: var(--radius);
+      transition: all 0.2s;
+    }
+    .nav-github:hover {
+      background: rgba(56,189,248,0.08);
+      border-color: rgba(56,189,248,0.5);
+    }
+
+    /* ─── Hero ──────────────────────────────────────────────────────────────── */
+    .hero {
+      position: relative;
+      padding: 160px 0 100px;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .hero-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -60%);
+      width: 700px;
+      height: 500px;
+      background: radial-gradient(ellipse at center, rgba(56,189,248,0.10) 0%, rgba(3,105,161,0.05) 40%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-glow2 {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, rgba(56,189,248,0.3) 50%, transparent 100%);
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--accent);
+      background: rgba(56,189,248,0.07);
+      border: 1px solid rgba(56,189,248,0.2);
+      padding: 6px 14px;
+      border-radius: 100px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 32px;
+    }
+
+    .hero-badge .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(56,189,248,0.4); }
+      50% { opacity: 0.8; box-shadow: 0 0 0 6px rgba(56,189,248,0); }
+    }
+
+    .hero-title {
+      font-family: var(--font-mono);
+      font-size: clamp(3.5rem, 10vw, 7.5rem);
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 0.95;
+      margin-bottom: 20px;
+      color: var(--text);
+    }
+
+    .hero-title .t-accent { color: var(--accent); }
+
+    .hero-subtitle {
+      font-family: var(--font-mono);
+      font-size: clamp(1rem, 2.5vw, 1.4rem);
+      font-weight: 400;
+      color: var(--text2);
+      margin-bottom: 20px;
+      letter-spacing: -0.01em;
+    }
+
+    .hero-subtitle code {
+      color: var(--accent2);
+      background: rgba(56,189,248,0.07);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.95em;
+    }
+
+    .hero-desc {
+      font-size: 1.05rem;
+      color: var(--text2);
+      max-width: 520px;
+      margin: 0 auto 40px;
+      line-height: 1.7;
+    }
+
+    .hero-ctas {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin-bottom: 48px;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--bg);
+      background: var(--accent);
+      border: none;
+      padding: 12px 28px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      text-decoration: none;
+      letter-spacing: 0.02em;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-primary:hover {
+      background: var(--accent2);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(56,189,248,0.25);
+    }
+
+    .btn-secondary {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--accent);
+      background: transparent;
+      border: 1px solid rgba(56,189,248,0.3);
+      padding: 12px 28px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      text-decoration: none;
+      letter-spacing: 0.02em;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-secondary:hover {
+      background: rgba(56,189,248,0.07);
+      border-color: rgba(56,189,248,0.55);
+      transform: translateY(-1px);
+    }
+
+    .hero-install {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px 12px 20px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--text2);
+      position: relative;
+      max-width: 100%;
+    }
+
+    .hero-install .prompt { color: var(--text3); user-select: none; }
+    .hero-install .cmd { color: var(--accent2); }
+
+    .copy-btn {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text3);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 5px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      transition: all 0.2s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .copy-btn:hover { color: var(--accent); border-color: rgba(56,189,248,0.3); }
+    .copy-btn.copied { color: var(--green); border-color: rgba(74,222,128,0.3); }
+
+    /* ─── Terminal Preview ──────────────────────────────────────────────────── */
+    .preview-section {
+      padding: 0 0 100px;
+    }
+
+    .terminal-wrap {
+      max-width: 840px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .terminal-wrap::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      background: linear-gradient(135deg, rgba(56,189,248,0.15), rgba(3,105,161,0.08), transparent 60%);
+      border-radius: calc(var(--radius-lg) + 1px);
+      z-index: -1;
+    }
+
+    .terminal-wrap::after {
+      content: '';
+      position: absolute;
+      inset: -40px;
+      background: radial-gradient(ellipse at 50% 40%, rgba(56,189,248,0.07), transparent 65%);
+      z-index: -2;
+      pointer-events: none;
+    }
+
+    .terminal {
+      background: #070d18;
+      border: 1px solid rgba(56,189,248,0.15);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,0.5),
+        0 40px 80px rgba(0,0,0,0.6),
+        0 0 40px rgba(56,189,248,0.05);
+    }
+
+    .terminal-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 13px 16px;
+      background: #0a1220;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .terminal-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .terminal-dot.close  { background: #ff5f57; }
+    .terminal-dot.min    { background: #ffbd2e; }
+    .terminal-dot.expand { background: #28c840; }
+
+    .terminal-title {
+      flex: 1;
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text3);
+      margin-right: 40px;
+    }
+
+
+    /* ─── Section scaffold ──────────────────────────────────────────────────── */
+    section { padding: 90px 0; }
+
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-family: var(--font-mono);
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      margin-bottom: 14px;
+      line-height: 1.15;
+    }
+
+    .section-desc {
+      font-size: 1.05rem;
+      color: var(--text2);
+      max-width: 540px;
+      line-height: 1.7;
+    }
+
+    .section-head { margin-bottom: 56px; }
+
+    /* ─── Features ──────────────────────────────────────────────────────────── */
+    #features { border-top: 1px solid var(--border2); }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      transition: all 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(56,189,248,0.2), transparent);
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(56,189,248,0.2);
+      background: var(--surface2);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 36px rgba(0,0,0,0.3), 0 0 0 1px rgba(56,189,248,0.06);
+    }
+
+    .feature-card:hover::before { opacity: 1; }
+
+    .feature-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius);
+      background: rgba(56,189,248,0.08);
+      border: 1px solid rgba(56,189,248,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 18px;
+      font-size: 1.1rem;
+    }
+
+    .feature-title {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 10px;
+      letter-spacing: -0.01em;
+    }
+
+    .feature-desc {
+      font-size: 0.9rem;
+      color: var(--text2);
+      line-height: 1.65;
+    }
+
+    .feature-desc code {
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      color: var(--accent2);
+      background: rgba(56,189,248,0.07);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    /* ─── Keybindings ───────────────────────────────────────────────────────── */
+    #keybindings { border-top: 1px solid var(--border2); }
+
+    .kb-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .kb-group {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .kb-group-header {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      padding: 14px 22px;
+      background: rgba(56,189,248,0.04);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .kb-rows { padding: 8px 0; }
+
+    .kb-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 9px 22px;
+      transition: background 0.15s;
+    }
+
+    .kb-row:hover { background: rgba(56,189,248,0.03); }
+
+    .kb-keys {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+      min-width: 110px;
+      flex-wrap: wrap;
+    }
+
+    .kb-key {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: rgba(3,105,161,0.25);
+      border: 1px solid rgba(56,189,248,0.2);
+      padding: 2px 8px;
+      border-radius: 5px;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+
+    .kb-action {
+      font-size: 0.875rem;
+      color: var(--text2);
+    }
+
+    /* ─── Install ───────────────────────────────────────────────────────────── */
+    #install { border-top: 1px solid var(--border2); }
+
+    .install-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .install-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .install-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .install-card-title {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .install-badge {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      font-weight: 600;
+      color: var(--green);
+      background: rgba(74,222,128,0.08);
+      border: 1px solid rgba(74,222,128,0.2);
+      padding: 2px 8px;
+      border-radius: 100px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .install-code {
+      padding: 20px 22px;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      line-height: 1.7;
+      color: var(--text2);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .install-line {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .install-prompt { color: var(--text3); user-select: none; flex-shrink: 0; }
+    .install-cmd { color: var(--accent2); }
+    .install-arg { color: var(--text); }
+    .install-comment { color: var(--text3); font-style: italic; }
+
+    .install-card-footer {
+      display: flex;
+      justify-content: flex-end;
+      padding: 14px 22px;
+      border-top: 1px solid var(--border);
+    }
+
+    .install-copy-btn {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text3);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 6px 16px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      transition: all 0.2s;
+    }
+    .install-copy-btn:hover { color: var(--accent); border-color: rgba(56,189,248,0.3); }
+    .install-copy-btn.copied { color: var(--green); border-color: rgba(74,222,128,0.3); }
+
+    /* ─── Footer ────────────────────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border2);
+      padding: 32px 0;
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .footer-left {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--text3);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .footer-sep { opacity: 0.3; }
+
+    .footer-mit {
+      color: var(--text3);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .footer-mit:hover { color: var(--text2); }
+
+    .footer-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .footer-link {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--text3);
+      text-decoration: none;
+      transition: color 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .footer-link:hover { color: var(--accent); }
+
+    /* ─── Scroll reveal ─────────────────────────────────────────────────────── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(22px);
+      transition: opacity 0.55s ease, transform 0.55s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+    .reveal-delay-1 { transition-delay: 0.08s; }
+    .reveal-delay-2 { transition-delay: 0.16s; }
+    .reveal-delay-3 { transition-delay: 0.24s; }
+    .reveal-delay-4 { transition-delay: 0.32s; }
+    .reveal-delay-5 { transition-delay: 0.40s; }
+    .reveal-delay-6 { transition-delay: 0.48s; }
+
+    /* ─── Responsive ────────────────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .features-grid { grid-template-columns: 1fr 1fr; }
+      .kb-grid { grid-template-columns: 1fr; }
+      .install-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 640px) {
+      .features-grid { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+      section { padding: 70px 0; }
+      .hero { padding: 120px 0 80px; }
+
+    }
+
+    @media (max-width: 480px) {
+      .hero-install { flex-direction: column; align-items: flex-start; gap: 10px; }
+    }
+
+    /* ─── SVG icons inline ─────────────────────────────────────────────────── */
+    .icon-gh {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Navigation ──────────────────────────────────────────────────────────── -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="nav-brand"><span class="t">t</span>docker</a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#keybindings">Keybindings</a></li>
+      <li><a href="#install">Install</a></li>
+    </ul>
+    <a href="https://github.com/pivovarit/tdocker" class="nav-github" target="_blank" rel="noopener">
+      <svg class="icon-gh" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+      </svg>
+      GitHub
+    </a>
+  </div>
+</nav>
+
+<!-- ── Hero ─────────────────────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-glow2"></div>
+  <div class="container">
+    <div class="hero-badge">
+      <span class="dot"></span>
+      Written in Go &nbsp;·&nbsp; Zero Config
+    </div>
+    <h1 class="hero-title">
+      <span class="t-accent">t</span>docker
+    </h1>
+    <p class="hero-subtitle">The <code>docker ps</code> you actually reach for.</p>
+    <p class="hero-desc">
+      An extremely lightweight terminal UI that puts container management at your fingertips.
+      No config. No clutter. Just your containers.
+    </p>
+    <div class="hero-ctas">
+      <a href="#install" class="btn-primary">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Get Started
+      </a>
+      <a href="https://github.com/pivovarit/tdocker" class="btn-secondary" target="_blank" rel="noopener">
+        <svg class="icon-gh" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+        </svg>
+        GitHub
+      </a>
+    </div>
+    <div class="hero-install">
+      <span class="prompt">$</span>
+      <span class="cmd">go install <span style="color:var(--text)">github.com/pivovarit/tdocker@latest</span></span>
+      <button class="copy-btn" data-copy="go install github.com/pivovarit/tdocker@latest">copy</button>
+    </div>
+  </div>
+</section>
+
+<!-- ── Terminal Preview ──────────────────────────────────────────────────────── -->
+<div class="preview-section">
+  <div class="container">
+    <div class="terminal-wrap reveal">
+      <div class="terminal">
+        <div class="terminal-bar">
+          <span class="terminal-dot close"></span>
+          <span class="terminal-dot min"></span>
+          <span class="terminal-dot expand"></span>
+          <span class="terminal-title">tdocker - zsh</span>
+        </div>
+        <video
+          src="https://github.com/user-attachments/assets/0bc1f303-46e1-4aa4-a755-72e769eeb3fd"
+          autoplay loop muted playsinline
+          style="display:block; width:100%; border-radius:0 0 var(--radius-lg) var(--radius-lg);"
+        ></video>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Features ─────────────────────────────────────────────────────────────── -->
+<section id="features">
+  <div class="container">
+    <div class="section-head">
+      <p class="section-label">What you get</p>
+      <h2 class="section-title">Everything in one keypress.</h2>
+      <p class="section-desc">All the container operations you reach for dozens of times a day, without remembering IDs or chaining CLI commands.</p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="feature-icon">⚡</div>
+        <h3 class="feature-title">Zero Config</h3>
+        <p class="feature-desc">Drop in and go. No setup files, no environment variables, no config directories. Just run <code>tdocker</code>.</p>
+      </div>
+
+      <div class="feature-card reveal reveal-delay-2">
+        <div class="feature-icon">📋</div>
+        <h3 class="feature-title">Live Logs</h3>
+        <p class="feature-desc"><code>l</code> streams live logs from any selected container directly in the TUI with smooth scrolling and instant exit.</p>
+      </div>
+
+      <div class="feature-card reveal reveal-delay-3">
+        <div class="feature-icon">🖥</div>
+        <h3 class="feature-title">Exec &amp; Debug</h3>
+        <p class="feature-desc"><code>e</code> opens a shell inside the container. <code>x</code> launches Docker's built-in debug shell for deeper inspection.</p>
+      </div>
+
+      <div class="feature-card reveal reveal-delay-4">
+        <div class="feature-icon">📊</div>
+        <h3 class="feature-title">Stats &amp; Inspect</h3>
+        <p class="feature-desc"><code>t</code> shows real-time CPU and memory trends with directional indicators. <code>i</code> gives full container config inspection.</p>
+      </div>
+
+      <div class="feature-card reveal reveal-delay-5">
+        <div class="feature-icon">🔍</div>
+        <h3 class="feature-title">Fuzzy Filter</h3>
+        <p class="feature-desc"><code>/</code> lets you filter containers by name or image instantly - no more scrolling through dozens of containers.</p>
+      </div>
+
+      <div class="feature-card reveal reveal-delay-6">
+        <div class="feature-icon">⚡</div>
+        <h3 class="feature-title">Container Events</h3>
+        <p class="feature-desc"><code>v</code> streams live Docker events - start, stop, die - as they happen, with color-coded event types.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Keybindings ───────────────────────────────────────────────────────────── -->
+<section id="keybindings">
+  <div class="container">
+    <div class="section-head">
+      <p class="section-label">Keyboard-first workflow</p>
+      <h2 class="section-title">Every action, one key away.</h2>
+      <p class="section-desc">No mouse. No menus. Everything you need is bound to a single keystroke.</p>
+    </div>
+
+    <div class="kb-grid">
+      <!-- Navigation -->
+      <div class="kb-group reveal">
+        <div class="kb-group-header">Navigation</div>
+        <div class="kb-rows">
+          <div class="kb-row">
+            <div class="kb-keys"><span class="kb-key">↑</span><span class="kb-key">↓</span></div>
+            <span class="kb-action">Navigate containers</span>
+          </div>
+          <div class="kb-row">
+            <div class="kb-keys"><span class="kb-key">j</span><span class="kb-key">k</span></div>
+            <span class="kb-action">Vim-style navigation</span>
+          </div>
+          <div class="kb-row">
+            <div class="kb-keys"><span class="kb-key">G</span></div>
+            <span class="kb-action">Jump to bottom</span>
+          </div>
+          <div class="kb-row">
+            <div class="kb-keys"><span class="kb-key">/</span></div>
+            <span class="kb-action">Filter containers</span>
+          </div>
+          <div class="kb-row">
+            <div class="kb-keys"><span class="kb-key">A</span></div>
+            <span class="kb-action">Toggle all / running only</span>
+          </div>
+          <div class="kb-row">
+            <div class="kb-keys"><span class="kb-key">r</span></div>
+            <span class="kb-action">Refresh container list</span>
+          </div>
+          <div class="kb-row">
+            <div class="kb-keys"><span class="kb-key">X</span></div>
+            <span class="kb-action">Switch Docker context</span>
+          </div>
+          <div class="kb-row">
+            <div class="kb-keys"><span class="kb-key">q</span><span class="kb-key">Ctrl+C</span></div>
+            <span class="kb-action">Quit</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="kb-group reveal reveal-delay-2">
+        <div class="kb-group-header">Container Actions</div>
+        <div class="kb-rows">
+          <div class="kb-row">
+            <div class="kb-keys"><span class="kb-key">l</span></div>
+            <span class="kb-action">Tail live logs</span>
+          </div>
+          <div class="kb-row">
+            <div class="kb-keys"><span class="kb-key">e</span></div>
+            <span class="kb-action">Exec into container (sh)</span>
+          </div>
+          <div class="kb-row">
+            <div class="kb-keys"><span class="kb-key">x</span></div>
+            <span class="kb-action">Open Docker debug shell</span>
+          </div>
+          <div class="kb-row">
+            <div class="kb-keys"><span class="kb-key">i</span></div>
+            <span class="kb-action">Inspect container config</span>
+          </div>
+          <div class="kb-row">
+            <div class="kb-keys"><span class="kb-key">t</span></div>
+            <span class="kb-action">Show CPU &amp; memory stats</span>
+          </div>
+          <div class="kb-row">
+            <div class="kb-keys"><span class="kb-key">v</span></div>
+            <span class="kb-action">Stream Docker events</span>
+          </div>
+          <div class="kb-row">
+            <div class="kb-keys"><span class="kb-key">c</span></div>
+            <span class="kb-action">Copy container ID to clipboard</span>
+          </div>
+          <div class="kb-row">
+            <div class="kb-keys"><span class="kb-key">s</span><span class="kb-key">S</span><span class="kb-key">R</span><span class="kb-key">D</span></div>
+            <span class="kb-action">Start · Stop · Restart · Delete</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Install ───────────────────────────────────────────────────────────────── -->
+<section id="install">
+  <div class="container">
+    <div class="section-head">
+      <p class="section-label">Installation</p>
+      <h2 class="section-title">Up and running in seconds.</h2>
+      <p class="section-desc">Requires Go 1.21+ and Docker. No other dependencies.</p>
+    </div>
+
+    <div class="install-grid">
+      <!-- go install -->
+      <div class="install-card reveal">
+        <div class="install-card-header">
+          <span class="install-card-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            go install
+          </span>
+          <span class="install-badge">Recommended</span>
+        </div>
+        <div class="install-code">
+          <div class="install-line">
+            <span class="install-prompt">$</span>
+            <span><span class="install-cmd">go install</span> <span class="install-arg">github.com/pivovarit/tdocker@latest</span></span>
+          </div>
+        </div>
+        <div class="install-card-footer">
+          <button class="install-copy-btn" data-copy="go install github.com/pivovarit/tdocker@latest">copy</button>
+        </div>
+      </div>
+
+      <!-- from source -->
+      <div class="install-card reveal reveal-delay-2">
+        <div class="install-card-header">
+          <span class="install-card-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            From Source
+          </span>
+        </div>
+        <div class="install-code">
+          <div class="install-line">
+            <span class="install-prompt">$</span>
+            <span><span class="install-cmd">git clone</span> <span class="install-arg">https://github.com/pivovarit/tdocker</span></span>
+          </div>
+          <div class="install-line">
+            <span class="install-prompt">$</span>
+            <span><span class="install-cmd">cd</span> <span class="install-arg">tdocker</span> <span class="install-comment">&amp;&amp; go run .</span></span>
+          </div>
+        </div>
+        <div class="install-card-footer">
+          <button class="install-copy-btn" data-copy="git clone https://github.com/pivovarit/tdocker && cd tdocker && go run .">copy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ───────────────────────────────────────────────────────────────── -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-left">
+      <span>© 2026 4Comprehension</span>
+    </div>
+    <div class="footer-right">
+      <a href="https://github.com/pivovarit/tdocker" class="footer-link" target="_blank" rel="noopener">
+        <svg class="icon-gh" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+        </svg>
+        GitHub
+      </a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ── Scroll reveal ─────────────────────────────────────────────────────────
+  const revealEls = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+  revealEls.forEach(el => observer.observe(el));
+
+  // ── Copy to clipboard ─────────────────────────────────────────────────────
+  function setupCopyBtn(btn) {
+    btn.addEventListener('click', () => {
+      const text = btn.dataset.copy;
+      navigator.clipboard.writeText(text).then(() => {
+        const original = btn.textContent;
+        btn.textContent = 'copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = original;
+          btn.classList.remove('copied');
+        }, 2000);
+      });
+    });
+  }
+
+  document.querySelectorAll('.copy-btn, .install-copy-btn').forEach(setupCopyBtn);
+
+  // ── Hero reveal on load ───────────────────────────────────────────────────
+  document.querySelectorAll('.hero > .container > *').forEach((el, i) => {
+    el.style.animationDelay = `${i * 0.07}s`;
+  });
+</script>
+</body>
+</html>
