@@ -21,7 +21,7 @@ func (m App) handleLogsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.logs.gen++
 		ctx, cancel := context.WithCancel(context.Background())
 		m.logs.cancel = cancel
-		tail := "200"
+		tail := logsTailDefault
 		if m.logs.allMode {
 			tail = "all"
 		}
@@ -217,7 +217,7 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.logs.gen++
 			ctx, cancel := context.WithCancel(context.Background())
 			m.logs.cancel = cancel
-			firstLine := m.client.StartLogs(ctx, filtered[cursor].ID, "200", m.logs.gen)
+			firstLine := m.client.StartLogs(ctx, filtered[cursor].ID, logsTailDefault, m.logs.gen)
 			m.table.SetHeight(m.tableHeight())
 			return m, firstLine
 		}
