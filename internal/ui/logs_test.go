@@ -22,8 +22,7 @@ func logsOpenWithLines(lines []string) App {
 	m.logs.containerID = runningContainer.ID
 	m.logs.container = runningContainer.Names
 	m.logs.lines = lines
-	m.logs.scrollOffset = 0
-	m.logs.autoScroll = false
+	m.logs.scroll = scrollState{}
 	return m
 }
 
@@ -98,24 +97,23 @@ func TestLogs_FToggle_PassesContainerID(t *testing.T) {
 func TestLogs_GKey_ScrollsToTopAndDisablesAutoScroll(t *testing.T) {
 	lines := make([]string, 20)
 	m := logsOpenWithLines(lines)
-	m.logs.scrollOffset = 10
-	m.logs.autoScroll = true
+	m.logs.scroll = scrollState{offset: 10, autoScroll: true}
 	got := update(m, runeKey("g"))
-	if got.logs.scrollOffset != 0 {
-		t.Errorf("want logs.scrollOffset=0, got %d", got.logs.scrollOffset)
+	if got.logs.scroll.offset != 0 {
+		t.Errorf("want logs.scroll.offset=0, got %d", got.logs.scroll.offset)
 	}
-	if got.logs.autoScroll {
-		t.Error("want logs.autoScroll=false after g")
+	if got.logs.scroll.autoScroll {
+		t.Error("want logs.scroll.autoScroll=false after g")
 	}
 }
 
 func TestLogs_HomeKey_ScrollsToTop(t *testing.T) {
 	lines := make([]string, 20)
 	m := logsOpenWithLines(lines)
-	m.logs.scrollOffset = 7
+	m.logs.scroll.offset = 7
 	got := update(m, tea.KeyMsg{Type: tea.KeyHome})
-	if got.logs.scrollOffset != 0 {
-		t.Errorf("want logs.scrollOffset=0 after Home, got %d", got.logs.scrollOffset)
+	if got.logs.scroll.offset != 0 {
+		t.Errorf("want logs.scroll.offset=0 after Home, got %d", got.logs.scroll.offset)
 	}
 }
 
@@ -124,11 +122,11 @@ func TestLogs_ShiftGKey_ScrollsToBottomAndEnablesAutoScroll(t *testing.T) {
 	m := logsOpenWithLines(lines)
 	got := update(m, runeKey("G"))
 	want := max(0, len(lines)-(logsPanelHeight-2))
-	if got.logs.scrollOffset != want {
-		t.Errorf("want logs.scrollOffset=%d after G, got %d", want, got.logs.scrollOffset)
+	if got.logs.scroll.offset != want {
+		t.Errorf("want logs.scroll.offset=%d after G, got %d", want, got.logs.scroll.offset)
 	}
-	if !got.logs.autoScroll {
-		t.Error("want logs.autoScroll=true after G")
+	if !got.logs.scroll.autoScroll {
+		t.Error("want logs.scroll.autoScroll=true after G")
 	}
 }
 
@@ -137,16 +135,15 @@ func TestLogs_EndKey_ScrollsToBottom(t *testing.T) {
 	m := logsOpenWithLines(lines)
 	got := update(m, tea.KeyMsg{Type: tea.KeyEnd})
 	want := max(0, len(lines)-(logsPanelHeight-2))
-	if got.logs.scrollOffset != want {
-		t.Errorf("want logs.scrollOffset=%d after End, got %d", want, got.logs.scrollOffset)
+	if got.logs.scroll.offset != want {
+		t.Errorf("want logs.scroll.offset=%d after End, got %d", want, got.logs.scroll.offset)
 	}
 }
 
 func TestLogs_GKey_OnFewLines_StaysAtZero(t *testing.T) {
 	m := logsOpenWithLines([]string{"only one line"})
-	m.logs.scrollOffset = 0
 	got := update(m, runeKey("G"))
-	if got.logs.scrollOffset != 0 {
-		t.Errorf("want logs.scrollOffset=0 when few lines, got %d", got.logs.scrollOffset)
+	if got.logs.scroll.offset != 0 {
+		t.Errorf("want logs.scroll.offset=0 when few lines, got %d", got.logs.scroll.offset)
 	}
 }

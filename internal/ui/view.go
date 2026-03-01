@@ -262,7 +262,7 @@ func (m App) renderLogsPanel() string {
 	}
 	return m.renderPanel(" Logs: "+m.logs.container+logsModeLabel, func(b *strings.Builder) {
 		maxLines := logsPanelHeight - 2
-		start := m.logs.scrollOffset
+		start := m.logs.scroll.offset
 		end := start + maxLines
 		if end > len(m.logs.lines) {
 			end = len(m.logs.lines)
@@ -286,7 +286,7 @@ func (m App) renderInspectPanel() string {
 			panelPad(b, 1, maxLines)
 			return
 		}
-		start := m.inspect.offset
+		start := m.inspect.scroll.offset
 		end := start + maxLines
 		if end > len(m.inspect.lines) {
 			end = len(m.inspect.lines)
@@ -462,7 +462,7 @@ func (m App) renderEventsPanel() string {
 			panelPad(b, 1, maxLines)
 			return
 		}
-		start := m.events.scrollOffset
+		start := m.events.scroll.offset
 		end := start + maxLines
 		if end > len(m.events.events) {
 			end = len(m.events.events)

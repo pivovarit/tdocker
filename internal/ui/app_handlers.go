@@ -16,8 +16,7 @@ func (m App) handleLogsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		m.logs.allMode = !m.logs.allMode
 		m.logs.lines = nil
-		m.logs.scrollOffset = 0
-		m.logs.autoScroll = true
+		m.logs.scroll = scrollState{autoScroll: true}
 		m.logs.gen++
 		ctx, cancel := context.WithCancel(context.Background())
 		m.logs.cancel = cancel
@@ -27,24 +26,13 @@ func (m App) handleLogsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, m.client.StartLogs(ctx, m.logs.containerID, tail, m.logs.gen)
 	case "up", "k":
-		if m.logs.scrollOffset > 0 {
-			m.logs.scrollOffset--
-			m.logs.autoScroll = false
-		}
+		m.logs.scroll = m.logs.scroll.up()
 	case "down", "j":
-		maxOffset := max(0, len(m.logs.lines)-(logsPanelHeight-2))
-		if m.logs.scrollOffset < maxOffset {
-			m.logs.scrollOffset++
-		}
-		if m.logs.scrollOffset >= maxOffset {
-			m.logs.autoScroll = true
-		}
+		m.logs.scroll = m.logs.scroll.down(len(m.logs.lines), logsPanelHeight-2)
 	case "g", "home":
-		m.logs.scrollOffset = 0
-		m.logs.autoScroll = false
+		m.logs.scroll = m.logs.scroll.top()
 	case "G", "end":
-		m.logs.scrollOffset = max(0, len(m.logs.lines)-(logsPanelHeight-2))
-		m.logs.autoScroll = true
+		m.logs.scroll = m.logs.scroll.bottom(len(m.logs.lines), logsPanelHeight-2)
 	}
 	return m, nil
 }
@@ -54,18 +42,13 @@ func (m App) handleInspectKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "esc", "i":
 		m = m.closeInspect()
 	case "up", "k":
-		if m.inspect.offset > 0 {
-			m.inspect.offset--
-		}
+		m.inspect.scroll = m.inspect.scroll.up()
 	case "down", "j":
-		maxOff := max(0, len(m.inspect.lines)-(inspectPanelHeight-2))
-		if m.inspect.offset < maxOff {
-			m.inspect.offset++
-		}
+		m.inspect.scroll = m.inspect.scroll.down(len(m.inspect.lines), inspectPanelHeight-2)
 	case "g", "home":
-		m.inspect.offset = 0
+		m.inspect.scroll = m.inspect.scroll.top()
 	case "G", "end":
-		m.inspect.offset = max(0, len(m.inspect.lines)-(inspectPanelHeight-2))
+		m.inspect.scroll = m.inspect.scroll.bottom(len(m.inspect.lines), inspectPanelHeight-2)
 	}
 	return m, nil
 }
@@ -75,24 +58,13 @@ func (m App) handleEventsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "esc", "v":
 		m = m.closeEvents()
 	case "up", "k":
-		if m.events.scrollOffset > 0 {
-			m.events.scrollOffset--
-			m.events.autoScroll = false
-		}
+		m.events.scroll = m.events.scroll.up()
 	case "down", "j":
-		maxOffset := max(0, len(m.events.events)-(eventsPanelHeight-2))
-		if m.events.scrollOffset < maxOffset {
-			m.events.scrollOffset++
-		}
-		if m.events.scrollOffset >= maxOffset {
-			m.events.autoScroll = true
-		}
+		m.events.scroll = m.events.scroll.down(len(m.events.events), eventsPanelHeight-2)
 	case "g", "home":
-		m.events.scrollOffset = 0
-		m.events.autoScroll = false
+		m.events.scroll = m.events.scroll.top()
 	case "G", "end":
-		m.events.scrollOffset = max(0, len(m.events.events)-(eventsPanelHeight-2))
-		m.events.autoScroll = true
+		m.events.scroll = m.events.scroll.bottom(len(m.events.events), eventsPanelHeight-2)
 	}
 	return m, nil
 }
@@ -210,8 +182,7 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.logs.container = filtered[cursor].Names
 			m.logs.containerID = filtered[cursor].ID
 			m.logs.lines = nil
-			m.logs.scrollOffset = 0
-			m.logs.autoScroll = true
+			m.logs.scroll = scrollState{autoScroll: true}
 			m.logs.allMode = false
 			m.logs.visible = true
 			m.logs.gen++
@@ -282,7 +253,7 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if cursor >= 0 && cursor < len(filtered) {
 			m.inspect.visible = true
 			m.inspect.lines = nil
-			m.inspect.offset = 0
+			m.inspect.scroll = scrollState{}
 			m.inspect.container = filtered[cursor].Names
 			m.table.SetHeight(m.tableHeight())
 			return m, m.client.InspectContainer(filtered[cursor].ID)
@@ -312,8 +283,7 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		} else {
 			m.events.visible = true
 			m.events.events = nil
-			m.events.scrollOffset = 0
-			m.events.autoScroll = true
+			m.events.scroll = scrollState{autoScroll: true}
 			m.events.gen++
 			ctx, cancel := context.WithCancel(context.Background())
 			m.events.cancel = cancel

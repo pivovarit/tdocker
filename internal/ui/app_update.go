@@ -142,8 +142,8 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		m.logs.lines = append(m.logs.lines, msg.Line)
-		if m.logs.autoScroll {
-			m.logs.scrollOffset = max(0, len(m.logs.lines)-(logsPanelHeight-2))
+		if m.logs.scroll.autoScroll {
+			m.logs.scroll.offset = max(0, len(m.logs.lines)-(logsPanelHeight-2))
 		}
 		return m, msg.Next
 
@@ -229,8 +229,8 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.events.events = m.events.events[1:]
 		}
 		m.events.events = append(m.events.events, msg.Event)
-		if m.events.autoScroll {
-			m.events.scrollOffset = max(0, len(m.events.events)-(eventsPanelHeight-2))
+		if m.events.scroll.autoScroll {
+			m.events.scroll.offset = max(0, len(m.events.events)-(eventsPanelHeight-2))
 		}
 		var refreshCmd tea.Cmd
 		if !m.loading && isContainerLifecycleEvent(msg.Event) {
