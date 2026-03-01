@@ -80,4 +80,25 @@ var (
 
 	trendSteadyStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#475569"))
+
+	eventStartStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#4ADE80")).Bold(true)
+
+	eventStopStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#F87171")).Bold(true)
+
+	eventWarnStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#FCD34D")).Bold(true)
+
+	eventDimStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#475569"))
+
+	eventTimeStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#64748B"))
+
+	eventTypeStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#7DD3FC"))
+
+	eventNameStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#E2E8F0"))
 )

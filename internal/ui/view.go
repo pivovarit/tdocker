@@ -145,8 +145,21 @@ func (m App) View() string {
 		b.WriteString(m.renderContextPicker())
 	}
 
+	if m.eventsVisible {
+		b.WriteString("\n")
+		b.WriteString(m.renderEventsPanel())
+	}
+
 	b.WriteString("\n")
 	switch {
+	case m.eventsVisible:
+		b.WriteString(helpStyle.Render(
+			"  ↑/↓ scroll · " +
+				keyStyle.Render("g") + " top · " +
+				keyStyle.Render("G") + " bottom · " +
+				keyStyle.Render("esc") + "/" + keyStyle.Render("v") + " close · " +
+				keyStyle.Render("q") + " quit",
+		))
 	case m.logsVisible:
 		b.WriteString(helpStyle.Render(
 			"  ↑/↓ scroll · " +
@@ -219,6 +232,7 @@ func (m App) View() string {
 					keyStyle.Render("R") + " restart · " +
 					keyStyle.Render("D") + " delete · " +
 					keyStyle.Render("t") + " stats · " +
+					keyStyle.Render("v") + " events · " +
 					keyStyle.Render("c") + " copy id · " +
 					keyStyle.Render("x") + " debug",
 			))
@@ -430,6 +444,43 @@ func (m App) renderContextPicker() string {
 			}
 			b.WriteString("\n")
 		}
+	})
+}
+
+func (m App) renderEventsPanel() string {
+	return m.renderPanel(" Events  (live)", func(b *strings.Builder) {
+		maxLines := eventsPanelHeight - 2
+		if len(m.eventsEvents) == 0 {
+			b.WriteString(emptyStyle.Render("Waiting for events…"))
+			b.WriteString("\n")
+			panelPad(b, 1, maxLines)
+			return
+		}
+		start := m.eventsScrollOffset
+		end := start + maxLines
+		if end > len(m.eventsEvents) {
+			end = len(m.eventsEvents)
+		}
+		shown := 0
+		for i := start; i < end; i++ {
+			ev := m.eventsEvents[i]
+			actionStyle := eventDimStyle
+			switch ev.Action {
+			case "start", "unpause", "create":
+				actionStyle = eventStartStyle
+			case "die", "stop", "kill", "destroy", "oom":
+				actionStyle = eventStopStyle
+			case "pause":
+				actionStyle = eventWarnStyle
+			}
+			line := eventTimeStyle.Render(ev.Timestamp()) + "  " +
+				eventTypeStyle.Render(fmt.Sprintf("%-11s", ev.Type)) +
+				actionStyle.Render(fmt.Sprintf("%-12s", ev.Action)) +
+				eventNameStyle.Render(ev.Name())
+			b.WriteString("  " + line + "\n")
+			shown++
+		}
+		panelPad(b, shown, maxLines)
 	})
 }
 

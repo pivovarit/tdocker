@@ -36,6 +36,19 @@ func (m App) closeStats() App {
 	return m
 }
 
+func (m App) closeEvents() App {
+	if m.eventsCancel != nil {
+		m.eventsCancel()
+		m.eventsCancel = nil
+	}
+	m.eventsVisible = false
+	m.eventsEvents = nil
+	m.eventsScrollOffset = 0
+	m.eventsAutoScroll = true
+	m.table.SetHeight(m.tableHeight())
+	return m
+}
+
 func (m App) tableHeight() int {
 	reserved := tableChrome
 	if m.logsVisible {
@@ -46,6 +59,9 @@ func (m App) tableHeight() int {
 	}
 	if m.statsVisible {
 		reserved += statsPanelHeight
+	}
+	if m.eventsVisible {
+		reserved += eventsPanelHeight
 	}
 	h := m.height - reserved
 	if h < 3 {

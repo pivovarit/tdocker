@@ -10,6 +10,17 @@ import (
 
 type statsTickMsg struct{}
 
+func isContainerLifecycleEvent(ev docker.Event) bool {
+	if ev.Type != "container" {
+		return false
+	}
+	switch ev.Action {
+	case "start", "stop", "die", "kill", "create", "destroy", "pause", "unpause", "rename", "oom":
+		return true
+	}
+	return false
+}
+
 func statsTickCmd() tea.Cmd {
 	return func() tea.Msg {
 		time.Sleep(2 * time.Second)
@@ -42,6 +53,9 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if m.statsVisible {
 			return m.handleStatsKey(msg)
+		}
+		if m.eventsVisible {
+			return m.handleEventsKey(msg)
 		}
 		if m.op == OpConfirming {
 			return m.handleConfirmKey(msg)
@@ -203,6 +217,35 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.contextPickerRequested {
 			m.contextPickerVisible = true
 			m.contextPickerRequested = false
+		}
+		return m, nil
+
+	case docker.EventLineMsg:
+		if !m.eventsVisible || msg.Gen != m.eventsGen {
+			return m, msg.Next
+		}
+		const maxEvents = 500
+		if len(m.eventsEvents) >= maxEvents {
+			m.eventsEvents = m.eventsEvents[1:]
+		}
+		m.eventsEvents = append(m.eventsEvents, msg.Event)
+		if m.eventsAutoScroll {
+			m.eventsScrollOffset = max(0, len(m.eventsEvents)-(eventsPanelHeight-2))
+		}
+		var refreshCmd tea.Cmd
+		if !m.loading && isContainerLifecycleEvent(msg.Event) {
+			m.loading = true
+			refreshCmd = m.client.FetchContainers(m.showAll)
+		}
+		return m, tea.Batch(msg.Next, refreshCmd)
+
+	case docker.EventEndMsg:
+		if !m.eventsVisible || msg.Gen != m.eventsGen {
+			return m, nil
+		}
+		if msg.Err != nil {
+			m.err = msg.Err
+			m = m.closeEvents()
 		}
 		return m, nil
 
