@@ -10,33 +10,43 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func copyToClipboard(text string) tea.Cmd {
+type clipboardMsg struct {
+	name string
+	err  error
+}
+
+func copyToClipboard(name, text string) tea.Cmd {
 	switch runtime.GOOS {
 	case "darwin":
-		return clipExec(text, "pbcopy")
+		return clipExec(name, text, "pbcopy")
 	case "windows":
-		return clipExec(text, "clip")
+		return clipExec(name, text, "clip")
 	default:
 		if os.Getenv("WAYLAND_DISPLAY") != "" {
-			return clipExec(text, "wl-copy")
+			return clipExec(name, text, "wl-copy")
 		}
 		if os.Getenv("DISPLAY") != "" {
-			return clipExec(text, "xclip", "-selection", "clipboard")
+			return clipExec(name, text, "xclip", "-selection", "clipboard")
 		}
-		return clipOSC52(text)
+		return clipOSC52(name, text)
 	}
 }
 
-func clipExec(text string, args ...string) tea.Cmd {
+func clipExec(name, text string, args ...string) tea.Cmd {
 	return func() tea.Msg {
 		cmd := exec.Command(args[0], args[1:]...)
 		cmd.Stdin = strings.NewReader(text)
-		_ = cmd.Run()
-		return nil
+		if err := cmd.Run(); err != nil {
+			return clipboardMsg{err: err}
+		}
+		return clipboardMsg{name: name}
 	}
 }
 
-func clipOSC52(text string) tea.Cmd {
+func clipOSC52(name, text string) tea.Cmd {
 	encoded := base64.StdEncoding.EncodeToString([]byte(text))
-	return tea.Printf("\033]52;c;%s\007", encoded)
+	return tea.Batch(
+		tea.Printf("\033]52;c;%s\007", encoded),
+		func() tea.Msg { return clipboardMsg{name: name} },
+	)
 }

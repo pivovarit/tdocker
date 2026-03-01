@@ -14,7 +14,7 @@ var (
 
 func TestSelection_PreservedOnContainersMsg(t *testing.T) {
 	m := modelWithSorted([]docker.Container{cA, cB, cC})
-	m.table.SetCursor(1) // select cB
+	m.table.SetCursor(1)
 
 	m = update(m, docker.ContainersMsg{cA, cB, cC})
 	if got := m.table.Cursor(); got != 1 {
@@ -24,7 +24,7 @@ func TestSelection_PreservedOnContainersMsg(t *testing.T) {
 
 func TestSelection_CursorFollowsContainerWhenNewOneInsertsBefore(t *testing.T) {
 	m := modelWithSorted([]docker.Container{cB, cC})
-	m.table.SetCursor(0) // select cB (index 0)
+	m.table.SetCursor(0)
 
 	m = update(m, docker.ContainersMsg{cA, cB, cC})
 	if got := m.table.Cursor(); got != 1 {
@@ -34,7 +34,7 @@ func TestSelection_CursorFollowsContainerWhenNewOneInsertsBefore(t *testing.T) {
 
 func TestSelection_ResetWhenSelectedContainerDisappears(t *testing.T) {
 	m := modelWithSorted([]docker.Container{cA, cB, cC})
-	m.table.SetCursor(1) // select cB
+	m.table.SetCursor(1)
 
 	m = update(m, docker.ContainersMsg{cA, cC})
 	if got := m.table.Cursor(); got != 0 {
@@ -44,7 +44,7 @@ func TestSelection_ResetWhenSelectedContainerDisappears(t *testing.T) {
 
 func TestSelection_PreservedAfterDelete(t *testing.T) {
 	m := modelWithSorted([]docker.Container{cA, cB, cC})
-	m.table.SetCursor(2) // select cC
+	m.table.SetCursor(2)
 
 	m = update(m, docker.DeleteMsg{ID: cB.ID})
 	if got := m.table.Cursor(); got != 1 {

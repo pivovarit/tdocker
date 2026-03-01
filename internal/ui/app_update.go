@@ -99,6 +99,14 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m = m.rebuildTable()
 		return m, nil
 
+	case clipboardMsg:
+		if msg.err != nil {
+			m.err = msg.err
+		} else {
+			m.copiedName = msg.name
+		}
+		return m, nil
+
 	case docker.LogsLineMsg:
 		if !m.logsVisible {
 			return m, nil
