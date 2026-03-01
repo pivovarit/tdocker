@@ -10,7 +10,7 @@ The operations that used to require remembering container IDs and chaining CLI c
 - inspect configuration, 
 - check CPU and memory usage
 
-https://github.com/user-attachments/assets/743ed68b-a001-4f3a-99a7-cd2e342ae9f6
+https://github.com/user-attachments/assets/0bc1f303-46e1-4aa4-a755-72e769eeb3fd
 
 ### Getting started
 
