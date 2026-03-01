@@ -4,7 +4,7 @@ func (m App) closeLogs() App {
 	if m.logs.cancel != nil {
 		m.logs.cancel()
 	}
-	m.logs = logsState{autoScroll: true}
+	m.logs = logsState{scroll: scrollState{autoScroll: true}}
 	m.table.SetHeight(m.tableHeight())
 	return m
 }
@@ -25,7 +25,7 @@ func (m App) closeEvents() App {
 	if m.events.cancel != nil {
 		m.events.cancel()
 	}
-	m.events = eventsState{autoScroll: true}
+	m.events = eventsState{scroll: scrollState{autoScroll: true}}
 	m.table.SetHeight(m.tableHeight())
 	return m
 }

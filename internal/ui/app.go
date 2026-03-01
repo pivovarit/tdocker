@@ -41,23 +41,58 @@ const (
 	OpDeleting
 )
 
+type scrollState struct {
+	offset     int
+	autoScroll bool
+}
+
+func (s scrollState) up() scrollState {
+	if s.offset > 0 {
+		s.offset--
+		s.autoScroll = false
+	}
+	return s
+}
+
+func (s scrollState) down(contentLen, viewHeight int) scrollState {
+	maxOff := max(0, contentLen-viewHeight)
+	if s.offset < maxOff {
+		s.offset++
+	}
+	if s.offset >= maxOff {
+		s.autoScroll = true
+	}
+	return s
+}
+
+func (s scrollState) top() scrollState {
+	s.offset = 0
+	s.autoScroll = false
+	return s
+}
+
+func (s scrollState) bottom(contentLen, viewHeight int) scrollState {
+	s.offset = max(0, contentLen-viewHeight)
+	s.autoScroll = true
+	return s
+}
+
 type logsState struct {
-	visible      bool
-	lines        []string
-	container    string
-	containerID  string
-	scrollOffset int
-	autoScroll   bool
-	allMode      bool
-	gen          int
-	cancel       context.CancelFunc
+	visible     bool
+	lines       []string
+	container   string
+	containerID string
+	scroll      scrollState
+	allMode     bool
+	gen         int
+	cancel      context.CancelFunc
 }
 
 type inspectState struct {
 	visible   bool
 	lines     []string
 	container string
-	offset    int
+	scroll    scrollState
 }
 
 type statsState struct {
@@ -70,12 +105,11 @@ type statsState struct {
 }
 
 type eventsState struct {
-	visible      bool
-	events       []docker.Event
-	scrollOffset int
-	autoScroll   bool
-	gen          int
-	cancel       context.CancelFunc
+	visible bool
+	events  []docker.Event
+	scroll  scrollState
+	gen     int
+	cancel  context.CancelFunc
 }
 
 type ctxPickerState struct {
@@ -128,8 +162,8 @@ func newWithClient(c docker.Client) App {
 		loading: true,
 		showAll: true,
 		table:   buildTable(nil, 120),
-		logs:    logsState{autoScroll: true},
-		events:  eventsState{autoScroll: true},
+		logs:    logsState{scroll: scrollState{autoScroll: true}},
+		events:  eventsState{scroll: scrollState{autoScroll: true}},
 	}
 }
 
