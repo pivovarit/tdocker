@@ -299,19 +299,16 @@ func TestParseByteSize_Units(t *testing.T) {
 		in   string
 		want float64
 	}{
-		// SI
 		{"1B", 1},
 		{"0B", 0},
 		{"1kB", 1000},
 		{"1MB", 1e6},
 		{"1GB", 1e9},
 		{"1TB", 1e12},
-		// IEC
 		{"1KiB", 1024},
 		{"1MiB", 1024 * 1024},
 		{"1GiB", 1024 * 1024 * 1024},
 		{"1TiB", TiB},
-		// fractional
 		{"1.5MiB", 1.5 * 1024 * 1024},
 		{"2.5kB", 2500},
 	}
@@ -356,7 +353,6 @@ func TestParseSizeFirst_Valid(t *testing.T) {
 }
 
 func TestParseSizeFirst_StoppedContainerDashDash(t *testing.T) {
-	// docker stats outputs "-- / --" for stopped containers
 	if _, ok := parseSizeFirst("-- / --"); ok {
 		t.Error("parseSizeFirst(\"-- / --\"): want ok=false for stopped-container placeholder")
 	}

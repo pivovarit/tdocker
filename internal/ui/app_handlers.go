@@ -284,11 +284,7 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.events.visible = true
 			m.events.events = nil
 			m.events.scroll = scrollState{autoScroll: true}
-			m.events.gen++
-			ctx, cancel := context.WithCancel(context.Background())
-			m.events.cancel = cancel
 			m.table.SetHeight(m.tableHeight())
-			return m, m.client.StartEvents(ctx, m.events.gen)
 		}
 	}
 
