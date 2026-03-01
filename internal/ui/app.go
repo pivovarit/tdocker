@@ -13,6 +13,7 @@ const (
 	logsPanelHeight    = 15
 	inspectPanelHeight = 20
 	statsPanelHeight   = 9
+	eventsPanelHeight  = 12
 
 	chromeTitle        = 1
 	chromeTitleMargin  = 1
@@ -87,6 +88,13 @@ type App struct {
 	statsFetching    bool
 
 	containersByID map[string]docker.Container
+
+	eventsVisible      bool
+	eventsEvents       []docker.Event
+	eventsScrollOffset int
+	eventsAutoScroll   bool
+	eventsGen          int
+	eventsCancel       context.CancelFunc
 }
 
 func New() App {

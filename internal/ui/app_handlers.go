@@ -70,6 +70,33 @@ func (m App) handleInspectKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+func (m App) handleEventsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "esc", "v":
+		m = m.closeEvents()
+	case "up", "k":
+		if m.eventsScrollOffset > 0 {
+			m.eventsScrollOffset--
+			m.eventsAutoScroll = false
+		}
+	case "down", "j":
+		maxOffset := max(0, len(m.eventsEvents)-(eventsPanelHeight-2))
+		if m.eventsScrollOffset < maxOffset {
+			m.eventsScrollOffset++
+		}
+		if m.eventsScrollOffset >= maxOffset {
+			m.eventsAutoScroll = true
+		}
+	case "g", "home":
+		m.eventsScrollOffset = 0
+		m.eventsAutoScroll = false
+	case "G", "end":
+		m.eventsScrollOffset = max(0, len(m.eventsEvents)-(eventsPanelHeight-2))
+		m.eventsAutoScroll = true
+	}
+	return m, nil
+}
+
 func (m App) handleStatsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "esc", "t":
@@ -278,6 +305,20 @@ func (m App) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.statsFetching = true
 			m.table.SetHeight(m.tableHeight())
 			return m, m.client.FetchStats(filtered[cursor].ID)
+		}
+	case "v":
+		if m.eventsVisible {
+			m = m.closeEvents()
+		} else {
+			m.eventsVisible = true
+			m.eventsEvents = nil
+			m.eventsScrollOffset = 0
+			m.eventsAutoScroll = true
+			m.eventsGen++
+			ctx, cancel := context.WithCancel(context.Background())
+			m.eventsCancel = cancel
+			m.table.SetHeight(m.tableHeight())
+			return m, m.client.StartEvents(ctx, m.eventsGen)
 		}
 	}
 
