@@ -51,6 +51,7 @@ type App struct {
 	logsScrollOffset   int
 	logsAutoScroll     bool
 	logsAllMode        bool
+	logsGen            int
 	logsCancel         context.CancelFunc
 
 	inspectVisible   bool
@@ -64,6 +65,7 @@ type App struct {
 	statsContainer   string
 	statsContainerID string
 	statsEntry       *docker.StatsEntry
+	statsFetching    bool
 }
 
 func New() App {

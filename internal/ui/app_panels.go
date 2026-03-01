@@ -30,6 +30,7 @@ func (m App) closeStats() App {
 	m.statsEntry = nil
 	m.statsContainer = ""
 	m.statsContainerID = ""
+	m.statsFetching = false
 	m.table.SetHeight(m.tableHeight())
 	return m
 }

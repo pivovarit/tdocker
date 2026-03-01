@@ -14,18 +14,22 @@ type (
 	LogsLineMsg struct {
 		Line string
 		Next tea.Cmd
+		Gen  int
 	}
-	LogsEndMsg struct{ Err error }
+	LogsEndMsg struct {
+		Err error
+		Gen int
+	}
 )
 
-func StartLogs(ctx context.Context, id string, tail string) tea.Cmd {
+func StartLogs(ctx context.Context, id string, tail string, gen int) tea.Cmd {
 	cmd := exec.CommandContext(ctx, "docker", "logs", "--follow", "--tail", tail, id)
 	pr, pw := io.Pipe()
 	cmd.Stdout = pw
 	cmd.Stderr = pw
 
 	if err := cmd.Start(); err != nil {
-		return func() tea.Msg { return LogsEndMsg{err} }
+		return func() tea.Msg { return LogsEndMsg{Err: err, Gen: gen} }
 	}
 
 	go func() {
@@ -47,9 +51,9 @@ func StartLogs(ctx context.Context, id string, tail string) tea.Cmd {
 	var readNext tea.Cmd
 	readNext = func() tea.Msg {
 		if scanner.Scan() {
-			return LogsLineMsg{Line: scanner.Text(), Next: readNext}
+			return LogsLineMsg{Line: scanner.Text(), Next: readNext, Gen: gen}
 		}
-		return LogsEndMsg{scanner.Err()}
+		return LogsEndMsg{Err: scanner.Err(), Gen: gen}
 	}
 
 	return readNext

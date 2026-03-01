@@ -16,7 +16,7 @@ type stubClient struct {
 	debugContainer   func(string) tea.Cmd
 	inspectContainer func(string) tea.Cmd
 	fetchStats       func(string) tea.Cmd
-	startLogs        func(context.Context, string, string) tea.Cmd
+	startLogs        func(context.Context, string, string, int) tea.Cmd
 }
 
 func newStubClient() *stubClient {
@@ -32,7 +32,7 @@ func newStubClient() *stubClient {
 		debugContainer:   noopStr,
 		inspectContainer: noopStr,
 		fetchStats:       noopStr,
-		startLogs:        func(_ context.Context, _ string, _ string) tea.Cmd { return noop },
+		startLogs:        func(_ context.Context, _ string, _ string, _ int) tea.Cmd { return noop },
 	}
 }
 
@@ -45,6 +45,6 @@ func (c *stubClient) CheckDebugAvailable(id string) tea.Cmd { return c.checkDebu
 func (c *stubClient) DebugContainer(id string) tea.Cmd      { return c.debugContainer(id) }
 func (c *stubClient) InspectContainer(id string) tea.Cmd    { return c.inspectContainer(id) }
 func (c *stubClient) FetchStats(id string) tea.Cmd          { return c.fetchStats(id) }
-func (c *stubClient) StartLogs(ctx context.Context, id string, tail string) tea.Cmd {
-	return c.startLogs(ctx, id, tail)
+func (c *stubClient) StartLogs(ctx context.Context, id string, tail string, gen int) tea.Cmd {
+	return c.startLogs(ctx, id, tail, gen)
 }
