@@ -71,14 +71,6 @@ func (m App) View() tea.View {
 	b.WriteString("\n\n")
 
 	switch {
-	case m.op == OpStopping:
-		b.WriteString(emptyStyle.Render("Stopping container…"))
-	case m.op == OpStarting:
-		b.WriteString(emptyStyle.Render("Starting container…"))
-	case m.op == OpRestarting:
-		b.WriteString(emptyStyle.Render("Restarting container…"))
-	case m.op == OpDeleting:
-		b.WriteString(emptyStyle.Render("Deleting container…"))
 	case m.loading && len(m.containers) == 0:
 		b.WriteString(emptyStyle.Render("Fetching containers…"))
 
@@ -174,6 +166,14 @@ func (m App) View() tea.View {
 
 func (m App) helpBar() string {
 	switch {
+	case m.op == OpStopping:
+		return confirmStyle.Render("  Stopping container…")
+	case m.op == OpStarting:
+		return confirmStyle.Render("  Starting container…")
+	case m.op == OpRestarting:
+		return confirmStyle.Render("  Restarting container…")
+	case m.op == OpDeleting:
+		return confirmStyle.Render("  Deleting container…")
 	case m.events.visible:
 		return helpStyle.Render(
 			"  ↑/↓ scroll · " +
