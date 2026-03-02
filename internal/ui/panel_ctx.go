@@ -8,26 +8,35 @@ import (
 )
 
 type ctxPickerState struct {
-	visible   bool
-	requested bool
-	contexts  []docker.DockerContext
-	cursor    int
-	current   string
+	visible       bool
+	requested     bool
+	contexts      []docker.DockerContext
+	cursor        int
+	current       string
+	viewportStart int
 }
 
 func (m App) handleContextKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	maxRows := min(len(m.ctxPicker.contexts), ctxPanelMaxRows)
 	switch msg.Code {
 	case tea.KeyEsc:
 		m.ctxPicker.visible = false
 		m.ctxPicker.contexts = nil
 		m.ctxPicker.cursor = 0
+		m.ctxPicker.viewportStart = 0
 	case tea.KeyUp, 'k':
 		if m.ctxPicker.cursor > 0 {
 			m.ctxPicker.cursor--
+			if m.ctxPicker.cursor < m.ctxPicker.viewportStart {
+				m.ctxPicker.viewportStart--
+			}
 		}
 	case tea.KeyDown, 'j':
 		if m.ctxPicker.cursor < len(m.ctxPicker.contexts)-1 {
 			m.ctxPicker.cursor++
+			if m.ctxPicker.cursor >= m.ctxPicker.viewportStart+maxRows {
+				m.ctxPicker.viewportStart++
+			}
 		}
 	case tea.KeyEnter:
 		if len(m.ctxPicker.contexts) > 0 {
@@ -44,7 +53,11 @@ func (m App) renderContextPicker() string {
 			b.WriteString("\n")
 			return
 		}
-		for i, c := range m.ctxPicker.contexts {
+		maxRows := min(len(m.ctxPicker.contexts), ctxPanelMaxRows)
+		start := m.ctxPicker.viewportStart
+		end := min(start+maxRows, len(m.ctxPicker.contexts))
+		for i := start; i < end; i++ {
+			c := m.ctxPicker.contexts[i]
 			name := c.Name
 			label := "  " + name
 			if c.Description != "" {
@@ -68,5 +81,6 @@ func (m App) renderContextPicker() string {
 			}
 			b.WriteString("\n")
 		}
+		panelPad(b, end-start, maxRows)
 	})
 }

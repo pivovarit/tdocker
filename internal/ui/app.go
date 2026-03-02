@@ -16,6 +16,7 @@ const (
 	statsRows          = 5
 	statsPanelHeight   = statsRows + 3
 	eventsPanelHeight  = 12
+	ctxPanelMaxRows    = 8
 	logsTailDefault    = "200"
 
 	chromeTitle        = 1
