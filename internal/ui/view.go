@@ -66,7 +66,7 @@ func (m App) View() tea.View {
 		b.WriteString(emptyStyle.Render("Restarting container…"))
 	case m.op == OpDeleting:
 		b.WriteString(emptyStyle.Render("Deleting container…"))
-	case m.loading:
+	case m.loading && len(m.containers) == 0:
 		b.WriteString(emptyStyle.Render("Fetching containers…"))
 
 	case m.err != nil:
