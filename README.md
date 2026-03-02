@@ -12,6 +12,10 @@ The operations that used to require remembering container IDs and chaining CLI c
 
 https://github.com/user-attachments/assets/0bc1f303-46e1-4aa4-a755-72e769eeb3fd
 
+### Philosophy
+
+`tdocker` does less on purpose. Every feature exists because it came up during real, day-to-day work with Docker - not to cover edge cases or satisfy a checklist. The goal is a tool you actually reach for, not one you install and forget. If an operation isn't part of a typical workflow, it doesn't belong here.
+
 ### Getting started
 
 Install with `go install`:
