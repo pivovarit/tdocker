@@ -29,12 +29,25 @@ func (m App) View() tea.View {
 	if m.filterQuery != "" {
 		leftPlain += ": " + fmt.Sprintf("%q", m.filterQuery)
 	}
-	rightPlain := ""
-	if m.ctxPicker.current != "" {
-		rightPlain = "ctx [X]: " + m.ctxPicker.current + " "
+	const ctxPrefix = "ctx [X]: "
+	const ctxSuffix = " "
+	const minPad = 2
+
+	ctxName := m.ctxPicker.current
+	if ctxName != "" && m.width > 0 {
+		maxNameW := m.width - len([]rune(leftPlain)) - len([]rune(ctxPrefix)) - len([]rune(ctxSuffix)) - minPad
+		if maxNameW < 1 {
+			maxNameW = 1
+		}
+		ctxName = trunc(ctxName, maxNameW)
 	}
 
-	pad := 2
+	rightPlain := ""
+	if ctxName != "" {
+		rightPlain = ctxPrefix + ctxName + ctxSuffix
+	}
+
+	pad := minPad
 	if rightPlain != "" && m.width > 0 {
 		if p := m.width - len([]rune(leftPlain)) - len([]rune(rightPlain)); p > pad {
 			pad = p
@@ -50,8 +63,8 @@ func (m App) View() tea.View {
 		styledLeft += titleHintStyle.Render(": ") + titleStyle.Render(fmt.Sprintf("%q", m.filterQuery))
 	}
 	styledRight := ""
-	if m.ctxPicker.current != "" {
-		styledRight = titleHintStyle.Render("ctx [X]: ") + titleStyle.Render(m.ctxPicker.current) + " "
+	if ctxName != "" {
+		styledRight = titleHintStyle.Render(ctxPrefix) + titleStyle.Render(ctxName) + ctxSuffix
 	}
 
 	b.WriteString(styledLeft + strings.Repeat(" ", pad) + styledRight)

@@ -14,6 +14,9 @@ func (m App) tableHeight() int {
 	if m.events.visible {
 		reserved += eventsPanelHeight
 	}
+	if m.ctxPicker.visible {
+		reserved += min(len(m.ctxPicker.contexts), ctxPanelMaxRows) + 2 // +2 for divider + title
+	}
 	h := m.height - reserved
 	if h < 3 {
 		return 3

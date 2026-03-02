@@ -221,6 +221,9 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.ctxPicker.current = m.ctxPicker.contexts[i].Name
 			if m.ctxPicker.requested {
 				m.ctxPicker.cursor = i
+				if i >= ctxPanelMaxRows {
+					m.ctxPicker.viewportStart = i - ctxPanelMaxRows + 1
+				}
 			}
 		}
 		if m.ctxPicker.requested {
