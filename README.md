@@ -18,6 +18,8 @@ https://github.com/user-attachments/assets/0bc1f303-46e1-4aa4-a755-72e769eeb3fd
 
 ### Getting started
 
+> Homebrew support is coming as soon as I figure out how to set it up.
+
 Install with `go install`:
 
 ```
