@@ -20,6 +20,20 @@ Install with `go install`:
 go install github.com/pivovarit/tdocker@latest
 ```
 
+Make sure `$GOPATH/bin` is on your `$PATH` (the default is `~/go/bin`):
+
+```
+export PATH="$PATH:$(go env GOPATH)/bin"
+```
+
+Add the line above to your shell profile (`.bashrc`, `.zshrc`, etc.) to make it permanent.
+
+Then launch:
+
+```
+tdocker
+```
+
 Or run directly from source:
 
 ```

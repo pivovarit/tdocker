@@ -986,7 +986,7 @@
     <div class="section-head">
       <p class="section-label">Installation</p>
       <h2 class="section-title">Up and running in seconds.</h2>
-      <p class="section-desc">Requires Go 1.21+ and Docker. No other dependencies.</p>
+      <p class="section-desc">Requires Go 1.21+ and Docker. No other dependencies. Make sure <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent2);background:rgba(56,189,248,0.07);padding:1px 6px;border-radius:4px">~/go/bin</code> is on your <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent2);background:rgba(56,189,248,0.07);padding:1px 6px;border-radius:4px">$PATH</code>, then run <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent2);background:rgba(56,189,248,0.07);padding:1px 6px;border-radius:4px">tdocker</code>.</p>
     </div>
 
     <div class="install-grid">
@@ -1003,6 +1003,18 @@
           <div class="install-line">
             <span class="install-prompt">$</span>
             <span><span class="install-cmd">go install</span> <span class="install-arg">github.com/pivovarit/tdocker@latest</span></span>
+          </div>
+          <div class="install-line" style="margin-top:10px">
+            <span class="install-prompt">#</span>
+            <span class="install-comment">ensure ~/go/bin is on your PATH (add to .bashrc / .zshrc)</span>
+          </div>
+          <div class="install-line">
+            <span class="install-prompt">$</span>
+            <span><span class="install-cmd">export</span> <span class="install-arg">PATH="$PATH:$(go env GOPATH)/bin"</span></span>
+          </div>
+          <div class="install-line" style="margin-top:10px">
+            <span class="install-prompt">$</span>
+            <span><span class="install-cmd">tdocker</span></span>
           </div>
         </div>
         <div class="install-card-footer">
