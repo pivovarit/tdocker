@@ -170,6 +170,13 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.inspect.lines = buildInspectLines(msg.Data, m.width)
 		return m, nil
 
+	case docker.ShellAvailableMsg:
+		if !msg.Available {
+			m.err = fmt.Errorf("shell not found in container (distroless/scratch image?) — press 'x' to use docker debug")
+			return m, nil
+		}
+		return m, m.client.ExecContainer(msg.ID)
+
 	case docker.DebugAvailableMsg:
 		if !msg.Available {
 			m.err = fmt.Errorf("docker debug is not available (requires Docker Desktop or the debug plugin)")
@@ -178,6 +185,10 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.client.DebugContainer(msg.ID)
 
 	case docker.ExecDoneMsg:
+		if msg.Err != nil {
+			m.err = msg.Err
+			return m, nil
+		}
 		m.loading = true
 		return m, m.client.FetchContainers(m.showAll)
 

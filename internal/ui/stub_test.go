@@ -12,6 +12,7 @@ type stubClient struct {
 	startContainer   func(string) tea.Cmd
 	restartContainer func(string) tea.Cmd
 	deleteContainer  func(string) tea.Cmd
+	checkShellAvail  func(string) tea.Cmd
 	execContainer    func(string) tea.Cmd
 	checkDebugAvail  func(string) tea.Cmd
 	debugContainer   func(string) tea.Cmd
@@ -32,6 +33,7 @@ func newStubClient() *stubClient {
 		startContainer:   noopStr,
 		restartContainer: noopStr,
 		deleteContainer:  noopStr,
+		checkShellAvail:  noopStr,
 		execContainer:    noopStr,
 		checkDebugAvail:  noopStr,
 		debugContainer:   noopStr,
@@ -49,6 +51,7 @@ func (c *stubClient) StopContainer(id string) tea.Cmd       { return c.stopConta
 func (c *stubClient) StartContainer(id string) tea.Cmd      { return c.startContainer(id) }
 func (c *stubClient) RestartContainer(id string) tea.Cmd    { return c.restartContainer(id) }
 func (c *stubClient) DeleteContainer(id string) tea.Cmd     { return c.deleteContainer(id) }
+func (c *stubClient) CheckShellAvailable(id string) tea.Cmd { return c.checkShellAvail(id) }
 func (c *stubClient) ExecContainer(id string) tea.Cmd       { return c.execContainer(id) }
 func (c *stubClient) CheckDebugAvailable(id string) tea.Cmd { return c.checkDebugAvail(id) }
 func (c *stubClient) DebugContainer(id string) tea.Cmd      { return c.debugContainer(id) }

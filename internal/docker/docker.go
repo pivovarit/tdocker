@@ -84,7 +84,11 @@ type (
 		ID  string
 		Err error
 	}
-	ExecDoneMsg       struct{}
+	ExecDoneMsg       struct{ Err error }
+	ShellAvailableMsg struct {
+		ID        string
+		Available bool
+	}
 	DebugAvailableMsg struct {
 		ID        string
 		Available bool
@@ -157,11 +161,36 @@ func DeleteContainer(id string) tea.Cmd {
 	return runContainerCmd(id, timeoutRM, "rm", func(err error) tea.Msg { return DeleteMsg{ID: id, Err: err} })
 }
 
+func CheckShellAvailable(id string) tea.Cmd {
+	return func() tea.Msg {
+		ctx, cancel := context.WithTimeout(context.Background(), timeoutDebug)
+		defer cancel()
+		cmd := exec.CommandContext(ctx, "docker", "exec", id, "sh", "-c", "exit 0")
+		cmd.Stdout = io.Discard
+		cmd.Stderr = io.Discard
+		return ShellAvailableMsg{ID: id, Available: cmd.Run() == nil}
+	}
+}
+
 func ExecContainer(id string) tea.Cmd {
 	return tea.ExecProcess(
 		exec.Command("docker", "exec", "-it", id, "sh"),
-		func(_ error) tea.Msg { return ExecDoneMsg{} },
+		func(err error) tea.Msg { return ExecDoneMsg{Err: execErr(err)} },
 	)
+}
+
+func execErr(err error) error {
+	if err == nil {
+		return nil
+	}
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		switch exitErr.ExitCode() {
+		case 126, 127:
+			return fmt.Errorf("shell not found in container (distroless/scratch image?) — press 'x' to use docker debug")
+		}
+	}
+	return err
 }
 
 func CheckDebugAvailable(id string) tea.Cmd {
@@ -178,7 +207,7 @@ func CheckDebugAvailable(id string) tea.Cmd {
 func DebugContainer(id string) tea.Cmd {
 	return tea.ExecProcess(
 		exec.Command("docker", "debug", id),
-		func(_ error) tea.Msg { return ExecDoneMsg{} },
+		func(err error) tea.Msg { return ExecDoneMsg{Err: err} },
 	)
 }
 

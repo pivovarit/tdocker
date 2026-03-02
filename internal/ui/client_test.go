@@ -136,15 +136,29 @@ func TestClient_IKey_CallsInspectContainerWithID(t *testing.T) {
 	}
 }
 
-func TestClient_EKey_CallsExecContainerWithID(t *testing.T) {
+func TestClient_EKey_CallsCheckShellAvailableWithID(t *testing.T) {
+	mc := newStubClient()
+	var gotID string
+	mc.checkShellAvail = func(id string) tea.Cmd {
+		gotID = id
+		return func() tea.Msg { return nil }
+	}
+	m := modelWithMock(mc, []docker.Container{runningContainer})
+	update(m, runeKey("e"))
+	if gotID != runningContainer.ID {
+		t.Errorf("want CheckShellAvailable(%q), got %q", runningContainer.ID, gotID)
+	}
+}
+
+func TestClient_ShellAvailableMsg_CallsExecContainer(t *testing.T) {
 	mc := newStubClient()
 	var gotID string
 	mc.execContainer = func(id string) tea.Cmd {
 		gotID = id
 		return func() tea.Msg { return nil }
 	}
-	m := modelWithMock(mc, []docker.Container{runningContainer})
-	update(m, runeKey("e"))
+	m := modelWithMock(mc, nil)
+	update(m, docker.ShellAvailableMsg{ID: runningContainer.ID, Available: true})
 	if gotID != runningContainer.ID {
 		t.Errorf("want ExecContainer(%q), got %q", runningContainer.ID, gotID)
 	}
@@ -190,6 +204,15 @@ func TestClient_ExecDoneMsg_FetchesContainers(t *testing.T) {
 	m := modelWithMock(mc, nil)
 	update(m, docker.ExecDoneMsg{})
 	if !fetched {
-		t.Error("want FetchContainers called after ExecDoneMsg")
+		t.Error("want FetchContainers called after successful ExecDoneMsg")
+	}
+}
+
+func TestClient_ShellUnavailableMsg_SetsError(t *testing.T) {
+	mc := newStubClient()
+	m := modelWithMock(mc, nil)
+	got := update(m, docker.ShellAvailableMsg{ID: runningContainer.ID, Available: false})
+	if got.err == nil {
+		t.Error("want err set when shell not available")
 	}
 }

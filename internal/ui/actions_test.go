@@ -233,6 +233,34 @@ func TestUpdate_StopMsgErrorSetsErr(t *testing.T) {
 	}
 }
 
+func TestUpdate_ExecDoneMsgWithErrorSetsErr(t *testing.T) {
+	m := modelWithSorted([]docker.Container{runningContainer})
+	got, cmd := m.Update(docker.ExecDoneMsg{Err: errors.New("shell not found")})
+	if got.(App).err == nil {
+		t.Error("want err surfaced in app")
+	}
+	if got.(App).loading {
+		t.Error("want no loading triggered on exec error")
+	}
+	if cmd != nil {
+		t.Error("want nil cmd on exec error")
+	}
+}
+
+func TestUpdate_ExecDoneMsgSuccessTriggersReload(t *testing.T) {
+	m := modelWithSorted([]docker.Container{runningContainer})
+	got, cmd := m.Update(docker.ExecDoneMsg{})
+	if got.(App).err != nil {
+		t.Errorf("want no error on success, got %v", got.(App).err)
+	}
+	if !got.(App).loading {
+		t.Error("want loading=true after successful exec")
+	}
+	if cmd == nil {
+		t.Error("want non-nil fetch cmd after successful exec")
+	}
+}
+
 func update(m App, msg tea.Msg) App {
 	result, _ := m.Update(msg)
 	return result.(App)
