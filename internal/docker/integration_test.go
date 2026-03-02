@@ -5,6 +5,7 @@ package docker
 import (
 	"context"
 	stdlog "log"
+	"os/exec"
 	"strings"
 	"testing"
 
@@ -101,6 +102,51 @@ func TestIntegration_FetchContainers_LabelsAreParsed(t *testing.T) {
 	}
 	if got := c.ComposeService(); got != "web" {
 		t.Errorf("want ComposeService=%q, got %q", "web", got)
+	}
+}
+
+func pauseContainer(t *testing.T) string {
+	t.Helper()
+	out, err := exec.Command("docker", "run", "-d", "registry.k8s.io/pause:3.10").Output()
+	if err != nil {
+		t.Fatalf("start pause container: %v", err)
+	}
+	id := strings.TrimSpace(string(out))
+	t.Cleanup(func() { exec.Command("docker", "rm", "-f", id).Run() })
+	return id
+}
+
+func TestIntegration_CheckShellAvailable_NoShell(t *testing.T) {
+	id := pauseContainer(t)
+
+	msg := CheckShellAvailable(id)()
+
+	result, ok := msg.(ShellAvailableMsg)
+	if !ok {
+		t.Fatalf("want ShellAvailableMsg, got %T", msg)
+	}
+	if result.ID != id {
+		t.Errorf("want ID=%q, got %q", id, result.ID)
+	}
+	if result.Available {
+		t.Error("want Available=false for shell-less container")
+	}
+}
+
+func TestIntegration_CheckShellAvailable_WithShell(t *testing.T) {
+	_, id := alpine(t)
+
+	msg := CheckShellAvailable(id)()
+
+	result, ok := msg.(ShellAvailableMsg)
+	if !ok {
+		t.Fatalf("want ShellAvailableMsg, got %T", msg)
+	}
+	if result.ID != id {
+		t.Errorf("want ID=%q, got %q", id, result.ID)
+	}
+	if !result.Available {
+		t.Error("want Available=true for alpine container")
 	}
 }
 

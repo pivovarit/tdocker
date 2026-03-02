@@ -135,7 +135,7 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		cursor := m.table.Cursor()
 		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State == "running" {
-			return m, m.client.ExecContainer(filtered[cursor].ID)
+			return m, m.client.CheckShellAvailable(filtered[cursor].ID)
 		}
 	case keyDebug:
 		cursor := m.table.Cursor()

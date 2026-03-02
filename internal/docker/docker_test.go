@@ -2,6 +2,8 @@ package docker
 
 import (
 	"encoding/json"
+	"os/exec"
+	"strings"
 	"testing"
 )
 
@@ -97,5 +99,50 @@ func TestSort_ComposeSameProjectSortedByService(t *testing.T) {
 	sorted := Sort(containers)
 	if sorted[0].Names != "a-svc" {
 		t.Errorf("want a-svc first, got %s", sorted[0].Names)
+	}
+}
+
+func TestExecErr_Nil(t *testing.T) {
+	if got := execErr(nil); got != nil {
+		t.Errorf("want nil, got %v", got)
+	}
+}
+
+func TestExecErr_Exit126_FriendlyMessage(t *testing.T) {
+	err := exec.Command("sh", "-c", "exit 126").Run()
+	got := execErr(err)
+	if got == nil {
+		t.Fatal("want non-nil error")
+	}
+	if !strings.Contains(got.Error(), "shell not found") {
+		t.Errorf("want friendly message, got %q", got.Error())
+	}
+	if !strings.Contains(got.Error(), "'x'") {
+		t.Errorf("want reference to debug key, got %q", got.Error())
+	}
+}
+
+func TestExecErr_Exit127_FriendlyMessage(t *testing.T) {
+	err := exec.Command("sh", "-c", "exit 127").Run()
+	got := execErr(err)
+	if got == nil {
+		t.Fatal("want non-nil error")
+	}
+	if !strings.Contains(got.Error(), "shell not found") {
+		t.Errorf("want friendly message, got %q", got.Error())
+	}
+	if !strings.Contains(got.Error(), "'x'") {
+		t.Errorf("want reference to debug key, got %q", got.Error())
+	}
+}
+
+func TestExecErr_OtherExitCode_OriginalError(t *testing.T) {
+	err := exec.Command("sh", "-c", "exit 1").Run()
+	got := execErr(err)
+	if got == nil {
+		t.Fatal("want non-nil error")
+	}
+	if strings.Contains(got.Error(), "shell not found") {
+		t.Errorf("want original error for exit 1, got %q", got.Error())
 	}
 }
