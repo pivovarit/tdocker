@@ -11,13 +11,10 @@ import (
 )
 
 const (
-	logsPanelHeight    = 15
-	inspectPanelHeight = 20
-	statsRows          = 5
-	statsPanelHeight   = statsRows + 3
-	eventsPanelHeight  = 12
-	ctxPanelMaxRows    = 8
-	logsTailDefault    = "200"
+	statsRows        = 5
+	statsPanelHeight = statsRows + 3
+	ctxPanelMaxRows  = 8
+	logsTailDefault  = "200"
 
 	chromeTitle        = 1
 	chromeTitleMargin  = 1
@@ -120,6 +117,10 @@ func (m App) filtered() []docker.Container {
 	}
 	return out
 }
+
+func (m App) logsPanelHeight() int    { return max(5, min(15, m.height/3)) }
+func (m App) inspectPanelHeight() int { return max(5, min(20, m.height/3)) }
+func (m App) eventsPanelHeight() int  { return max(5, min(12, m.height/3)) }
 
 func (m App) currentSelectedID() string {
 	filtered := m.filtered()

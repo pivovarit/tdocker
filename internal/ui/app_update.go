@@ -157,7 +157,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.logs.lines = append(m.logs.lines, msg.Line)
 		if m.logs.scroll.autoScroll {
-			m.logs.scroll.offset = max(0, len(m.logs.lines)-(logsPanelHeight-2))
+			m.logs.scroll.offset = max(0, len(m.logs.lines)-(m.logsPanelHeight()-2))
 		}
 		return m, msg.Next
 
@@ -264,7 +264,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.events.events = append(m.events.events, msg.Event)
 			if m.events.scroll.autoScroll {
-				m.events.scroll.offset = max(0, len(m.events.events)-(eventsPanelHeight-2))
+				m.events.scroll.offset = max(0, len(m.events.events)-(m.eventsPanelHeight()-2))
 			}
 		}
 		return m, tea.Batch(msg.Next, debounceCmd)

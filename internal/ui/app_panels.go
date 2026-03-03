@@ -3,16 +3,16 @@ package ui
 func (m App) tableHeight() int {
 	reserved := tableChrome
 	if m.logs.visible {
-		reserved += logsPanelHeight
+		reserved += m.logsPanelHeight()
 	}
 	if m.inspect.visible {
-		reserved += inspectPanelHeight
+		reserved += m.inspectPanelHeight()
 	}
 	if m.stats.visible {
 		reserved += statsPanelHeight
 	}
 	if m.events.visible {
-		reserved += eventsPanelHeight
+		reserved += m.eventsPanelHeight()
 	}
 	if m.ctxPicker.visible {
 		reserved += min(len(m.ctxPicker.contexts), ctxPanelMaxRows) + 2 // +2 for divider + title

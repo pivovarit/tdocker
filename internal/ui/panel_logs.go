@@ -49,15 +49,15 @@ func (m App) handleLogsKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case tea.KeyUp, 'k':
 		m.logs.scroll = m.logs.scroll.up()
 	case tea.KeyDown, 'j':
-		m.logs.scroll = m.logs.scroll.down(len(m.logs.lines), logsPanelHeight-2)
+		m.logs.scroll = m.logs.scroll.down(len(m.logs.lines), m.logsPanelHeight()-2)
 	case 'g', tea.KeyHome:
 		if msg.Text == keyScrollBottom {
-			m.logs.scroll = m.logs.scroll.bottom(len(m.logs.lines), logsPanelHeight-2)
+			m.logs.scroll = m.logs.scroll.bottom(len(m.logs.lines), m.logsPanelHeight()-2)
 		} else {
 			m.logs.scroll = m.logs.scroll.top()
 		}
 	case tea.KeyEnd:
-		m.logs.scroll = m.logs.scroll.bottom(len(m.logs.lines), logsPanelHeight-2)
+		m.logs.scroll = m.logs.scroll.bottom(len(m.logs.lines), m.logsPanelHeight()-2)
 	}
 	return m, nil
 }
@@ -68,7 +68,7 @@ func (m App) renderLogsPanel() string {
 		logsModeLabel = " (all)"
 	}
 	return m.renderPanel(" Logs: "+m.logs.container+logsModeLabel, func(b *strings.Builder) {
-		maxLines := logsPanelHeight - 2
+		maxLines := m.logsPanelHeight() - 2
 		start := m.logs.scroll.offset
 		end := start + maxLines
 		if end > len(m.logs.lines) {

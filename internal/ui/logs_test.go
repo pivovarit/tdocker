@@ -121,7 +121,7 @@ func TestLogs_ShiftGKey_ScrollsToBottomAndEnablesAutoScroll(t *testing.T) {
 	lines := make([]string, 20)
 	m := logsOpenWithLines(lines)
 	got := update(m, runeKey("G"))
-	want := max(0, len(lines)-(logsPanelHeight-2))
+	want := max(0, len(lines)-(m.logsPanelHeight()-2))
 	if got.logs.scroll.offset != want {
 		t.Errorf("want logs.scroll.offset=%d after G, got %d", want, got.logs.scroll.offset)
 	}
@@ -134,7 +134,7 @@ func TestLogs_EndKey_ScrollsToBottom(t *testing.T) {
 	lines := make([]string, 20)
 	m := logsOpenWithLines(lines)
 	got := update(m, tea.KeyPressMsg{Code: tea.KeyEnd})
-	want := max(0, len(lines)-(logsPanelHeight-2))
+	want := max(0, len(lines)-(m.logsPanelHeight()-2))
 	if got.logs.scroll.offset != want {
 		t.Errorf("want logs.scroll.offset=%d after End, got %d", want, got.logs.scroll.offset)
 	}

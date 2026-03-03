@@ -20,6 +20,7 @@ func modelWithSorted(containers []docker.Container) App {
 	m.containers = containers
 	m.loading = false
 	m.width = 120
+	m.height = 60
 	return m.rebuildTable("")
 }
 
