@@ -152,15 +152,19 @@ func TestClient_EKey_CallsCheckShellAvailableWithID(t *testing.T) {
 
 func TestClient_ShellAvailableMsg_CallsExecContainer(t *testing.T) {
 	mc := newStubClient()
-	var gotID string
-	mc.execContainer = func(id string) tea.Cmd {
+	var gotID, gotShell string
+	mc.execContainer = func(id, shell string) tea.Cmd {
 		gotID = id
+		gotShell = shell
 		return func() tea.Msg { return nil }
 	}
 	m := modelWithMock(mc, nil)
-	update(m, docker.ShellAvailableMsg{ID: runningContainer.ID, Available: true})
+	update(m, docker.ShellAvailableMsg{ID: runningContainer.ID, Available: true, Shell: "bash"})
 	if gotID != runningContainer.ID {
 		t.Errorf("want ExecContainer(%q), got %q", runningContainer.ID, gotID)
+	}
+	if gotShell != "bash" {
+		t.Errorf("want shell=%q, got %q", "bash", gotShell)
 	}
 }
 

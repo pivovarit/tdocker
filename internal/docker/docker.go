@@ -88,6 +88,7 @@ type (
 	ShellAvailableMsg struct {
 		ID        string
 		Available bool
+		Shell     string
 	}
 	DebugAvailableMsg struct {
 		ID        string

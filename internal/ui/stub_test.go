@@ -13,7 +13,7 @@ type stubClient struct {
 	restartContainer func(string) tea.Cmd
 	deleteContainer  func(string) tea.Cmd
 	checkShellAvail  func(string) tea.Cmd
-	execContainer    func(string) tea.Cmd
+	execContainer    func(string, string) tea.Cmd
 	checkDebugAvail  func(string) tea.Cmd
 	debugContainer   func(string) tea.Cmd
 	inspectContainer func(string) tea.Cmd
@@ -34,7 +34,7 @@ func newStubClient() *stubClient {
 		restartContainer: noopStr,
 		deleteContainer:  noopStr,
 		checkShellAvail:  noopStr,
-		execContainer:    noopStr,
+		execContainer:    func(_ string, _ string) tea.Cmd { return noop },
 		checkDebugAvail:  noopStr,
 		debugContainer:   noopStr,
 		inspectContainer: noopStr,
@@ -46,17 +46,17 @@ func newStubClient() *stubClient {
 	}
 }
 
-func (c *stubClient) FetchContainers(all bool) tea.Cmd      { return c.fetchContainers(all) }
-func (c *stubClient) StopContainer(id string) tea.Cmd       { return c.stopContainer(id) }
-func (c *stubClient) StartContainer(id string) tea.Cmd      { return c.startContainer(id) }
-func (c *stubClient) RestartContainer(id string) tea.Cmd    { return c.restartContainer(id) }
-func (c *stubClient) DeleteContainer(id string) tea.Cmd     { return c.deleteContainer(id) }
-func (c *stubClient) CheckShellAvailable(id string) tea.Cmd { return c.checkShellAvail(id) }
-func (c *stubClient) ExecContainer(id string) tea.Cmd       { return c.execContainer(id) }
-func (c *stubClient) CheckDebugAvailable(id string) tea.Cmd { return c.checkDebugAvail(id) }
-func (c *stubClient) DebugContainer(id string) tea.Cmd      { return c.debugContainer(id) }
-func (c *stubClient) InspectContainer(id string) tea.Cmd    { return c.inspectContainer(id) }
-func (c *stubClient) FetchStats(id string) tea.Cmd          { return c.fetchStats(id) }
+func (c *stubClient) FetchContainers(all bool) tea.Cmd       { return c.fetchContainers(all) }
+func (c *stubClient) StopContainer(id string) tea.Cmd        { return c.stopContainer(id) }
+func (c *stubClient) StartContainer(id string) tea.Cmd       { return c.startContainer(id) }
+func (c *stubClient) RestartContainer(id string) tea.Cmd     { return c.restartContainer(id) }
+func (c *stubClient) DeleteContainer(id string) tea.Cmd      { return c.deleteContainer(id) }
+func (c *stubClient) CheckShellAvailable(id string) tea.Cmd  { return c.checkShellAvail(id) }
+func (c *stubClient) ExecContainer(id, shell string) tea.Cmd { return c.execContainer(id, shell) }
+func (c *stubClient) CheckDebugAvailable(id string) tea.Cmd  { return c.checkDebugAvail(id) }
+func (c *stubClient) DebugContainer(id string) tea.Cmd       { return c.debugContainer(id) }
+func (c *stubClient) InspectContainer(id string) tea.Cmd     { return c.inspectContainer(id) }
+func (c *stubClient) FetchStats(id string) tea.Cmd           { return c.fetchStats(id) }
 func (c *stubClient) StartLogs(ctx context.Context, id string, tail string, gen int) tea.Cmd {
 	return c.startLogs(ctx, id, tail, gen)
 }

@@ -13,7 +13,7 @@ type Client interface {
 	RestartContainer(id string) tea.Cmd
 	DeleteContainer(id string) tea.Cmd
 	CheckShellAvailable(id string) tea.Cmd
-	ExecContainer(id string) tea.Cmd
+	ExecContainer(id, shell string) tea.Cmd
 	CheckDebugAvailable(id string) tea.Cmd
 	DebugContainer(id string) tea.Cmd
 	InspectContainer(id string) tea.Cmd
