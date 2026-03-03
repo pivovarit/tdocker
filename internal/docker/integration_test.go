@@ -35,7 +35,7 @@ func findByID(containers ContainersMsg, fullID string) (Container, bool) {
 
 func fetchAll(t *testing.T) ContainersMsg {
 	t.Helper()
-	msg := FetchContainers(true)()
+	msg := CLI{}.FetchContainers(true)()
 	containers, ok := msg.(ContainersMsg)
 	if !ok {
 		t.Fatalf("expected ContainersMsg, got %T", msg)
@@ -63,7 +63,7 @@ func TestIntegration_FetchContainers_StoppedHiddenWithoutAll(t *testing.T) {
 		t.Fatalf("stop: %v", err)
 	}
 
-	msg := FetchContainers(false)()
+	msg := CLI{}.FetchContainers(false)()
 	containers, ok := msg.(ContainersMsg)
 	if !ok {
 		t.Fatalf("expected ContainersMsg, got %T", msg)
@@ -119,7 +119,7 @@ func pauseContainer(t *testing.T) string {
 func TestIntegration_CheckShellAvailable_NoShell(t *testing.T) {
 	id := pauseContainer(t)
 
-	msg := CheckShellAvailable(id)()
+	msg := CLI{}.CheckShellAvailable(id)()
 
 	result, ok := msg.(ShellAvailableMsg)
 	if !ok {
@@ -136,7 +136,7 @@ func TestIntegration_CheckShellAvailable_NoShell(t *testing.T) {
 func TestIntegration_CheckShellAvailable_WithShell(t *testing.T) {
 	_, id := alpine(t)
 
-	msg := CheckShellAvailable(id)()
+	msg := CLI{}.CheckShellAvailable(id)()
 
 	result, ok := msg.(ShellAvailableMsg)
 	if !ok {
@@ -154,7 +154,7 @@ func TestIntegration_StopContainer(t *testing.T) {
 	_, id := alpine(t)
 	ctx := context.Background()
 
-	msg := StopContainer(id)()
+	msg := CLI{}.StopContainer(id)()
 	stopMsg, ok := msg.(StopMsg)
 	if !ok {
 		t.Fatalf("expected StopMsg, got %T", msg)
@@ -181,7 +181,7 @@ func TestIntegration_StartContainer(t *testing.T) {
 		t.Fatalf("stop: %v", err)
 	}
 
-	msg := StartContainer(id)()
+	msg := CLI{}.StartContainer(id)()
 	startMsg, ok := msg.(StartMsg)
 	if !ok {
 		t.Fatalf("expected StartMsg, got %T", msg)
@@ -207,7 +207,7 @@ func TestIntegration_DeleteContainer(t *testing.T) {
 		t.Fatalf("stop: %v", err)
 	}
 
-	msg := DeleteContainer(id)()
+	msg := CLI{}.DeleteContainer(id)()
 	deleteMsg, ok := msg.(DeleteMsg)
 	if !ok {
 		t.Fatalf("expected DeleteMsg, got %T", msg)

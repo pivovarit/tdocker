@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os/exec"
 	"slices"
 	"strings"
@@ -104,35 +103,6 @@ type DockerContext struct {
 	DockerEndpoint string `json:"DockerEndpoint"`
 }
 
-func FetchContainers(all bool) tea.Cmd {
-	return func() tea.Msg {
-		args := []string{"ps", "--format", "{{json .}}"}
-		if all {
-			args = append(args, "-a")
-		}
-		ctx, cancel := context.WithTimeout(context.Background(), timeoutFetch)
-		defer cancel()
-		out, err := exec.CommandContext(ctx, "docker", args...).CombinedOutput()
-		if err != nil {
-			if isDaemonUnavailable(out) {
-				return ErrMsg{fmt.Errorf("docker ps: %w\n%s", ErrDaemonUnavailable, strings.TrimSpace(string(out)))}
-			}
-			return ErrMsg{fmt.Errorf("docker ps: %w\n%s", err, strings.TrimSpace(string(out)))}
-		}
-		var containers []Container
-		for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
-			if line == "" {
-				continue
-			}
-			var c Container
-			if err := json.Unmarshal([]byte(line), &c); err == nil {
-				containers = append(containers, c)
-			}
-		}
-		return ContainersMsg(containers)
-	}
-}
-
 func runContainerCmd(id string, timeout time.Duration, subcmd string, mkMsg func(error) tea.Msg) tea.Cmd {
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
@@ -143,40 +113,6 @@ func runContainerCmd(id string, timeout time.Duration, subcmd string, mkMsg func
 		}
 		return mkMsg(nil)
 	}
-}
-
-func StopContainer(id string) tea.Cmd {
-	return runContainerCmd(id, timeoutStop, "stop", func(err error) tea.Msg { return StopMsg{Err: err} })
-}
-
-func StartContainer(id string) tea.Cmd {
-	return runContainerCmd(id, timeoutStart, "start", func(err error) tea.Msg { return StartMsg{Err: err} })
-}
-
-func RestartContainer(id string) tea.Cmd {
-	return runContainerCmd(id, timeoutRestart, "restart", func(err error) tea.Msg { return RestartMsg{Err: err} })
-}
-
-func DeleteContainer(id string) tea.Cmd {
-	return runContainerCmd(id, timeoutRM, "rm", func(err error) tea.Msg { return DeleteMsg{ID: id, Err: err} })
-}
-
-func CheckShellAvailable(id string) tea.Cmd {
-	return func() tea.Msg {
-		ctx, cancel := context.WithTimeout(context.Background(), timeoutDebug)
-		defer cancel()
-		cmd := exec.CommandContext(ctx, "docker", "exec", id, "sh", "-c", "exit 0")
-		cmd.Stdout = io.Discard
-		cmd.Stderr = io.Discard
-		return ShellAvailableMsg{ID: id, Available: cmd.Run() == nil}
-	}
-}
-
-func ExecContainer(id string) tea.Cmd {
-	return tea.ExecProcess(
-		exec.Command("docker", "exec", "-it", id, "sh"),
-		func(err error) tea.Msg { return ExecDoneMsg{Err: execErr(err)} },
-	)
 }
 
 func execErr(err error) error {
@@ -191,24 +127,6 @@ func execErr(err error) error {
 		}
 	}
 	return err
-}
-
-func CheckDebugAvailable(id string) tea.Cmd {
-	return func() tea.Msg {
-		ctx, cancel := context.WithTimeout(context.Background(), timeoutDebug)
-		defer cancel()
-		cmd := exec.CommandContext(ctx, "docker", "debug", "--help")
-		cmd.Stdout = io.Discard
-		cmd.Stderr = io.Discard
-		return DebugAvailableMsg{ID: id, Available: cmd.Run() == nil}
-	}
-}
-
-func DebugContainer(id string) tea.Cmd {
-	return tea.ExecProcess(
-		exec.Command("docker", "debug", id),
-		func(err error) tea.Msg { return ExecDoneMsg{Err: err} },
-	)
 }
 
 func Sort(containers []Container) []Container {
@@ -239,41 +157,4 @@ func Sort(containers []Container) []Container {
 		return strings.Compare(a.Names, b.Names)
 	})
 	return sorted
-}
-
-func FetchContexts() tea.Cmd {
-	return func() tea.Msg {
-		ctx, cancel := context.WithTimeout(context.Background(), timeoutContext)
-		defer cancel()
-		out, err := exec.CommandContext(ctx, "docker", "context", "ls", "--format", "{{json .}}").CombinedOutput()
-		if err != nil {
-			if isDaemonUnavailable(out) {
-				return ErrMsg{fmt.Errorf("docker context ls: %w\n%s", ErrDaemonUnavailable, strings.TrimSpace(string(out)))}
-			}
-			return ErrMsg{fmt.Errorf("docker context ls: %w\n%s", err, strings.TrimSpace(string(out)))}
-		}
-		var contexts []DockerContext
-		for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
-			if line == "" {
-				continue
-			}
-			var c DockerContext
-			if err := json.Unmarshal([]byte(line), &c); err == nil {
-				contexts = append(contexts, c)
-			}
-		}
-		return ContextsMsg(contexts)
-	}
-}
-
-func SwitchContext(name string) tea.Cmd {
-	return func() tea.Msg {
-		ctx, cancel := context.WithTimeout(context.Background(), timeoutContext)
-		defer cancel()
-		out, err := exec.CommandContext(ctx, "docker", "context", "use", name).CombinedOutput()
-		if err != nil {
-			return ContextSwitchMsg{Err: fmt.Errorf("docker context use: %w\n%s", err, strings.TrimSpace(string(out)))}
-		}
-		return ContextSwitchMsg{}
-	}
 }
