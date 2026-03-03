@@ -16,10 +16,12 @@ func buildTable(containers []docker.Container, width int) table.Model {
 		overhead    = 16
 	)
 
+	names := make([]string, len(containers))
 	nameW, imageW, statusW, portsW := 4, 5, 6, 0
 	hasPorts := false
 	for i, c := range containers {
-		if w := len([]rune(buildTableName(containers, i))); w > nameW {
+		names[i] = buildTableName(containers, i)
+		if w := len([]rune(names[i])); w > nameW {
 			nameW = w
 		}
 		if w := len([]rune(c.Image)); w > imageW {
@@ -74,7 +76,7 @@ func buildTable(containers []docker.Container, width int) table.Model {
 	for i, c := range containers {
 		row := table.Row{
 			trunc(c.ID, idW),
-			trunc(buildTableName(containers, i), nameW),
+			trunc(names[i], nameW),
 			trunc(c.Image, imageW),
 			trunc(c.State, stateW),
 			trunc(c.Status, statusW),
