@@ -37,21 +37,22 @@ type Labels map[string]string
 
 func (l *Labels) UnmarshalJSON(data []byte) error {
 	var m map[string]string
-	if err := json.Unmarshal(data, &m); err == nil {
+	if objErr := json.Unmarshal(data, &m); objErr == nil {
 		*l = m
 		return nil
-	}
-	var s string
-	if err := json.Unmarshal(data, &s); err != nil {
-		return err
-	}
-	*l = make(Labels)
-	for _, pair := range strings.Split(s, ",") {
-		if k, v, ok := strings.Cut(pair, "="); ok {
-			(*l)[k] = v
+	} else {
+		var s string
+		if strErr := json.Unmarshal(data, &s); strErr != nil {
+			return errors.Join(objErr, strErr)
 		}
+		*l = make(Labels)
+		for _, pair := range strings.Split(s, ",") {
+			if k, v, ok := strings.Cut(pair, "="); ok {
+				(*l)[k] = v
+			}
+		}
+		return nil
 	}
-	return nil
 }
 
 type Container struct {
