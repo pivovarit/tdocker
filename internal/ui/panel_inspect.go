@@ -27,22 +27,22 @@ func (m App) handleInspectKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case tea.KeyUp, 'k':
 		m.inspect.scroll = m.inspect.scroll.up()
 	case tea.KeyDown, 'j':
-		m.inspect.scroll = m.inspect.scroll.down(len(m.inspect.lines), inspectPanelHeight-2)
+		m.inspect.scroll = m.inspect.scroll.down(len(m.inspect.lines), m.inspectPanelHeight()-2)
 	case 'g', tea.KeyHome:
 		if msg.Text == keyScrollBottom {
-			m.inspect.scroll = m.inspect.scroll.bottom(len(m.inspect.lines), inspectPanelHeight-2)
+			m.inspect.scroll = m.inspect.scroll.bottom(len(m.inspect.lines), m.inspectPanelHeight()-2)
 		} else {
 			m.inspect.scroll = m.inspect.scroll.top()
 		}
 	case tea.KeyEnd:
-		m.inspect.scroll = m.inspect.scroll.bottom(len(m.inspect.lines), inspectPanelHeight-2)
+		m.inspect.scroll = m.inspect.scroll.bottom(len(m.inspect.lines), m.inspectPanelHeight()-2)
 	}
 	return m, nil
 }
 
 func (m App) renderInspectPanel() string {
 	return m.renderPanel(" Inspect: "+m.inspect.container, func(b *strings.Builder) {
-		maxLines := inspectPanelHeight - 2
+		maxLines := m.inspectPanelHeight() - 2
 		if len(m.inspect.lines) == 0 {
 			b.WriteString(emptyStyle.Render("Loading…"))
 			b.WriteString("\n")
