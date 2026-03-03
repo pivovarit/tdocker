@@ -53,6 +53,9 @@ func (m App) handleFilterKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	cursor := m.table.Cursor()
+	filtered := m.filtered()
+
 	switch msg.Text {
 	case keyRefresh:
 		m.loading = true
@@ -67,8 +70,6 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m.filtering = true
 		return m, nil
 	case keyLogs:
-		cursor := m.table.Cursor()
-		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) {
 			m.logs.container = filtered[cursor].Names
 			m.logs.containerID = filtered[cursor].ID
@@ -84,8 +85,6 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, firstLine
 		}
 	case keyStop:
-		cursor := m.table.Cursor()
-		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State == "running" {
 			m.op = OpConfirming
 			m.confirmAction = "stop"
@@ -94,8 +93,6 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 	case keyStart:
-		cursor := m.table.Cursor()
-		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State != "running" {
 			m.op = OpConfirming
 			m.confirmAction = "start"
@@ -104,8 +101,6 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 	case keyRestart:
-		cursor := m.table.Cursor()
-		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) {
 			m.op = OpConfirming
 			m.confirmID = filtered[cursor].ID
@@ -118,8 +113,6 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 	case keyDelete:
-		cursor := m.table.Cursor()
-		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) {
 			if filtered[cursor].State == "running" {
 				m.warnMsg = "stop the container before deleting"
@@ -132,14 +125,10 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 	case keyExec:
-		cursor := m.table.Cursor()
-		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State == "running" {
 			return m, m.client.CheckShellAvailable(filtered[cursor].ID)
 		}
 	case keyDebug:
-		cursor := m.table.Cursor()
-		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) {
 			return m, m.client.CheckDebugAvailable(filtered[cursor].ID)
 		}
@@ -147,8 +136,6 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m.ctxPicker.requested = true
 		return m, m.client.FetchContexts()
 	case keyInspect:
-		cursor := m.table.Cursor()
-		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) {
 			m.inspect.visible = true
 			m.inspect.lines = nil
@@ -158,15 +145,11 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, m.client.InspectContainer(filtered[cursor].ID)
 		}
 	case keyCopy:
-		cursor := m.table.Cursor()
-		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) {
 			c := filtered[cursor]
 			return m, copyToClipboard(c.Names, c.ID)
 		}
 	case keyStats:
-		cursor := m.table.Cursor()
-		filtered := m.filtered()
 		if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State == "running" {
 			m.stats.visible = true
 			m.stats.entry = nil
@@ -188,7 +171,10 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	default:
 		if msg.Code == tea.KeyEsc {
 			if m.filterQuery != "" {
-				selectedID := m.currentSelectedID()
+				selectedID := ""
+				if cursor >= 0 && cursor < len(filtered) {
+					selectedID = filtered[cursor].ID
+				}
 				m.filterQuery = ""
 				m = m.rebuildTable(selectedID)
 			}
@@ -205,7 +191,7 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 	var cmd tea.Cmd
 	m.table, cmd = m.table.Update(tableMsg)
-	cursor := m.table.Cursor()
+	cursor = m.table.Cursor()
 	height := m.tableHeight()
 	if cursor < m.viewportStart {
 		m.viewportStart = cursor
