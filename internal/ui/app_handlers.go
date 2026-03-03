@@ -168,6 +168,9 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			m.events.scroll = scrollState{autoScroll: true}
 			m.table.SetHeight(m.tableHeight())
 		}
+	case keyHelp:
+		m.helpVisible = true
+		return m, nil
 	default:
 		if msg.Code == tea.KeyEsc {
 			if m.filterQuery != "" {

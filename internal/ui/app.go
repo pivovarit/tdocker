@@ -74,6 +74,8 @@ type App struct {
 	events         eventsState
 	bgEventsGen    int
 	pendingRefresh bool
+
+	helpVisible bool
 }
 
 func New() App {
