@@ -26,7 +26,7 @@ func startAlpine(t *testing.T, opts ...testcontainers.ContainerCustomizer) (test
 
 func appWithRealContainers(t *testing.T) App {
 	t.Helper()
-	msg := docker.FetchContainers(true)()
+	msg := docker.CLI{}.FetchContainers(true)()
 	containers, ok := msg.(docker.ContainersMsg)
 	if !ok {
 		t.Fatalf("expected ContainersMsg, got %T", msg)
@@ -79,7 +79,7 @@ func TestIntegration_App_StopUpdatesState(t *testing.T) {
 		t.Fatalf("container not found before stop")
 	}
 
-	msg := docker.StopContainer(id)()
+	msg := docker.CLI{}.StopContainer(id)()
 	result, _ := app.Update(msg)
 	app = result.(App)
 

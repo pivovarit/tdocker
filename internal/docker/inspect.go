@@ -137,7 +137,7 @@ type inspectRaw struct {
 	} `json:"NetworkSettings"`
 }
 
-func InspectContainer(id string) tea.Cmd {
+func (CLI) InspectContainer(id string) tea.Cmd {
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), timeoutInspect)
 		defer cancel()

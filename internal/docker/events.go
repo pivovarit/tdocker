@@ -50,7 +50,7 @@ type (
 	}
 )
 
-func StartEvents(ctx context.Context, gen int) tea.Cmd {
+func (CLI) StartEvents(ctx context.Context, gen int) tea.Cmd {
 	cmd := exec.CommandContext(ctx, "docker", "events", "--format", "{{json .}}")
 	pr, pw := io.Pipe()
 	cmd.Stdout = pw

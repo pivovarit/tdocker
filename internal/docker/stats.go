@@ -27,7 +27,7 @@ type StatsMsg struct {
 	Err   error
 }
 
-func FetchStats(id string) tea.Cmd {
+func (CLI) FetchStats(id string) tea.Cmd {
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), timeoutStats)
 		defer cancel()
