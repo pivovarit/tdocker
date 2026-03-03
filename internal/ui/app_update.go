@@ -197,7 +197,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.err = fmt.Errorf("shell not found in container (distroless/scratch image?) — press 'x' to use docker debug")
 			return m, nil
 		}
-		return m, m.client.ExecContainer(msg.ID)
+		return m, m.client.ExecContainer(msg.ID, msg.Shell)
 
 	case docker.DebugAvailableMsg:
 		if !msg.Available {
