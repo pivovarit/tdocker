@@ -28,6 +28,16 @@ func statsTickCmd() tea.Cmd {
 	}
 }
 
+func (m App) handleLifecycleMsg(err error) (tea.Model, tea.Cmd) {
+	m.op = OpNone
+	if err != nil {
+		m.err = err
+		return m, nil
+	}
+	m.loading = true
+	return m, m.client.FetchContainers(m.showAll)
+}
+
 func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
@@ -106,31 +116,13 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case docker.StopMsg:
-		m.op = OpNone
-		if msg.Err != nil {
-			m.err = msg.Err
-			return m, nil
-		}
-		m.loading = true
-		return m, m.client.FetchContainers(m.showAll)
+		return m.handleLifecycleMsg(msg.Err)
 
 	case docker.StartMsg:
-		m.op = OpNone
-		if msg.Err != nil {
-			m.err = msg.Err
-			return m, nil
-		}
-		m.loading = true
-		return m, m.client.FetchContainers(m.showAll)
+		return m.handleLifecycleMsg(msg.Err)
 
 	case docker.RestartMsg:
-		m.op = OpNone
-		if msg.Err != nil {
-			m.err = msg.Err
-			return m, nil
-		}
-		m.loading = true
-		return m, m.client.FetchContainers(m.showAll)
+		return m.handleLifecycleMsg(msg.Err)
 
 	case docker.DeleteMsg:
 		m.op = OpNone
