@@ -58,6 +58,9 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if msg.String() == keyQuit {
 			switch {
+			case m.helpVisible:
+				m.helpVisible = false
+				return m, nil
 			case m.logs.visible:
 				m = m.closeLogs()
 				return m, nil
@@ -76,6 +79,12 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			default:
 				return m, tea.Quit
 			}
+		}
+		if m.helpVisible {
+			if msg.String() == keyHelp || msg.Code == tea.KeyEsc {
+				m.helpVisible = false
+			}
+			return m, nil
 		}
 		if m.logs.visible {
 			return m.handleLogsKey(msg)
