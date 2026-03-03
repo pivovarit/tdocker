@@ -21,4 +21,5 @@ const (
 	keyVimDown      = "j"
 	keyVimUp        = "k"
 	keyScrollBottom = "G"
+	keyHelp         = "?"
 )
