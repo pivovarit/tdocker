@@ -118,7 +118,7 @@ func parseByteSize(s string) (float64, bool) {
 	case "TiB":
 		return num * 1024 * 1024 * 1024 * 1024, true
 	default:
-		return num, true
+		return 0, false
 	}
 }
 
