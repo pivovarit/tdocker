@@ -180,7 +180,7 @@ func (m App) helpBar() string {
 				keyStyle.Render("g") + " top · " +
 				keyStyle.Render("G") + " bottom · " +
 				keyStyle.Render("esc") + "/" + keyStyle.Render("v") + " close · " +
-				keyStyle.Render("q") + " quit",
+				keyStyle.Render("q") + " close",
 		)
 	case m.logs.visible:
 		return helpStyle.Render(
@@ -189,7 +189,7 @@ func (m App) helpBar() string {
 				keyStyle.Render("G") + " bottom · " +
 				keyStyle.Render("f") + " toggle all · " +
 				keyStyle.Render("esc") + "/" + keyStyle.Render("l") + " close · " +
-				keyStyle.Render("q") + " quit",
+				keyStyle.Render("q") + " close",
 		)
 	case m.inspect.visible:
 		return helpStyle.Render(
@@ -197,13 +197,13 @@ func (m App) helpBar() string {
 				keyStyle.Render("g") + " top · " +
 				keyStyle.Render("G") + " bottom · " +
 				keyStyle.Render("esc") + "/" + keyStyle.Render("i") + " close · " +
-				keyStyle.Render("q") + " quit",
+				keyStyle.Render("q") + " close",
 		)
 	case m.stats.visible:
 		return helpStyle.Render(
 			"  " + keyStyle.Render("r") + " refresh · " +
 				keyStyle.Render("esc") + "/" + keyStyle.Render("t") + " close · " +
-				keyStyle.Render("q") + " quit",
+				keyStyle.Render("q") + " close",
 		)
 	case m.op == OpConfirming:
 		verb := "Stop"

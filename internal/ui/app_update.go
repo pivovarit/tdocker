@@ -40,11 +40,32 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyPressMsg:
 		m.copiedName = ""
 		m.warnMsg = ""
-		if msg.String() == keyQuit || msg.String() == keyForceQuit {
+		if msg.String() == keyForceQuit {
 			if m.logs.visible {
 				m = m.closeLogs()
 			}
 			return m, tea.Quit
+		}
+		if msg.String() == keyQuit {
+			switch {
+			case m.logs.visible:
+				m = m.closeLogs()
+				return m, nil
+			case m.inspect.visible:
+				m = m.closeInspect()
+				return m, nil
+			case m.stats.visible:
+				m = m.closeStats()
+				return m, nil
+			case m.events.visible:
+				m = m.closeEvents()
+				return m, nil
+			case m.ctxPicker.visible:
+				m.ctxPicker = ctxPickerState{}
+				return m, nil
+			default:
+				return m, tea.Quit
+			}
 		}
 		if m.logs.visible {
 			return m.handleLogsKey(msg)
