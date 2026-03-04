@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>tdocker - The docker ps you actually reach for</title>
-  <meta name="description" content="An extremely lightweight zero-config terminal UI for Docker container management. Navigate, inspect, exec, tail logs - all from the keyboard." />
+  <meta name="description" content="A minimalistic terminal UI for everyday Docker operations. Tail logs, exec into a shell, restart a container, copy an ID - each a single keypress away." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet" />
@@ -738,10 +738,11 @@
     @media (max-width: 900px) {
       .features-grid { grid-template-columns: 1fr 1fr; }
       .kb-grid { grid-template-columns: 1fr; }
-      .install-grid { grid-template-columns: 1fr; }
+      .install-grid { grid-template-columns: 1fr 1fr !important; }
     }
 
     @media (max-width: 640px) {
+      .install-grid { grid-template-columns: 1fr !important; }
       .features-grid { grid-template-columns: 1fr; }
       .nav-links { display: none; }
       section { padding: 70px 0; }
@@ -797,8 +798,7 @@
     </h1>
     <p class="hero-subtitle">The <code>docker ps</code> you actually reach for.</p>
     <p class="hero-desc">
-      An extremely lightweight terminal UI that puts container management at your fingertips.
-      No config. No clutter. Just your containers.
+      A minimalistic terminal UI for everyday Docker operations. Just the handful of things you actually do dozens of times a day, each a single keypress away.
     </p>
     <div class="hero-ctas">
       <a href="#install" class="btn-primary">
@@ -814,8 +814,8 @@
     </div>
     <div class="hero-install">
       <span class="prompt">$</span>
-      <span class="cmd">go install <span style="color:var(--text)">github.com/pivovarit/tdocker@latest</span></span>
-      <button class="copy-btn" data-copy="go install github.com/pivovarit/tdocker@latest">copy</button>
+      <span class="cmd">brew install <span style="color:var(--text)">pivovarit/tap/tdocker</span></span>
+      <button class="copy-btn" data-copy="brew install pivovarit/tap/tdocker">copy</button>
     </div>
   </div>
 </section>
@@ -846,12 +846,9 @@
   <div class="container">
     <div class="reveal" style="max-width: 720px; margin: 0 auto; text-align: center;">
       <p class="section-label">Design philosophy</p>
-      <h2 class="section-title">Built from actual usage.</h2>
-      <p class="section-desc" style="max-width: 100%; margin: 0 0 24px;">
-        <code>tdocker</code> does less on purpose. Every feature exists because it came up during real, day-to-day work with Docker - not to cover edge cases or satisfy a checklist.
-      </p>
+      <h2 class="section-title">Intentionally small.</h2>
       <p class="section-desc" style="max-width: 100%; margin: 0;">
-        The goal is a tool you actually reach for, not one you install and forget. If an operation isn't part of a typical workflow, it doesn't belong here.
+        <code>tdocker</code> covers the most common Docker workflows and nothing more. No plugin system, no YAML configs, no container creation wizards. If an operation isn't something you'd do multiple times a week, it probably doesn't belong here.
       </p>
     </div>
   </div>
@@ -1003,18 +1000,41 @@
     <div class="section-head">
       <p class="section-label">Installation</p>
       <h2 class="section-title">Up and running in seconds.</h2>
-      <p class="section-desc">Requires Go 1.21+ and Docker. No other dependencies. Make sure <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent2);background:rgba(56,189,248,0.07);padding:1px 6px;border-radius:4px">~/go/bin</code> is on your <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent2);background:rgba(56,189,248,0.07);padding:1px 6px;border-radius:4px">$PATH</code>, then run <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent2);background:rgba(56,189,248,0.07);padding:1px 6px;border-radius:4px">tdocker</code>.</p>
+      <p class="section-desc">Requires Docker. Install via Homebrew, <code style="font-family:var(--font-mono);font-size:0.9em;color:var(--accent2);background:rgba(56,189,248,0.07);padding:1px 6px;border-radius:4px">go install</code>, or build from source.</p>
     </div>
 
-    <div class="install-grid">
-      <!-- go install -->
+    <div class="install-grid" style="grid-template-columns: repeat(3, 1fr);">
+      <!-- Homebrew -->
       <div class="install-card reveal">
+        <div class="install-card-header">
+          <span class="install-card-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>
+            Homebrew
+          </span>
+          <span class="install-badge">Recommended</span>
+        </div>
+        <div class="install-code">
+          <div class="install-line">
+            <span class="install-prompt">$</span>
+            <span><span class="install-cmd">brew install</span> <span class="install-arg">pivovarit/tap/tdocker</span></span>
+          </div>
+          <div class="install-line" style="margin-top:10px">
+            <span class="install-prompt">$</span>
+            <span><span class="install-cmd">tdocker</span></span>
+          </div>
+        </div>
+        <div class="install-card-footer">
+          <button class="install-copy-btn" data-copy="brew install pivovarit/tap/tdocker">copy</button>
+        </div>
+      </div>
+
+      <!-- go install -->
+      <div class="install-card reveal reveal-delay-1">
         <div class="install-card-header">
           <span class="install-card-title">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
             go install
           </span>
-          <span class="install-badge">Recommended</span>
         </div>
         <div class="install-code">
           <div class="install-line">
@@ -1040,7 +1060,7 @@
       </div>
 
       <!-- from source -->
-      <div class="install-card reveal reveal-delay-2">
+      <div class="install-card reveal reveal-delay-3">
         <div class="install-card-header">
           <span class="install-card-title">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
