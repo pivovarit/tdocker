@@ -29,6 +29,9 @@ func (m App) View() tea.View {
 	if m.filterQuery != "" {
 		leftPlain += ": " + fmt.Sprintf("%q", m.filterQuery)
 	}
+	if m.eventsReconnecting {
+		leftPlain += "  ·  reconnecting…"
+	}
 	const ctxPrefix = "ctx [X]: "
 	const ctxSuffix = " "
 	const minPad = 2
@@ -61,6 +64,9 @@ func (m App) View() tea.View {
 		titleHintStyle.Render("r refresh")
 	if m.filterQuery != "" {
 		styledLeft += titleHintStyle.Render(": ") + titleStyle.Render(fmt.Sprintf("%q", m.filterQuery))
+	}
+	if m.eventsReconnecting {
+		styledLeft += sep + titleHintStyle.Render("reconnecting…")
 	}
 	styledRight := ""
 	if ctxName != "" {

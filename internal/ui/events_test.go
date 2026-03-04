@@ -164,6 +164,9 @@ func TestEventEndMsg_IncrementsGenAndSchedulesRestart(t *testing.T) {
 	if app.bgEventsGen != 2 {
 		t.Errorf("want bgEventsGen=2 after stream death, got %d", app.bgEventsGen)
 	}
+	if !app.eventsReconnecting {
+		t.Error("want eventsReconnecting=true after stream death")
+	}
 	if cmd == nil {
 		t.Error("want restart cmd after stream death")
 	}
@@ -194,7 +197,11 @@ func TestBgEventsRestartMsg_StartsNewStream(t *testing.T) {
 	m := modelWithMock(mc, nil)
 	m.bgEventsGen = 2
 
-	_, cmd := m.Update(bgEventsRestartMsg{gen: 2})
+	got, cmd := m.Update(bgEventsRestartMsg{gen: 2})
+	app := got.(App)
+	if app.eventsReconnecting {
+		t.Error("want eventsReconnecting=false after bgEventsRestartMsg")
+	}
 	if cmd == nil {
 		t.Error("want non-nil StartEvents cmd after bgEventsRestartMsg")
 	}
@@ -269,5 +276,16 @@ func TestEventLineMsg_DoesNotPopulatePanelWhenHidden(t *testing.T) {
 	got := update(m, lifecycleEvent("start", 1))
 	if len(got.events.events) != 0 {
 		t.Errorf("want 0 events buffered when panel is hidden, got %d", len(got.events.events))
+	}
+}
+
+func TestEventLineMsg_ClearsReconnecting(t *testing.T) {
+	m := modelWithSorted(nil)
+	m.bgEventsGen = 1
+	m.eventsReconnecting = true
+
+	got := update(m, nonLifecycleEvent(1))
+	if got.eventsReconnecting {
+		t.Error("want eventsReconnecting=false after receiving EventLineMsg with matching gen")
 	}
 }

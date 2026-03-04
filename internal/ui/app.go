@@ -71,9 +71,10 @@ type App struct {
 
 	containersByID map[string]docker.Container
 
-	events         eventsState
-	bgEventsGen    int
-	pendingRefresh bool
+	events             eventsState
+	bgEventsGen        int
+	pendingRefresh     bool
+	eventsReconnecting bool
 
 	helpVisible bool
 }

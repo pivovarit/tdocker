@@ -258,6 +258,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.Gen != m.bgEventsGen {
 			return m, msg.Next
 		}
+		m.eventsReconnecting = false
 		var debounceCmd tea.Cmd
 		opIdle := m.op == OpNone || m.op == OpConfirming
 		if !m.loading && !m.pendingRefresh && opIdle && isContainerLifecycleEvent(msg.Event) {
@@ -290,6 +291,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.Gen != m.bgEventsGen {
 			return m, nil
 		}
+		m.eventsReconnecting = true
 		m.bgEventsGen++
 		newGen := m.bgEventsGen
 		return m, tea.Tick(2*time.Second, func(time.Time) tea.Msg {
@@ -300,6 +302,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.gen != m.bgEventsGen {
 			return m, nil
 		}
+		m.eventsReconnecting = false
 		return m, m.client.StartEvents(context.Background(), m.bgEventsGen)
 
 	case docker.ContextSwitchMsg:
