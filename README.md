@@ -1,20 +1,12 @@
 # tdocker
 
-`tdocker` is an extremely lightweight zero-config `docker ps` alternative that you actually reach for dozens of times a day.
-
-The operations that used to require remembering container IDs and chaining CLI commands are now a single keypress: 
-- tail logs 
-- stop or restart a container
-- exec into a shell
-- copy an ID to the clipboard
-- inspect configuration, 
-- check CPU and memory usage
+A minimalistic terminal UI for everyday Docker operations. Not a dashboard, not a full Docker management suite - just the handful of things you actually do dozens of times a day, each a single keypress away: tail logs, exec into a shell, restart a container, copy an ID.
 
 https://github.com/user-attachments/assets/0bc1f303-46e1-4aa4-a755-72e769eeb3fd
 
 ### Philosophy
 
-`tdocker` does less on purpose. Every feature exists because it came up during real, day-to-day work with Docker - not to cover edge cases or satisfy a checklist. The goal is a tool you actually reach for, not one you install and forget. If an operation isn't part of a typical workflow, it doesn't belong here.
+`tdocker` is intentionally small. It covers the most common Docker workflows and nothing more. No plugin system, no YAML configs, no container creation wizards. If an operation isn't something you'd do multiple times a week, it probably doesn't belong here.
 
 ### Getting started
 
