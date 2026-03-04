@@ -18,9 +18,13 @@ https://github.com/user-attachments/assets/0bc1f303-46e1-4aa4-a755-72e769eeb3fd
 
 ### Getting started
 
-> Homebrew support is coming as soon as I figure out how to set it up.
+Install with Homebrew:
 
-Install with `go install`:
+```
+brew install pivovarit/tap/tdocker
+```
+
+Or install with `go install`:
 
 ```
 go install github.com/pivovarit/tdocker@latest
