@@ -1,6 +1,10 @@
 package ui
 
-import "strings"
+import (
+	"strings"
+
+	"charm.land/lipgloss/v2"
+)
 
 func (m App) renderHelpOverlay() string {
 	type entry struct{ key, desc string }
@@ -41,19 +45,21 @@ func (m App) renderHelpOverlay() string {
 		}},
 	}
 
+	var columns []string
+	for _, s := range sections {
+		var b strings.Builder
+		b.WriteString(inspectSectionStyle.Render(s.title) + "\n")
+		for _, e := range s.entries {
+			b.WriteString("  " + keyStyle.Render(e.key) + helpStyle.MarginTop(0).Render("  "+e.desc) + "\n")
+		}
+		columns = append(columns, b.String())
+	}
+
+	row := lipgloss.JoinHorizontal(lipgloss.Top, columns...)
+
 	var b strings.Builder
 	b.WriteString(logsDividerStyle.Render(strings.Repeat("─", m.width)))
 	b.WriteString("\n")
-
-	for _, s := range sections {
-		b.WriteString("  " + inspectSectionStyle.Render(s.title) + "\n")
-		for _, e := range s.entries {
-			b.WriteString("    " + keyStyle.Render(e.key))
-			b.WriteString(helpStyle.MarginTop(0).Render("  " + e.desc))
-			b.WriteString("\n")
-		}
-		b.WriteString("\n")
-	}
-
+	b.WriteString("  " + row)
 	return b.String()
 }
