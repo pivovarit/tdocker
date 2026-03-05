@@ -137,7 +137,7 @@ func TestUpdate_DeleteMsgRemovesContainerLocally(t *testing.T) {
 		t.Error("want op!=OpDeleting")
 	}
 	if got.loading {
-		t.Error("want no reload — smooth deletion should update locally")
+		t.Error("want no reload - smooth deletion should update locally")
 	}
 	if len(got.containers) != 1 {
 		t.Fatalf("want 1 container remaining, got %d", len(got.containers))

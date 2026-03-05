@@ -24,7 +24,7 @@ func isDaemonUnavailable(out []byte) bool {
 }
 
 const (
-	timeoutFetch   = 10 * time.Second
+	timeoutFetch   = 30 * time.Second
 	timeoutStop    = 30 * time.Second
 	timeoutStart   = 15 * time.Second
 	timeoutRestart = 30 * time.Second
@@ -111,6 +111,9 @@ func runContainerCmd(id string, timeout time.Duration, subcmd string, mkMsg func
 		defer cancel()
 		out, err := exec.CommandContext(ctx, "docker", subcmd, id).CombinedOutput()
 		if err != nil {
+			if ctx.Err() != nil {
+				return mkMsg(fmt.Errorf("docker %s timed out - Docker daemon may be slow or unresponsive", subcmd))
+			}
 			return mkMsg(fmt.Errorf("docker %s: %w\n%s", subcmd, err, strings.TrimSpace(string(out))))
 		}
 		return mkMsg(nil)
@@ -125,7 +128,7 @@ func execErr(err error) error {
 	if errors.As(err, &exitErr) {
 		switch exitErr.ExitCode() {
 		case 126, 127:
-			return fmt.Errorf("shell not found in container (distroless/scratch image?) — press 'x' to use docker debug")
+			return fmt.Errorf("shell not found in container (distroless/scratch image?) - press 'x' to use docker debug")
 		}
 	}
 	return err
