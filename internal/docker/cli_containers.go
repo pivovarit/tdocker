@@ -1,7 +1,6 @@
 package docker
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os/exec"
@@ -18,13 +17,8 @@ func (CLI) FetchContainers(all bool) tea.Cmd {
 		if all {
 			args = append(args, "-a")
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), timeoutFetch)
-		defer cancel()
-		out, err := exec.CommandContext(ctx, "docker", args...).CombinedOutput()
+		out, err := exec.Command("docker", args...).CombinedOutput()
 		if err != nil {
-			if ctx.Err() != nil {
-				return ErrMsg{fmt.Errorf("docker ps timed out - Docker daemon may be slow or unresponsive")}
-			}
 			if isDaemonUnavailable(out) {
 				return ErrMsg{fmt.Errorf("docker ps: %w\n%s", ErrDaemonUnavailable, strings.TrimSpace(string(out)))}
 			}

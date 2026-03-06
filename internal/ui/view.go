@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/pivovarit/tdocker/internal/docker"
@@ -75,7 +76,17 @@ func (m App) View() tea.View {
 		b.WriteString(m.renderHelpOverlay())
 
 	case m.loading && len(m.containers) == 0:
-		b.WriteString(emptyStyle.Render("Fetching containers…"))
+		elapsed := time.Since(m.fetchStart)
+		loadingMsg := "Fetching containers…"
+		if elapsed >= time.Second {
+			loadingMsg += fmt.Sprintf(" (%ds)", int(elapsed.Seconds()))
+		}
+		b.WriteString(emptyStyle.Render(loadingMsg))
+		if m.fetchSlow {
+			b.WriteString("\n")
+			b.WriteString(helpStyle.Render("  Docker is taking a long time to respond. Press " +
+				keyStyle.Render("q") + " to quit or keep waiting."))
+		}
 
 	case m.err != nil:
 		b.WriteString(errorStyle.Render("  Error: " + m.err.Error()))
