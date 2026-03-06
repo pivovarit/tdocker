@@ -28,14 +28,35 @@ func statsTickCmd() tea.Cmd {
 	}
 }
 
+func fetchTimerCmd() tea.Cmd {
+	return func() tea.Msg {
+		time.Sleep(100 * time.Millisecond)
+		return fetchTimerTickMsg{}
+	}
+}
+
+func fetchSlowCmd(gen int) tea.Cmd {
+	return func() tea.Msg {
+		time.Sleep(30 * time.Second)
+		return fetchSlowMsg{gen: gen}
+	}
+}
+
+func (m App) startFetch() (App, tea.Cmd) {
+	m.loading = true
+	m.fetchStart = time.Now()
+	m.fetchGen++
+	m.fetchSlow = false
+	return m, tea.Batch(m.client.FetchContainers(m.showAll), fetchTimerCmd(), fetchSlowCmd(m.fetchGen))
+}
+
 func (m App) handleLifecycleMsg(err error) (tea.Model, tea.Cmd) {
 	m.op = OpNone
 	if err != nil {
 		m.err = err
 		return m, nil
 	}
-	m.loading = true
-	return m, m.client.FetchContainers(m.showAll)
+	return m.startFetch()
 }
 
 func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -109,12 +130,25 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m.handleMainKey(msg)
 
+	case fetchTimerTickMsg:
+		if m.loading {
+			return m, fetchTimerCmd()
+		}
+		return m, nil
+
+	case fetchSlowMsg:
+		if m.loading && msg.gen == m.fetchGen {
+			m.fetchSlow = true
+		}
+		return m, nil
+
 	case docker.ContainersMsg:
 		selectedID := m.currentSelectedID()
 		m.containers = msg
 		m.sorted = docker.Sort(m.containers)
 		m.containersByID = indexContainers(m.containers)
 		m.loading = false
+		m.fetchSlow = false
 		m.err = nil
 		m = m.rebuildTable(selectedID)
 		return m, nil
@@ -211,8 +245,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.err = msg.Err
 			return m, nil
 		}
-		m.loading = true
-		return m, m.client.FetchContainers(m.showAll)
+		return m.startFetch()
 
 	case docker.StatsMsg:
 		m.stats.fetching = false
@@ -281,8 +314,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case autoRefreshMsg:
 		m.pendingRefresh = false
 		if !m.loading {
-			m.loading = true
-			return m, m.client.FetchContainers(m.showAll)
+			return m.startFetch()
 		}
 		return m, nil
 
@@ -310,9 +342,9 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.err = msg.Err
 			return m, nil
 		}
-		m.loading = true
 		m.err = nil
-		return m, tea.Batch(m.client.FetchContainers(m.showAll), m.client.FetchContexts())
+		m, fetchCmd := m.startFetch()
+		return m, tea.Batch(fetchCmd, m.client.FetchContexts())
 	}
 
 	var cmd tea.Cmd

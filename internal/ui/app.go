@@ -4,6 +4,7 @@ import (
 	"context"
 	"slices"
 	"strings"
+	"time"
 
 	"charm.land/bubbles/v2/table"
 	tea "charm.land/bubbletea/v2"
@@ -62,6 +63,10 @@ type App struct {
 	logs    logsState
 	inspect inspectState
 
+	fetchStart time.Time
+	fetchGen   int
+	fetchSlow  bool
+
 	copiedName string
 	warnMsg    string
 
@@ -86,6 +91,8 @@ func newWithClient(c docker.Client) App {
 	return App{
 		client:      c,
 		loading:     true,
+		fetchStart:  time.Now(),
+		fetchGen:    1,
 		showAll:     true,
 		table:       buildTable(nil, 120),
 		logs:        logsState{scroll: scrollState{autoScroll: true}},
@@ -99,6 +106,8 @@ func (m App) Init() tea.Cmd {
 		m.client.FetchContainers(m.showAll),
 		m.client.FetchContexts(),
 		m.client.StartEvents(context.Background(), m.bgEventsGen),
+		fetchTimerCmd(),
+		fetchSlowCmd(m.fetchGen),
 	)
 }
 
