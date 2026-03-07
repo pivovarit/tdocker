@@ -11,19 +11,20 @@ func (m App) handleConfirmKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case 'y', 'Y':
 		m.op = OpNone
 		m.err = nil
+		m.opGen++
 		switch m.confirmAction {
 		case "stop":
 			m.op = OpStopping
-			return m, m.client.StopContainer(m.confirmID)
+			return m, tea.Batch(m.client.StopContainer(m.confirmID), opDisplayCmd(m.opGen), opSlowCmd(m.opGen))
 		case "start":
 			m.op = OpStarting
-			return m, m.client.StartContainer(m.confirmID)
+			return m, tea.Batch(m.client.StartContainer(m.confirmID), opDisplayCmd(m.opGen), opSlowCmd(m.opGen))
 		case "restart":
 			m.op = OpRestarting
-			return m, m.client.RestartContainer(m.confirmID)
+			return m, tea.Batch(m.client.RestartContainer(m.confirmID), opDisplayCmd(m.opGen), opSlowCmd(m.opGen))
 		case "delete":
 			m.op = OpDeleting
-			return m, m.client.DeleteContainer(m.confirmID)
+			return m, tea.Batch(m.client.DeleteContainer(m.confirmID), opDisplayCmd(m.opGen), opSlowCmd(m.opGen))
 		}
 	case 'n', 'N', tea.KeyEsc:
 		m.op = OpNone
@@ -124,12 +125,13 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case keyPause:
 		if cursor >= 0 && cursor < len(filtered) {
 			c := filtered[cursor]
+			m.opGen++
 			if c.State == "running" {
 				m.op = OpPausing
-				return m, m.client.PauseContainer(c.ID)
+				return m, tea.Batch(m.client.PauseContainer(c.ID), opDisplayCmd(m.opGen), opSlowCmd(m.opGen))
 			} else if c.State == "paused" {
 				m.op = OpUnpausing
-				return m, m.client.UnpauseContainer(c.ID)
+				return m, tea.Batch(m.client.UnpauseContainer(c.ID), opDisplayCmd(m.opGen), opSlowCmd(m.opGen))
 			}
 		}
 	case keyExec:

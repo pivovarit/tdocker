@@ -39,25 +39,25 @@ func (CLI) FetchContainers(all bool) tea.Cmd {
 }
 
 func (CLI) StopContainer(id string) tea.Cmd {
-	return runContainerCmd(id, timeoutStop, "stop", func(err error) tea.Msg { return StopMsg{Err: err} })
+	return runContainerCmd(id, "stop", func(err error) tea.Msg { return StopMsg{Err: err} })
 }
 
 func (CLI) StartContainer(id string) tea.Cmd {
-	return runContainerCmd(id, timeoutStart, "start", func(err error) tea.Msg { return StartMsg{Err: err} })
+	return runContainerCmd(id, "start", func(err error) tea.Msg { return StartMsg{Err: err} })
 }
 
 func (CLI) RestartContainer(id string) tea.Cmd {
-	return runContainerCmd(id, timeoutRestart, "restart", func(err error) tea.Msg { return RestartMsg{Err: err} })
+	return runContainerCmd(id, "restart", func(err error) tea.Msg { return RestartMsg{Err: err} })
 }
 
 func (CLI) DeleteContainer(id string) tea.Cmd {
-	return runContainerCmd(id, timeoutRM, "rm", func(err error) tea.Msg { return DeleteMsg{ID: id, Err: err} })
+	return runContainerCmd(id, "rm", func(err error) tea.Msg { return DeleteMsg{ID: id, Err: err} })
 }
 
 func (CLI) PauseContainer(id string) tea.Cmd {
-	return runContainerCmd(id, timeoutPause, "pause", func(err error) tea.Msg { return PauseMsg{Err: err} })
+	return runContainerCmd(id, "pause", func(err error) tea.Msg { return PauseMsg{Err: err} })
 }
 
 func (CLI) UnpauseContainer(id string) tea.Cmd {
-	return runContainerCmd(id, timeoutUnpause, "unpause", func(err error) tea.Msg { return UnpauseMsg{Err: err} })
+	return runContainerCmd(id, "unpause", func(err error) tea.Msg { return UnpauseMsg{Err: err} })
 }

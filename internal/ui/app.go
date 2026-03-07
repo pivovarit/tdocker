@@ -69,8 +69,11 @@ type App struct {
 	fetchGen   int
 	fetchSlow  bool
 
-	copiedName string
-	warnMsg    string
+	copiedName     string
+	warnMsg        string
+	opGen          int
+	opVisible      bool
+	loadingVisible bool
 
 	ctxPicker ctxPickerState
 

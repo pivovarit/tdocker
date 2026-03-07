@@ -1,7 +1,6 @@
 package docker
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -24,15 +23,8 @@ func isDaemonUnavailable(out []byte) bool {
 }
 
 const (
-	timeoutFetch   = 30 * time.Second
-	timeoutStop    = 30 * time.Second
-	timeoutStart   = 15 * time.Second
-	timeoutRestart = 30 * time.Second
-	timeoutRM      = 10 * time.Second
 	timeoutDebug   = 5 * time.Second
 	timeoutContext = 10 * time.Second
-	timeoutPause   = 10 * time.Second
-	timeoutUnpause = 10 * time.Second
 )
 
 type Labels map[string]string
@@ -109,15 +101,10 @@ type DockerContext struct {
 	DockerEndpoint string `json:"DockerEndpoint"`
 }
 
-func runContainerCmd(id string, timeout time.Duration, subcmd string, mkMsg func(error) tea.Msg) tea.Cmd {
+func runContainerCmd(id string, subcmd string, mkMsg func(error) tea.Msg) tea.Cmd {
 	return func() tea.Msg {
-		ctx, cancel := context.WithTimeout(context.Background(), timeout)
-		defer cancel()
-		out, err := exec.CommandContext(ctx, "docker", subcmd, id).CombinedOutput()
+		out, err := exec.Command("docker", subcmd, id).CombinedOutput()
 		if err != nil {
-			if ctx.Err() != nil {
-				return mkMsg(fmt.Errorf("docker %s timed out - Docker daemon may be slow or unresponsive", subcmd))
-			}
 			return mkMsg(fmt.Errorf("docker %s: %w\n%s", subcmd, err, strings.TrimSpace(string(out))))
 		}
 		return mkMsg(nil)
