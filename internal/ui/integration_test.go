@@ -5,12 +5,31 @@ package ui
 import (
 	"context"
 	stdlog "log"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/pivovarit/tdocker/internal/docker"
 	"github.com/testcontainers/testcontainers-go"
 )
+
+var sharedAlpineID string
+
+func TestMain(m *testing.M) {
+	ctx := context.Background()
+	c, err := testcontainers.Run(ctx, "alpine",
+		testcontainers.WithCmd("sh", "-c", "trap 'exit 0' TERM; sleep 60 & wait"),
+		testcontainers.WithLogger(stdlog.Default()))
+	if err != nil {
+		stdlog.Fatalf("shared alpine: %v", err)
+	}
+	sharedAlpineID = c.GetContainerID()
+
+	code := m.Run()
+
+	c.Terminate(ctx)
+	os.Exit(code)
+}
 
 func startAlpine(t *testing.T, opts ...testcontainers.ContainerCustomizer) (testcontainers.Container, string) {
 	t.Helper()
@@ -47,13 +66,11 @@ func findContainer(app App, fullID string) (docker.Container, bool) {
 
 func TestIntegration_App_ShowsRunningContainer(t *testing.T) {
 	t.Parallel()
-	_, id := startAlpine(t)
-
 	app := appWithRealContainers(t)
 
-	c, found := findContainer(app, id)
+	c, found := findContainer(app, sharedAlpineID)
 	if !found {
-		t.Fatalf("container %q not found in app", id[:12])
+		t.Fatalf("container %q not found in app", sharedAlpineID[:12])
 	}
 	if c.State != "running" {
 		t.Errorf("want State=running, got %q", c.State)
@@ -62,14 +79,12 @@ func TestIntegration_App_ShowsRunningContainer(t *testing.T) {
 
 func TestIntegration_App_FilterMatchesRunningContainer(t *testing.T) {
 	t.Parallel()
-	_, id := startAlpine(t)
-
 	app := appWithRealContainers(t)
-	app.filterQuery = id[:8]
+	app.filterQuery = sharedAlpineID[:8]
 
-	_, found := findContainer(app, id)
+	_, found := findContainer(app, sharedAlpineID)
 	if !found {
-		t.Errorf("container %q not found when filtering by ID prefix %q", id[:12], id[:8])
+		t.Errorf("container %q not found when filtering by ID prefix %q", sharedAlpineID[:12], sharedAlpineID[:8])
 	}
 }
 
