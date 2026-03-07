@@ -27,17 +27,9 @@ func TestUpdate_ShiftSOnRunningEntersStopConfirm(t *testing.T) {
 	}
 }
 
-func TestUpdate_ShiftSOnStoppedDoesNothing(t *testing.T) {
+func TestUpdate_ShiftSOnStoppedEntersStartConfirm(t *testing.T) {
 	m := modelWithSorted([]docker.Container{stoppedContainer})
 	got := update(m, runeKey("S"))
-	if got.op == OpConfirming {
-		t.Error("want op!=OpConfirming for non-running container")
-	}
-}
-
-func TestUpdate_SKeyOnStoppedEntersStartConfirm(t *testing.T) {
-	m := modelWithSorted([]docker.Container{stoppedContainer})
-	got := update(m, runeKey("s"))
 	if got.op != OpConfirming {
 		t.Fatal("want op=OpConfirming")
 	}
@@ -46,14 +38,6 @@ func TestUpdate_SKeyOnStoppedEntersStartConfirm(t *testing.T) {
 	}
 	if got.confirmID != stoppedContainer.ID {
 		t.Errorf("want confirmID=%q, got %q", stoppedContainer.ID, got.confirmID)
-	}
-}
-
-func TestUpdate_SKeyOnRunningDoesNothing(t *testing.T) {
-	m := modelWithSorted([]docker.Container{runningContainer})
-	got := update(m, runeKey("s"))
-	if got.op == OpConfirming {
-		t.Error("want op!=OpConfirming for running container")
 	}
 }
 

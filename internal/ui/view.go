@@ -266,8 +266,7 @@ func (m App) helpBar() string {
 				keyStyle.Render("l") + " logs · " +
 				keyStyle.Render("i") + " inspect · " +
 				keyStyle.Render("e") + " exec · " +
-				keyStyle.Render("S") + " stop · " +
-				keyStyle.Render("s") + " start · " +
+				keyStyle.Render("S") + " start/stop · " +
 				keyStyle.Render("R") + " restart · " +
 				keyStyle.Render("P") + " pause · " +
 				keyStyle.Render("D") + " delete · " +
