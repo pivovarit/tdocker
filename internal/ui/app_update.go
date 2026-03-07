@@ -98,6 +98,8 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case m.helpVisible:
 				m.helpVisible = false
 				return m, nil
+			case m.logs.searching:
+				return m.handleLogsKey(msg)
 			case m.logs.visible:
 				m = m.closeLogs()
 				return m, nil
@@ -244,7 +246,8 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.logs.lines = append(m.logs.lines, msg.Line)
 		if m.logs.scroll.autoScroll {
-			m.logs.scroll.offset = max(0, len(m.logs.lines)-(m.logsPanelHeight()-2))
+			filtered := m.logsFiltered()
+			m.logs.scroll.offset = max(0, len(filtered)-(m.logsPanelHeight()-2))
 		}
 		return m, msg.Next
 
