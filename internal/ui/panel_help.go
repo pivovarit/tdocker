@@ -21,8 +21,7 @@ func (m App) renderHelpOverlay() string {
 			{"G", "jump to bottom"},
 		}},
 		{"Container", []entry{
-			{"s", "start"},
-			{"S", "stop"},
+			{"S", "start / stop"},
 			{"R", "restart"},
 			{"P", "pause / unpause"},
 			{"D", "delete (stopped only)"},

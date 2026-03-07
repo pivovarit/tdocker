@@ -8,7 +8,6 @@ const (
 	keyFilter       = "/"
 	keyLogs         = "l"
 	keyStop         = "S"
-	keyStart        = "s"
 	keyRestart      = "R"
 	keyDelete       = "D"
 	keyExec         = "e"

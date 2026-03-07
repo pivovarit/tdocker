@@ -85,19 +85,16 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, firstLine
 		}
 	case keyStop:
-		if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State == "running" {
+		if cursor >= 0 && cursor < len(filtered) {
+			c := filtered[cursor]
 			m.op = OpConfirming
-			m.confirmAction = "stop"
-			m.confirmID = filtered[cursor].ID
-			m.confirmName = filtered[cursor].Names
-			return m, nil
-		}
-	case keyStart:
-		if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State != "running" {
-			m.op = OpConfirming
-			m.confirmAction = "start"
-			m.confirmID = filtered[cursor].ID
-			m.confirmName = filtered[cursor].Names
+			m.confirmID = c.ID
+			m.confirmName = c.Names
+			if c.State == "running" {
+				m.confirmAction = "stop"
+			} else {
+				m.confirmAction = "start"
+			}
 			return m, nil
 		}
 	case keyRestart:
