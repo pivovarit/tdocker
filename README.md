@@ -57,18 +57,22 @@ Clipboard integration is supported on macOS (`pbcopy`), Windows (`clip`), Linux/
 
 | Key | Action |
 |-----|--------|
-| `↑` / `↓` | Navigate |
+| `↑` / `↓` / `j` / `k` | Navigate |
+| `g` / `G` | Jump to top / bottom |
 | `/` | Filter containers |
 | `A` | Toggle all / running only |
-| `c` | Copy container ID to clipboard |
+| `l` | View logs |
 | `e` | Exec into container (`sh`) |
 | `x` | Open debug shell (`docker debug`) |
 | `i` | Inspect container |
 | `t` | Show stats |
-| `l` | View logs |
-| `S` | Stop container |
-| `s` | Start container |
+| `v` | Stream Docker events |
+| `c` | Copy container ID to clipboard |
+| `S` | Start / Stop (toggles by state) |
 | `R` | Restart container |
-| `D` | Delete container |
+| `P` | Pause / Unpause |
+| `D` | Delete container (stopped only) |
 | `r` | Refresh |
+| `X` | Switch Docker context |
+| `?` | Show help |
 | `q` / `Ctrl+C` | Quit |
