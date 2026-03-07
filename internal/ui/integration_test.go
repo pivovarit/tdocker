@@ -15,7 +15,7 @@ import (
 func startAlpine(t *testing.T, opts ...testcontainers.ContainerCustomizer) (testcontainers.Container, string) {
 	t.Helper()
 	ctx := context.Background()
-	allOpts := append([]testcontainers.ContainerCustomizer{testcontainers.WithCmd("sleep", "60"), testcontainers.WithLogger(stdlog.Default())}, opts...)
+	allOpts := append([]testcontainers.ContainerCustomizer{testcontainers.WithCmd("sh", "-c", "trap 'exit 0' TERM; sleep 60 & wait"), testcontainers.WithLogger(stdlog.Default())}, opts...)
 	c, err := testcontainers.Run(ctx, "alpine", allOpts...)
 	if err != nil {
 		t.Fatalf("start container: %v", err)
@@ -46,6 +46,7 @@ func findContainer(app App, fullID string) (docker.Container, bool) {
 }
 
 func TestIntegration_App_ShowsRunningContainer(t *testing.T) {
+	t.Parallel()
 	_, id := startAlpine(t)
 
 	app := appWithRealContainers(t)
@@ -60,6 +61,7 @@ func TestIntegration_App_ShowsRunningContainer(t *testing.T) {
 }
 
 func TestIntegration_App_FilterMatchesRunningContainer(t *testing.T) {
+	t.Parallel()
 	_, id := startAlpine(t)
 
 	app := appWithRealContainers(t)
@@ -72,6 +74,7 @@ func TestIntegration_App_FilterMatchesRunningContainer(t *testing.T) {
 }
 
 func TestIntegration_App_StopUpdatesState(t *testing.T) {
+	t.Parallel()
 	_, id := startAlpine(t)
 
 	app := appWithRealContainers(t)
@@ -94,6 +97,7 @@ func TestIntegration_App_StopUpdatesState(t *testing.T) {
 }
 
 func TestIntegration_App_ComposeGroupingVisible(t *testing.T) {
+	t.Parallel()
 	_, id1 := startAlpine(t, testcontainers.WithLabels(map[string]string{
 		"com.docker.compose.project": "integ-proj",
 		"com.docker.compose.service": "svc-a",

@@ -15,7 +15,7 @@ import (
 func alpine(t *testing.T, extraArgs ...testcontainers.ContainerCustomizer) (testcontainers.Container, string) {
 	t.Helper()
 	ctx := context.Background()
-	opts := append([]testcontainers.ContainerCustomizer{testcontainers.WithCmd("sleep", "60"), testcontainers.WithLogger(stdlog.Default())}, extraArgs...)
+	opts := append([]testcontainers.ContainerCustomizer{testcontainers.WithCmd("sh", "-c", "trap 'exit 0' TERM; sleep 60 & wait"), testcontainers.WithLogger(stdlog.Default())}, extraArgs...)
 	c, err := testcontainers.Run(ctx, "alpine", opts...)
 	if err != nil {
 		t.Fatalf("start container: %v", err)
@@ -44,6 +44,7 @@ func fetchAll(t *testing.T) ContainersMsg {
 }
 
 func TestIntegration_FetchContainers_RunningContainerAppears(t *testing.T) {
+	t.Parallel()
 	_, id := alpine(t)
 
 	containers := fetchAll(t)
@@ -57,6 +58,7 @@ func TestIntegration_FetchContainers_RunningContainerAppears(t *testing.T) {
 }
 
 func TestIntegration_FetchContainers_StoppedHiddenWithoutAll(t *testing.T) {
+	t.Parallel()
 	ctr, id := alpine(t)
 	ctx := context.Background()
 	if err := ctr.Stop(ctx, nil); err != nil {
@@ -74,6 +76,7 @@ func TestIntegration_FetchContainers_StoppedHiddenWithoutAll(t *testing.T) {
 }
 
 func TestIntegration_FetchContainers_ShowAllIncludesStopped(t *testing.T) {
+	t.Parallel()
 	ctr, id := alpine(t)
 	ctx := context.Background()
 	if err := ctr.Stop(ctx, nil); err != nil {
@@ -87,6 +90,7 @@ func TestIntegration_FetchContainers_ShowAllIncludesStopped(t *testing.T) {
 }
 
 func TestIntegration_FetchContainers_LabelsAreParsed(t *testing.T) {
+	t.Parallel()
 	_, id := alpine(t, testcontainers.WithLabels(map[string]string{
 		"com.docker.compose.project": "myapp",
 		"com.docker.compose.service": "web",
@@ -117,6 +121,7 @@ func pauseContainer(t *testing.T) string {
 }
 
 func TestIntegration_CheckShellAvailable_NoShell(t *testing.T) {
+	t.Parallel()
 	id := pauseContainer(t)
 
 	msg := CLI{}.CheckShellAvailable(id)()
@@ -134,6 +139,7 @@ func TestIntegration_CheckShellAvailable_NoShell(t *testing.T) {
 }
 
 func TestIntegration_CheckShellAvailable_WithShell(t *testing.T) {
+	t.Parallel()
 	_, id := alpine(t)
 
 	msg := CLI{}.CheckShellAvailable(id)()
@@ -151,6 +157,7 @@ func TestIntegration_CheckShellAvailable_WithShell(t *testing.T) {
 }
 
 func TestIntegration_StopContainer(t *testing.T) {
+	t.Parallel()
 	_, id := alpine(t)
 	ctx := context.Background()
 
@@ -175,6 +182,7 @@ func TestIntegration_StopContainer(t *testing.T) {
 }
 
 func TestIntegration_StartContainer(t *testing.T) {
+	t.Parallel()
 	ctr, id := alpine(t)
 	ctx := context.Background()
 	if err := ctr.Stop(ctx, nil); err != nil {
@@ -201,6 +209,7 @@ func TestIntegration_StartContainer(t *testing.T) {
 }
 
 func TestIntegration_DeleteContainer(t *testing.T) {
+	t.Parallel()
 	ctr, id := alpine(t)
 	ctx := context.Background()
 	if err := ctr.Stop(ctx, nil); err != nil {
