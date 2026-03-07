@@ -167,6 +167,12 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case docker.RestartMsg:
 		return m.handleLifecycleMsg(msg.Err)
 
+	case docker.PauseMsg:
+		return m.handleLifecycleMsg(msg.Err)
+
+	case docker.UnpauseMsg:
+		return m.handleLifecycleMsg(msg.Err)
+
 	case docker.DeleteMsg:
 		m.op = OpNone
 		if msg.Err != nil {

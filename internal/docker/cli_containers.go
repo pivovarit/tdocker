@@ -53,3 +53,11 @@ func (CLI) RestartContainer(id string) tea.Cmd {
 func (CLI) DeleteContainer(id string) tea.Cmd {
 	return runContainerCmd(id, timeoutRM, "rm", func(err error) tea.Msg { return DeleteMsg{ID: id, Err: err} })
 }
+
+func (CLI) PauseContainer(id string) tea.Cmd {
+	return runContainerCmd(id, timeoutPause, "pause", func(err error) tea.Msg { return PauseMsg{Err: err} })
+}
+
+func (CLI) UnpauseContainer(id string) tea.Cmd {
+	return runContainerCmd(id, timeoutUnpause, "unpause", func(err error) tea.Msg { return UnpauseMsg{Err: err} })
+}

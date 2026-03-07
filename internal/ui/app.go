@@ -40,6 +40,8 @@ const (
 	OpStarting
 	OpRestarting
 	OpDeleting
+	OpPausing
+	OpUnpausing
 )
 
 type App struct {
@@ -157,7 +159,7 @@ func indexContainers(cs []docker.Container) map[string]docker.Container {
 func (m App) rebuildTable(selectedID string) App {
 	filtered := m.filtered()
 
-	m.table = buildTable(filtered, m.width)
+	m.table = buildTable(filtered, m.width-2)
 	m.table.SetHeight(m.tableHeight())
 	m.viewportStart = 0
 

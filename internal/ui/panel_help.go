@@ -24,6 +24,7 @@ func (m App) renderHelpOverlay() string {
 			{"s", "start"},
 			{"S", "stop"},
 			{"R", "restart"},
+			{"P", "pause / unpause"},
 			{"D", "delete (stopped only)"},
 			{"e", "exec shell"},
 			{"x", "docker debug"},
