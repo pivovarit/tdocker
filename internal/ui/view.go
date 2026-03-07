@@ -138,35 +138,34 @@ func (m App) View() tea.View {
 		b.WriteString(emptyStyle.Render(fmt.Sprintf("No containers match %q.", m.filterQuery)))
 
 	default:
-		const headerLines = 2
+		if m.logs.visible {
+			b.WriteString(m.renderLogsPanel())
+		} else {
+			const headerLines = 2
 
-		lines := strings.Split(m.table.View(), "\n")
-		cursor := m.table.Cursor()
-		for i, line := range lines {
-			dataIdx := i - headerLines
-			if dataIdx < 0 {
-				continue
-			}
-			containerIdx := m.viewportStart + dataIdx
-			if containerIdx >= len(filtered) {
-				break
-			}
-			if containerIdx != cursor {
-				switch filtered[containerIdx].State {
-				case "paused":
-					lines[i] = pausedRowStyle.Render(line)
-				case "running":
-				default:
-					lines[i] = stoppedRowStyle.Render(line)
+			lines := strings.Split(m.table.View(), "\n")
+			cursor := m.table.Cursor()
+			for i, line := range lines {
+				dataIdx := i - headerLines
+				if dataIdx < 0 {
+					continue
+				}
+				containerIdx := m.viewportStart + dataIdx
+				if containerIdx >= len(filtered) {
+					break
+				}
+				if containerIdx != cursor {
+					switch filtered[containerIdx].State {
+					case "paused":
+						lines[i] = pausedRowStyle.Render(line)
+					case "running":
+					default:
+						lines[i] = stoppedRowStyle.Render(line)
+					}
 				}
 			}
+			b.WriteString(tableStyle.Render(strings.Join(lines, "\n")))
 		}
-		b.WriteString(tableStyle.Render(strings.Join(lines, "\n")))
-	}
-
-	if m.logs.visible {
-		b.WriteString("\n")
-		b.WriteString(m.renderLogsPanel())
 	}
 
 	if m.inspect.visible {
