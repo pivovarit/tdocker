@@ -80,3 +80,11 @@ Clipboard integration is supported on macOS (`pbcopy`), Windows (`clip`), Linux/
 | `X` | Switch Docker context |
 | `?` | Show help |
 | `q` / `Ctrl+C` | Quit |
+
+### Tips & Hints
+
+- **Navigate while filtering** - press `↑`/`↓` while typing a filter to accept it and immediately navigate the list
+- **`q` clears filters first** - if a filter is active, `q` clears it instead of quitting; press again to exit
+- **Auto-scroll in logs** - logs auto-scroll as new lines arrive; scroll up to pause, scroll back to the bottom to resume
+- **Smart actions** - `S` stops running containers and starts stopped ones; `R` restarts running containers and starts stopped ones
+- **Shell detection** - `e` auto-detects available shells; for distroless/scratch images, use `x` (docker debug) instead
