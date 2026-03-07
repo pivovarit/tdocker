@@ -2,7 +2,11 @@
 
 A minimalistic terminal UI for everyday Docker operations. Not a dashboard, not a full Docker management suite - just the handful of things you actually do dozens of times a day, each a single keypress away: tail logs, exec into a shell, restart a container, copy an ID.
 
-https://github.com/user-attachments/assets/0bc1f303-46e1-4aa4-a755-72e769eeb3fd
+
+
+https://github.com/user-attachments/assets/225b071c-cd62-4f93-9705-15ab6aff7e4c
+
+
 
 ### Philosophy
 
