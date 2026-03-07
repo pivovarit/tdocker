@@ -571,6 +571,87 @@
       color: var(--text2);
     }
 
+    /* ─── Tips ─────────────────────────────────────────────────────────────── */
+    #tips { border-top: 1px solid var(--border2); }
+
+    .tips-terminal {
+      max-width: 780px;
+      margin: 0 auto;
+      background: #070d18;
+      border: 1px solid rgba(56,189,248,0.15);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,0.5),
+        0 24px 60px rgba(0,0,0,0.5),
+        0 0 30px rgba(56,189,248,0.04);
+    }
+
+    .tips-terminal-bar {
+      display: flex;
+      align-items: center;
+      padding: 13px 16px;
+      background: #0a1220;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .tips-terminal-title {
+      flex: 1;
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text3);
+    }
+
+    .tips-body {
+      padding: 8px 0;
+    }
+
+    .tip-line {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      padding: 7px 22px;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      line-height: 1.6;
+      transition: background 0.15s;
+    }
+
+    .tip-line:hover {
+      background: rgba(56,189,248,0.03);
+    }
+
+    .tip-prompt {
+      color: var(--accent);
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .tip-comment {
+      color: var(--text3);
+      font-style: italic;
+    }
+
+    .tip-content {
+      color: var(--text2);
+    }
+
+    .tip-content code {
+      font-family: var(--font-mono);
+      font-size: 1em;
+      color: var(--accent2);
+      background: rgba(56,189,248,0.07);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    .tip-sep {
+      border: none;
+      border-top: 1px solid rgba(255,255,255,0.04);
+      margin: 4px 22px;
+    }
+
     /* ─── Install ───────────────────────────────────────────────────────────── */
     #install { border-top: 1px solid var(--border2); }
 
@@ -773,6 +854,7 @@
       <li><a href="#philosophy">Philosophy</a></li>
       <li><a href="#features">Features</a></li>
       <li><a href="#keybindings">Keybindings</a></li>
+      <li><a href="#tips">Tips</a></li>
       <li><a href="#install">Install</a></li>
     </ul>
     <a href="https://github.com/pivovarit/tdocker" class="nav-github" target="_blank" rel="noopener">
@@ -848,7 +930,7 @@
       <p class="section-label">Design philosophy</p>
       <h2 class="section-title">Intentionally small.</h2>
       <p class="section-desc" style="max-width: 100%; margin: 0;">
-        <code>tdocker</code> covers the most common Docker workflows and nothing more. No plugin system, no YAML configs, no container creation wizards. If an operation isn't something you'd do multiple times a week, it probably doesn't belong here.
+        <code>tdocker</code> covers the most common Docker workflows and nothing more. No plugin system, no YAML configs, no container creation wizards.<br><br> If an operation isn't something you'd do multiple times a week, it probably doesn't belong here.
       </p>
     </div>
   </div>
@@ -873,31 +955,31 @@
       <div class="feature-card reveal reveal-delay-2">
         <div class="feature-icon">📋</div>
         <h3 class="feature-title">Live Logs</h3>
-        <p class="feature-desc"><code>l</code> streams live logs from any selected container directly in the TUI with smooth scrolling and instant exit.</p>
+        <p class="feature-desc"><code>l</code> streams live logs full-screen. Press <code>f</code> to toggle between the last 200 lines and full history. Auto-scrolls as new lines arrive.</p>
       </div>
 
       <div class="feature-card reveal reveal-delay-3">
         <div class="feature-icon">🖥</div>
         <h3 class="feature-title">Exec &amp; Debug</h3>
-        <p class="feature-desc"><code>e</code> opens a shell inside the container. <code>x</code> launches Docker's built-in debug shell for deeper inspection.</p>
+        <p class="feature-desc"><code>e</code> auto-detects available shells in the container. <code>x</code> launches Docker debug for distroless or scratch images.</p>
       </div>
 
       <div class="feature-card reveal reveal-delay-4">
         <div class="feature-icon">📊</div>
         <h3 class="feature-title">Stats &amp; Inspect</h3>
-        <p class="feature-desc"><code>t</code> shows real-time CPU and memory trends with directional indicators. <code>i</code> gives full container config inspection.</p>
+        <p class="feature-desc"><code>t</code> shows real-time CPU, memory, net I/O, block I/O, and PIDs with trend indicators (↑ ↓ ·). <code>i</code> opens full-screen container inspection.</p>
       </div>
 
       <div class="feature-card reveal reveal-delay-5">
         <div class="feature-icon">🔍</div>
         <h3 class="feature-title">Fuzzy Filter</h3>
-        <p class="feature-desc"><code>/</code> lets you filter containers by name or image instantly - no more scrolling through dozens of containers.</p>
+        <p class="feature-desc"><code>/</code> filters by name, image, ID, Compose project, and service. Press <code>↑</code>/<code>↓</code> while typing to accept and navigate immediately.</p>
       </div>
 
       <div class="feature-card reveal reveal-delay-6">
         <div class="feature-icon">⚡</div>
         <h3 class="feature-title">Container Events</h3>
-        <p class="feature-desc"><code>v</code> streams live Docker events - start, stop, die - as they happen, with color-coded event types.</p>
+        <p class="feature-desc"><code>v</code> streams live Docker events with color-coded actions. The container list auto-refreshes on lifecycle events.</p>
       </div>
     </div>
   </div>
@@ -1009,6 +1091,38 @@
             <span class="kb-action">Delete container (stopped only)</span>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Tips ─────────────────────────────────────────────────────────────────── -->
+<section id="tips">
+  <div class="container">
+    <div class="section-head">
+      <p class="section-label">Tips &amp; Hints</p>
+      <h2 class="section-title">The small things that add up.</h2>
+      <p class="section-desc">Behaviors designed to keep you in the flow.</p>
+    </div>
+
+    <div class="tips-terminal reveal">
+      <div class="tips-terminal-bar">
+        <span class="terminal-dot close"></span>
+        <span class="terminal-dot min"></span>
+        <span class="terminal-dot expand"></span>
+        <span class="tips-terminal-title">tdocker tips</span>
+      </div>
+      <div class="tips-body">
+        <div class="tip-line"><span class="tip-prompt">#</span> <span class="tip-comment">filter</span></div>
+        <div class="tip-line"><span class="tip-prompt">→</span> <span class="tip-content">press <code>↑</code>/<code>↓</code> while typing a filter to accept it and navigate immediately</span></div>
+        <div class="tip-line"><span class="tip-prompt">→</span> <span class="tip-content"><code>q</code> clears the active filter first, press again to quit</span></div>
+        <hr class="tip-sep">
+        <div class="tip-line"><span class="tip-prompt">#</span> <span class="tip-comment">logs &amp; inspect</span></div>
+        <div class="tip-line"><span class="tip-prompt">→</span> <span class="tip-content">logs auto-scroll as new lines arrive, scroll up to pause, bottom to resume</span></div>
+        <hr class="tip-sep">
+        <div class="tip-line"><span class="tip-prompt">#</span> <span class="tip-comment">containers</span></div>
+        <div class="tip-line"><span class="tip-prompt">→</span> <span class="tip-content"><code>S</code> stops running containers and starts stopped ones, <code>R</code> does the same for restart</span></div>
+        <div class="tip-line"><span class="tip-prompt">→</span> <span class="tip-content"><code>e</code> auto-detects shells, for distroless/scratch images, use <code>x</code> (docker debug)</span></div>
       </div>
     </div>
   </div>
