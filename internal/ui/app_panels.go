@@ -2,9 +2,6 @@ package ui
 
 func (m App) tableHeight() int {
 	reserved := tableChrome
-	if m.inspect.visible {
-		reserved += m.inspectPanelHeight()
-	}
 	if m.stats.visible {
 		reserved += statsPanelHeight
 	}
