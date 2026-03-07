@@ -140,6 +140,8 @@ func (m App) View() tea.View {
 	default:
 		if m.logs.visible {
 			b.WriteString(m.renderLogsPanel())
+		} else if m.inspect.visible {
+			b.WriteString(m.renderInspectPanel())
 		} else {
 			const headerLines = 2
 
@@ -166,11 +168,6 @@ func (m App) View() tea.View {
 			}
 			b.WriteString(tableStyle.Render(strings.Join(lines, "\n")))
 		}
-	}
-
-	if m.inspect.visible {
-		b.WriteString("\n")
-		b.WriteString(m.renderInspectPanel())
 	}
 
 	if m.stats.visible {

@@ -139,7 +139,7 @@ func (m App) filtered() []docker.Container {
 }
 
 func (m App) logsPanelHeight() int    { return max(5, m.height-tableChrome) }
-func (m App) inspectPanelHeight() int { return max(5, min(20, m.height/3)) }
+func (m App) inspectPanelHeight() int { return max(5, m.height-tableChrome) }
 func (m App) eventsPanelHeight() int  { return max(5, min(12, m.height/3)) }
 
 func (m App) currentSelectedID() string {

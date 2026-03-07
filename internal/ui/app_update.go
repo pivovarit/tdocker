@@ -113,6 +113,10 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case m.ctxPicker.visible:
 				m.ctxPicker = ctxPickerState{}
 				return m, nil
+			case m.filterQuery != "":
+				m.filterQuery = ""
+				m = m.rebuildTable("")
+				return m, nil
 			default:
 				return m, tea.Quit
 			}

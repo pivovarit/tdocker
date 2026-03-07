@@ -34,6 +34,9 @@ func (m App) handleConfirmKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 func (m App) handleFilterKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch msg.Code {
+	case tea.KeyUp, tea.KeyDown:
+		m.filtering = false
+		return m.handleMainKey(msg)
 	case tea.KeyEsc, tea.KeyEnter:
 		m.filtering = false
 	case tea.KeyBackspace, tea.KeyDelete:
