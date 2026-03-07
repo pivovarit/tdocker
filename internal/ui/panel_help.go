@@ -31,6 +31,7 @@ func (m App) renderHelpOverlay() string {
 		}},
 		{"Panels", []entry{
 			{"l", "logs"},
+			{"/", "search logs"},
 			{"i", "inspect"},
 			{"t", "stats"},
 			{"v", "events"},

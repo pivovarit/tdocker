@@ -213,13 +213,22 @@ func (m App) helpBar() string {
 				keyStyle.Render("esc") + "/" + keyStyle.Render("v") + " close · " +
 				keyStyle.Render("q") + " close",
 		)
+	case m.logs.searching:
+		return helpStyle.Render(
+			"  / " + keyStyle.Render(m.logs.searchQuery+"▌") + " · esc cancel · enter confirm",
+		)
 	case m.logs.visible:
+		searchHint := keyStyle.Render("/") + " search · "
+		if m.logs.searchQuery != "" {
+			searchHint = keyStyle.Render("["+m.logs.searchQuery+"]") + " · " + keyStyle.Render("esc") + " clear · "
+		}
 		return helpStyle.Render(
 			"  ↑/↓ scroll · " +
 				keyStyle.Render("g") + " top · " +
 				keyStyle.Render("G") + " bottom · " +
+				searchHint +
 				keyStyle.Render("f") + " toggle all · " +
-				keyStyle.Render("esc") + "/" + keyStyle.Render("l") + " close · " +
+				keyStyle.Render("l") + " close · " +
 				keyStyle.Render("q") + " close",
 		)
 	case m.inspect.visible:
