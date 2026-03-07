@@ -13,7 +13,7 @@ func buildTable(containers []docker.Container, width int) table.Model {
 		idW         = 13
 		stateW      = 9
 		runningForW = 13
-		overhead    = 16
+		overhead    = 15
 	)
 
 	names := make([]string, len(containers))
@@ -38,26 +38,30 @@ func buildTable(containers []docker.Container, width int) table.Model {
 		}
 	}
 
-	nameW = min(nameW, 50)
-	imageW = min(imageW, 40)
-	statusW = min(statusW, 20)
-
 	remaining := width - idW - stateW - runningForW - overhead
-	if remaining < 40 {
-		remaining = 40
-	}
 
-	leftover := max(remaining-nameW, 20)
 	if hasPorts {
-		portsW = min(portsW, 60)
-		total := imageW + statusW + portsW
-		imageW = max(leftover*imageW/total, 5)
-		statusW = max(leftover*statusW/total, 6)
-		portsW = max(leftover-imageW-statusW, 5)
+		minR := 8 + 5 + 6 + 5
+		if remaining < minR {
+			remaining = minR
+		}
+		total := nameW + imageW + statusW + portsW
+		nameW = max(remaining*nameW/total, 8)
+		imageW = max(remaining*imageW/total, 5)
+		statusW = max(remaining*statusW/total, 6)
+		portsW = max(remaining*portsW/total, 5)
+		if leftover := remaining - nameW - imageW - statusW - portsW; leftover > 0 {
+			portsW += leftover
+		}
 	} else {
-		total := imageW + statusW
-		imageW = max(leftover*imageW/total, 5)
-		statusW = max(leftover-imageW, 6)
+		minR := 8 + 5 + 6
+		if remaining < minR {
+			remaining = minR
+		}
+		total := nameW + imageW + statusW
+		nameW = max(remaining*nameW/total, 8)
+		imageW = max(remaining*imageW/total, 5)
+		statusW = max(remaining-nameW-imageW, 6)
 	}
 
 	cols := []table.Column{

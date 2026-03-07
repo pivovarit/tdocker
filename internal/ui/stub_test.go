@@ -22,6 +22,8 @@ type stubClient struct {
 	startEvents      func(context.Context, int) tea.Cmd
 	fetchContexts    func() tea.Cmd
 	switchContext    func(string) tea.Cmd
+	pauseContainer   func(string) tea.Cmd
+	unpauseContainer func(string) tea.Cmd
 }
 
 func newStubClient() *stubClient {
@@ -43,6 +45,8 @@ func newStubClient() *stubClient {
 		startEvents:      func(_ context.Context, _ int) tea.Cmd { return noop },
 		fetchContexts:    func() tea.Cmd { return noop },
 		switchContext:    noopStr,
+		pauseContainer:   noopStr,
+		unpauseContainer: noopStr,
 	}
 }
 
@@ -63,5 +67,7 @@ func (c *stubClient) StartLogs(ctx context.Context, id string, tail string, gen 
 func (c *stubClient) StartEvents(ctx context.Context, gen int) tea.Cmd {
 	return c.startEvents(ctx, gen)
 }
-func (c *stubClient) FetchContexts() tea.Cmd            { return c.fetchContexts() }
-func (c *stubClient) SwitchContext(name string) tea.Cmd { return c.switchContext(name) }
+func (c *stubClient) FetchContexts() tea.Cmd             { return c.fetchContexts() }
+func (c *stubClient) SwitchContext(name string) tea.Cmd  { return c.switchContext(name) }
+func (c *stubClient) PauseContainer(id string) tea.Cmd   { return c.pauseContainer(id) }
+func (c *stubClient) UnpauseContainer(id string) tea.Cmd { return c.unpauseContainer(id) }

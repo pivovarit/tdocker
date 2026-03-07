@@ -31,6 +31,8 @@ const (
 	timeoutRM      = 10 * time.Second
 	timeoutDebug   = 5 * time.Second
 	timeoutContext = 10 * time.Second
+	timeoutPause   = 10 * time.Second
+	timeoutUnpause = 10 * time.Second
 )
 
 type Labels map[string]string
@@ -96,6 +98,8 @@ type (
 	}
 	ContextsMsg      []DockerContext
 	ContextSwitchMsg struct{ Err error }
+	PauseMsg         struct{ Err error }
+	UnpauseMsg       struct{ Err error }
 )
 
 type DockerContext struct {

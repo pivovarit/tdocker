@@ -22,4 +22,6 @@ type Client interface {
 	StartEvents(ctx context.Context, gen int) tea.Cmd
 	FetchContexts() tea.Cmd
 	SwitchContext(name string) tea.Cmd
+	PauseContainer(id string) tea.Cmd
+	UnpauseContainer(id string) tea.Cmd
 }

@@ -18,6 +18,7 @@ const (
 	keyCopy         = "c"
 	keyStats        = "t"
 	keyEvents       = "v"
+	keyPause        = "P"
 	keyVimDown      = "j"
 	keyVimUp        = "k"
 	keyScrollBottom = "G"

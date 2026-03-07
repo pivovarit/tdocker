@@ -124,6 +124,17 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			m.confirmName = filtered[cursor].Names
 			return m, nil
 		}
+	case keyPause:
+		if cursor >= 0 && cursor < len(filtered) {
+			c := filtered[cursor]
+			if c.State == "running" {
+				m.op = OpPausing
+				return m, m.client.PauseContainer(c.ID)
+			} else if c.State == "paused" {
+				m.op = OpUnpausing
+				return m, m.client.UnpauseContainer(c.ID)
+			}
+		}
 	case keyExec:
 		if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State == "running" {
 			return m, m.client.CheckShellAvailable(filtered[cursor].ID)
