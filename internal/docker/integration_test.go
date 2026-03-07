@@ -5,12 +5,64 @@ package docker
 import (
 	"context"
 	stdlog "log"
+	"os"
 	"os/exec"
 	"strings"
 	"testing"
 
 	"github.com/testcontainers/testcontainers-go"
 )
+
+var (
+	sharedAlpineID        string
+	sharedLabeledAlpineID string
+	sharedStoppedAlpineID string
+	sharedPauseID         string
+)
+
+func TestMain(m *testing.M) {
+	ctx := context.Background()
+	cmd := testcontainers.WithCmd("sh", "-c", "trap 'exit 0' TERM; sleep 60 & wait")
+	logger := testcontainers.WithLogger(stdlog.Default())
+
+	running, err := testcontainers.Run(ctx, "alpine", cmd, logger)
+	if err != nil {
+		stdlog.Fatalf("shared alpine: %v", err)
+	}
+	sharedAlpineID = running.GetContainerID()
+
+	labeled, err := testcontainers.Run(ctx, "alpine", cmd, logger, testcontainers.WithLabels(map[string]string{
+		"com.docker.compose.project": "myapp",
+		"com.docker.compose.service": "web",
+	}))
+	if err != nil {
+		stdlog.Fatalf("shared labeled alpine: %v", err)
+	}
+	sharedLabeledAlpineID = labeled.GetContainerID()
+
+	stopped, err := testcontainers.Run(ctx, "alpine", cmd, logger)
+	if err != nil {
+		stdlog.Fatalf("shared stopped alpine: %v", err)
+	}
+	sharedStoppedAlpineID = stopped.GetContainerID()
+	if err := stopped.Stop(ctx, nil); err != nil {
+		stdlog.Fatalf("stop shared alpine: %v", err)
+	}
+
+	out, err := exec.Command("docker", "run", "-d", "registry.k8s.io/pause:3.10").Output()
+	if err != nil {
+		stdlog.Fatalf("shared pause: %v", err)
+	}
+	sharedPauseID = strings.TrimSpace(string(out))
+
+	code := m.Run()
+
+	running.Terminate(ctx)
+	labeled.Terminate(ctx)
+	stopped.Terminate(ctx)
+	exec.Command("docker", "rm", "-f", sharedPauseID).Run()
+	os.Exit(code)
+}
 
 func alpine(t *testing.T, extraArgs ...testcontainers.ContainerCustomizer) (testcontainers.Container, string) {
 	t.Helper()
@@ -45,12 +97,10 @@ func fetchAll(t *testing.T) ContainersMsg {
 
 func TestIntegration_FetchContainers_RunningContainerAppears(t *testing.T) {
 	t.Parallel()
-	_, id := alpine(t)
-
 	containers := fetchAll(t)
-	c, found := findByID(containers, id)
+	c, found := findByID(containers, sharedAlpineID)
 	if !found {
-		t.Fatalf("container %q not found", id[:12])
+		t.Fatalf("container %q not found", sharedAlpineID[:12])
 	}
 	if c.State != "running" {
 		t.Errorf("want State=running, got %q", c.State)
@@ -59,47 +109,30 @@ func TestIntegration_FetchContainers_RunningContainerAppears(t *testing.T) {
 
 func TestIntegration_FetchContainers_StoppedHiddenWithoutAll(t *testing.T) {
 	t.Parallel()
-	ctr, id := alpine(t)
-	ctx := context.Background()
-	if err := ctr.Stop(ctx, nil); err != nil {
-		t.Fatalf("stop: %v", err)
-	}
-
 	msg := CLI{}.FetchContainers(false)()
 	containers, ok := msg.(ContainersMsg)
 	if !ok {
 		t.Fatalf("expected ContainersMsg, got %T", msg)
 	}
-	if _, found := findByID(containers, id); found {
-		t.Errorf("stopped container %q should not appear without showAll", id[:12])
+	if _, found := findByID(containers, sharedStoppedAlpineID); found {
+		t.Errorf("stopped container %q should not appear without showAll", sharedStoppedAlpineID[:12])
 	}
 }
 
 func TestIntegration_FetchContainers_ShowAllIncludesStopped(t *testing.T) {
 	t.Parallel()
-	ctr, id := alpine(t)
-	ctx := context.Background()
-	if err := ctr.Stop(ctx, nil); err != nil {
-		t.Fatalf("stop: %v", err)
-	}
-
 	containers := fetchAll(t)
-	if _, found := findByID(containers, id); !found {
-		t.Errorf("stopped container %q not found with showAll=true", id[:12])
+	if _, found := findByID(containers, sharedStoppedAlpineID); !found {
+		t.Errorf("stopped container %q not found with showAll=true", sharedStoppedAlpineID[:12])
 	}
 }
 
 func TestIntegration_FetchContainers_LabelsAreParsed(t *testing.T) {
 	t.Parallel()
-	_, id := alpine(t, testcontainers.WithLabels(map[string]string{
-		"com.docker.compose.project": "myapp",
-		"com.docker.compose.service": "web",
-	}))
-
 	containers := fetchAll(t)
-	c, found := findByID(containers, id)
+	c, found := findByID(containers, sharedLabeledAlpineID)
 	if !found {
-		t.Fatalf("container %q not found", id[:12])
+		t.Fatalf("container %q not found", sharedLabeledAlpineID[:12])
 	}
 	if got := c.ComposeProject(); got != "myapp" {
 		t.Errorf("want ComposeProject=%q, got %q", "myapp", got)
@@ -109,29 +142,16 @@ func TestIntegration_FetchContainers_LabelsAreParsed(t *testing.T) {
 	}
 }
 
-func pauseContainer(t *testing.T) string {
-	t.Helper()
-	out, err := exec.Command("docker", "run", "-d", "registry.k8s.io/pause:3.10").Output()
-	if err != nil {
-		t.Fatalf("start pause container: %v", err)
-	}
-	id := strings.TrimSpace(string(out))
-	t.Cleanup(func() { exec.Command("docker", "rm", "-f", id).Run() })
-	return id
-}
-
 func TestIntegration_CheckShellAvailable_NoShell(t *testing.T) {
 	t.Parallel()
-	id := pauseContainer(t)
-
-	msg := CLI{}.CheckShellAvailable(id)()
+	msg := CLI{}.CheckShellAvailable(sharedPauseID)()
 
 	result, ok := msg.(ShellAvailableMsg)
 	if !ok {
 		t.Fatalf("want ShellAvailableMsg, got %T", msg)
 	}
-	if result.ID != id {
-		t.Errorf("want ID=%q, got %q", id, result.ID)
+	if result.ID != sharedPauseID {
+		t.Errorf("want ID=%q, got %q", sharedPauseID, result.ID)
 	}
 	if result.Available {
 		t.Error("want Available=false for shell-less container")
@@ -140,16 +160,14 @@ func TestIntegration_CheckShellAvailable_NoShell(t *testing.T) {
 
 func TestIntegration_CheckShellAvailable_WithShell(t *testing.T) {
 	t.Parallel()
-	_, id := alpine(t)
-
-	msg := CLI{}.CheckShellAvailable(id)()
+	msg := CLI{}.CheckShellAvailable(sharedAlpineID)()
 
 	result, ok := msg.(ShellAvailableMsg)
 	if !ok {
 		t.Fatalf("want ShellAvailableMsg, got %T", msg)
 	}
-	if result.ID != id {
-		t.Errorf("want ID=%q, got %q", id, result.ID)
+	if result.ID != sharedAlpineID {
+		t.Errorf("want ID=%q, got %q", sharedAlpineID, result.ID)
 	}
 	if !result.Available {
 		t.Error("want Available=true for alpine container")
