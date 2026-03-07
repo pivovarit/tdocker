@@ -390,6 +390,7 @@ func TestParseNumber_InvalidReturnsNotOk(t *testing.T) {
 func TestView_LoadingState(t *testing.T) {
 	m := viewApp()
 	m.loading = true
+	m.loadingVisible = true
 	out := m.View().Content
 	if !strings.Contains(out, "Fetching") {
 		t.Errorf("want 'Fetching' in loading view, got:\n%s", out)

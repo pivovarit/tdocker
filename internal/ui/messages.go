@@ -5,6 +5,8 @@ type autoRefreshMsg struct{}
 type bgEventsRestartMsg struct{ gen int }
 type fetchTimerTickMsg struct{}
 type fetchSlowMsg struct{ gen int }
+type opSlowMsg struct{ gen int }
+type opDisplayMsg struct{ gen int }
 
 type clipboardMsg struct {
 	name string

@@ -42,6 +42,20 @@ func fetchSlowCmd(gen int) tea.Cmd {
 	}
 }
 
+func opSlowCmd(gen int) tea.Cmd {
+	return func() tea.Msg {
+		time.Sleep(10 * time.Second)
+		return opSlowMsg{gen: gen}
+	}
+}
+
+func opDisplayCmd(gen int) tea.Cmd {
+	return func() tea.Msg {
+		time.Sleep(150 * time.Millisecond)
+		return opDisplayMsg{gen: gen}
+	}
+}
+
 func (m App) startFetch() (App, tea.Cmd) {
 	m.loading = true
 	m.fetchStart = time.Now()
@@ -52,6 +66,8 @@ func (m App) startFetch() (App, tea.Cmd) {
 
 func (m App) handleLifecycleMsg(err error) (tea.Model, tea.Cmd) {
 	m.op = OpNone
+	m.opVisible = false
+	m.warnMsg = ""
 	if err != nil {
 		m.err = err
 		return m, nil
@@ -132,7 +148,14 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case fetchTimerTickMsg:
 		if m.loading {
+			m.loadingVisible = true
 			return m, fetchTimerCmd()
+		}
+		return m, nil
+
+	case opDisplayMsg:
+		if msg.gen == m.opGen && m.op != OpNone && m.op != OpConfirming {
+			m.opVisible = true
 		}
 		return m, nil
 
@@ -142,12 +165,19 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
+	case opSlowMsg:
+		if msg.gen == m.opGen && m.op != OpNone && m.op != OpConfirming {
+			m.warnMsg = "Docker is taking a long time to respond…"
+		}
+		return m, nil
+
 	case docker.ContainersMsg:
 		selectedID := m.currentSelectedID()
 		m.containers = msg
 		m.sorted = docker.Sort(m.containers)
 		m.containersByID = indexContainers(m.containers)
 		m.loading = false
+		m.loadingVisible = false
 		m.fetchSlow = false
 		m.err = nil
 		m = m.rebuildTable(selectedID)

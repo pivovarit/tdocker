@@ -75,7 +75,7 @@ func (m App) View() tea.View {
 	case m.helpVisible:
 		b.WriteString(m.renderHelpOverlay())
 
-	case m.loading && len(m.containers) == 0:
+	case m.loadingVisible && len(m.containers) == 0:
 		elapsed := time.Since(m.fetchStart)
 		loadingMsg := "Fetching containers…"
 		if elapsed >= time.Second {
@@ -182,13 +182,13 @@ func (m App) helpBar() string {
 	switch {
 	case m.helpVisible:
 		return helpStyle.Render("  " + keyStyle.Render("?") + "/" + keyStyle.Render("esc") + "/" + keyStyle.Render("q") + " close")
-	case m.op == OpStopping:
+	case m.opVisible && m.op == OpStopping:
 		return confirmStyle.Render("  Stopping container…")
-	case m.op == OpStarting:
+	case m.opVisible && m.op == OpStarting:
 		return confirmStyle.Render("  Starting container…")
-	case m.op == OpRestarting:
+	case m.opVisible && m.op == OpRestarting:
 		return confirmStyle.Render("  Restarting container…")
-	case m.op == OpDeleting:
+	case m.opVisible && m.op == OpDeleting:
 		return confirmStyle.Render("  Deleting container…")
 	case m.events.visible:
 		return helpStyle.Render(
