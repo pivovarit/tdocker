@@ -34,9 +34,18 @@ func (m App) View() tea.View {
 	const ctxSuffix = " "
 	const minPad = 2
 
+	updatePlain := ""
+	if m.updateAvailable != "" {
+		updatePlain = "new version available"
+	}
+
 	ctxName := m.ctxPicker.current
 	if ctxName != "" && m.width > 0 {
-		maxNameW := m.width - len([]rune(leftPlain)) - len([]rune(ctxPrefix)) - len([]rune(ctxSuffix)) - minPad
+		updateW := 0
+		if updatePlain != "" {
+			updateW = len([]rune(updatePlain)) + 5
+		}
+		maxNameW := m.width - len([]rune(leftPlain)) - len([]rune(ctxPrefix)) - len([]rune(ctxSuffix)) - updateW - minPad
 		if maxNameW < 1 {
 			maxNameW = 1
 		}
@@ -44,7 +53,12 @@ func (m App) View() tea.View {
 	}
 
 	rightPlain := ""
-	if ctxName != "" {
+	switch {
+	case updatePlain != "" && ctxName != "":
+		rightPlain = updatePlain + "  ·  " + ctxPrefix + ctxName + ctxSuffix
+	case updatePlain != "":
+		rightPlain = updatePlain + " "
+	case ctxName != "":
 		rightPlain = ctxPrefix + ctxName + ctxSuffix
 	}
 
@@ -64,7 +78,12 @@ func (m App) View() tea.View {
 		styledLeft += titleHintStyle.Render(": ") + titleStyle.Render(fmt.Sprintf("%q", m.filterQuery))
 	}
 	styledRight := ""
-	if ctxName != "" {
+	switch {
+	case updatePlain != "" && ctxName != "":
+		styledRight = titleHintStyle.Render(updatePlain) + sep + titleHintStyle.Render(ctxPrefix) + titleStyle.Render(ctxName) + ctxSuffix
+	case updatePlain != "":
+		styledRight = titleHintStyle.Render(updatePlain) + " "
+	case ctxName != "":
 		styledRight = titleHintStyle.Render(ctxPrefix) + titleStyle.Render(ctxName) + ctxSuffix
 	}
 

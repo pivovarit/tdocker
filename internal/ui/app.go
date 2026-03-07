@@ -69,11 +69,13 @@ type App struct {
 	fetchGen   int
 	fetchSlow  bool
 
-	copiedName     string
-	warnMsg        string
-	opGen          int
-	opVisible      bool
-	loadingVisible bool
+	copiedName      string
+	warnMsg         string
+	opGen           int
+	opVisible       bool
+	loadingVisible  bool
+	version         string
+	updateAvailable string
 
 	ctxPicker ctxPickerState
 
@@ -88,13 +90,14 @@ type App struct {
 	helpVisible bool
 }
 
-func New() App {
-	return newWithClient(docker.CLI{})
+func New(version string) App {
+	return newWithClient(docker.CLI{}, version)
 }
 
-func newWithClient(c docker.Client) App {
+func newWithClient(c docker.Client, version string) App {
 	return App{
 		client:      c,
+		version:     version,
 		loading:     true,
 		fetchStart:  time.Now(),
 		fetchGen:    1,
@@ -113,6 +116,7 @@ func (m App) Init() tea.Cmd {
 		m.client.StartEvents(context.Background(), m.bgEventsGen),
 		fetchTimerCmd(),
 		fetchSlowCmd(m.fetchGen),
+		checkUpdateCmd(m.version),
 	)
 }
 
