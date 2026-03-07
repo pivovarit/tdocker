@@ -30,9 +30,9 @@ func buildTable(containers []docker.Container, width int) table.Model {
 		if w := len([]rune(c.Status)); w > statusW {
 			statusW = w
 		}
-		if c.Ports != "" {
+		if fp := formatPorts(c.Ports); fp != "" {
 			hasPorts = true
-			if w := len([]rune(c.Ports)); w > portsW {
+			if w := len([]rune(fp)); w > portsW {
 				portsW = w
 			}
 		}
@@ -87,7 +87,7 @@ func buildTable(containers []docker.Container, width int) table.Model {
 			trunc(c.RunningFor, runningForW),
 		}
 		if hasPorts {
-			row = append(row, trunc(c.Ports, portsW))
+			row = append(row, trunc(formatPorts(c.Ports), portsW))
 		}
 		rows[i] = row
 	}
