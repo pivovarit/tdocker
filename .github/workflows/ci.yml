@@ -38,3 +38,5 @@ jobs:
 
       - name: Integration Tests
         run: go test -tags integration -v ./...
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: true
