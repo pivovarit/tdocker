@@ -38,7 +38,7 @@ func TestInit_StartsBackgroundEventStream(t *testing.T) {
 		startEventsCalled = true
 		return func() tea.Msg { return nil }
 	}
-	m := newWithClient(mc)
+	m := newWithClient(mc, "")
 	m.Init()
 	if !startEventsCalled {
 		t.Error("want StartEvents called from Init")

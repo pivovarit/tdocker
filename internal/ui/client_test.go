@@ -9,7 +9,7 @@ import (
 )
 
 func modelWithMock(mc *stubClient, containers []docker.Container) App {
-	m := newWithClient(mc)
+	m := newWithClient(mc, "")
 	m.sorted = containers
 	m.containers = containers
 	m.loading = false

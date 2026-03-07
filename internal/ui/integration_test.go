@@ -31,7 +31,7 @@ func appWithRealContainers(t *testing.T) App {
 	if !ok {
 		t.Fatalf("expected ContainersMsg, got %T", msg)
 	}
-	m := New()
+	m := New("")
 	result, _ := m.Update(containers)
 	return result.(App)
 }

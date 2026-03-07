@@ -159,6 +159,10 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
+	case updateAvailableMsg:
+		m.updateAvailable = msg.version
+		return m, nil
+
 	case fetchSlowMsg:
 		if m.loading && msg.gen == m.fetchGen {
 			m.fetchSlow = true

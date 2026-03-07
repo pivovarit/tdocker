@@ -16,7 +16,7 @@ func main() {
 		return
 	}
 
-	p := tea.NewProgram(ui.New())
+	p := tea.NewProgram(ui.New(version))
 	if _, err := p.Run(); err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
