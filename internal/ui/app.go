@@ -82,6 +82,8 @@ type App struct {
 	width          int
 	height         int
 
+	collapsedProjects map[string]bool
+
 	op     operationState
 	fetch  fetchState
 	rename renameState
@@ -108,10 +110,11 @@ func New(version string) App {
 
 func newWithClient(c docker.Client, version string) App {
 	return App{
-		client:  c,
-		version: version,
-		showAll: true,
-		table:   buildTable(nil, 120),
+		client:            c,
+		version:           version,
+		showAll:           true,
+		collapsedProjects: map[string]bool{},
+		table:             buildTable(nil, 120),
 		fetch: fetchState{
 			loading: true,
 			start:   time.Now(),
@@ -135,21 +138,53 @@ func (m App) Init() tea.Cmd {
 	)
 }
 
+func matchesFilter(c docker.Container, q string) bool {
+	return strings.Contains(strings.ToLower(c.Names), q) ||
+		strings.Contains(strings.ToLower(c.Image), q) ||
+		strings.Contains(strings.ToLower(c.ID), q) ||
+		strings.Contains(strings.ToLower(c.ComposeProject()), q) ||
+		strings.Contains(strings.ToLower(c.ComposeService()), q)
+}
+
 func (m App) filtered() []docker.Container {
-	if m.filterQuery == "" {
+	if m.filterQuery != "" {
+		q := strings.ToLower(m.filterQuery)
+		var out []docker.Container
+		for _, c := range m.sorted {
+			if matchesFilter(c, q) {
+				out = append(out, c)
+			}
+		}
+		return out
+	}
+
+	if len(m.collapsedProjects) == 0 {
 		return m.sorted
 	}
-	q := strings.ToLower(m.filterQuery)
+
+	collapsedGroups := map[string][]docker.Container{}
+	emitted := map[string]bool{}
 	var out []docker.Container
+
 	for _, c := range m.sorted {
-		if strings.Contains(strings.ToLower(c.Names), q) ||
-			strings.Contains(strings.ToLower(c.Image), q) ||
-			strings.Contains(strings.ToLower(c.ID), q) ||
-			strings.Contains(strings.ToLower(c.ComposeProject()), q) ||
-			strings.Contains(strings.ToLower(c.ComposeService()), q) {
+		proj := c.ComposeProject()
+		if proj != "" && m.collapsedProjects[proj] {
+			collapsedGroups[proj] = append(collapsedGroups[proj], c)
+		}
+	}
+
+	for _, c := range m.sorted {
+		proj := c.ComposeProject()
+		if proj != "" && m.collapsedProjects[proj] {
+			if !emitted[proj] {
+				emitted[proj] = true
+				out = append(out, collapseSummary(proj, collapsedGroups[proj]))
+			}
+		} else {
 			out = append(out, c)
 		}
 	}
+
 	return out
 }
 

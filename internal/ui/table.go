@@ -117,6 +117,9 @@ func buildTable(containers []docker.Container, width int) table.Model {
 
 func buildTableName(containers []docker.Container, i int) string {
 	c := containers[i]
+	if c.State == "collapsed" {
+		return c.Names
+	}
 	p := c.ComposeProject()
 	if p == "" {
 		return strings.TrimPrefix(c.Names, "/")

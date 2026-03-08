@@ -104,4 +104,7 @@ var (
 
 	eventNameStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#E2E8F0"))
+
+	collapsedRowStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#A78BFA"))
 )

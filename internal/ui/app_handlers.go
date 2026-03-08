@@ -102,7 +102,7 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m.filtering = true
 		return m, nil
 	case keyLogs:
-		if c, ok := m.selectedContainer(); ok {
+		if c, ok := m.selectedContainer(); ok && c.ID != "" {
 			m.logs.container = c.Names
 			m.logs.containerID = c.ID
 			m.logs.lines = nil
@@ -117,7 +117,7 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, firstLine
 		}
 	case keyStop:
-		if c, ok := m.selectedContainer(); ok {
+		if c, ok := m.selectedContainer(); ok && c.ID != "" {
 			action := "start"
 			if c.State == "running" {
 				action = "stop"
@@ -126,7 +126,7 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 	case keyRestart:
-		if c, ok := m.selectedContainer(); ok {
+		if c, ok := m.selectedContainer(); ok && c.ID != "" {
 			action := "start"
 			if c.State == "running" {
 				action = "restart"
@@ -135,7 +135,7 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 	case keyDelete:
-		if c, ok := m.selectedContainer(); ok {
+		if c, ok := m.selectedContainer(); ok && c.ID != "" {
 			if c.State == "running" {
 				m.warnMsg = "stop the container before deleting"
 				return m, nil
@@ -144,7 +144,7 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 	case keyPause:
-		if c, ok := m.selectedContainer(); ok {
+		if c, ok := m.selectedContainer(); ok && c.ID != "" {
 			m.op.gen++
 			gen := m.op.gen
 			if c.State == "running" {
@@ -156,23 +156,23 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			}
 		}
 	case keyRename:
-		if c, ok := m.selectedContainer(); ok {
+		if c, ok := m.selectedContainer(); ok && c.ID != "" {
 			m.rename = renameState{active: true, id: c.ID, input: strings.TrimPrefix(c.Names, "/")}
 			return m, nil
 		}
 	case keyExec:
-		if c, ok := m.selectedContainer(); ok && c.State == "running" {
+		if c, ok := m.selectedContainer(); ok && c.ID != "" && c.State == "running" {
 			return m, m.client.CheckShellAvailable(c.ID)
 		}
 	case keyDebug:
-		if c, ok := m.selectedContainer(); ok {
+		if c, ok := m.selectedContainer(); ok && c.ID != "" {
 			return m, m.client.CheckDebugAvailable(c.ID)
 		}
 	case keyContext:
 		m.ctxPicker.requested = true
 		return m, m.client.FetchContexts()
 	case keyInspect:
-		if c, ok := m.selectedContainer(); ok {
+		if c, ok := m.selectedContainer(); ok && c.ID != "" {
 			m.inspect.visible = true
 			m.inspect.lines = nil
 			m.inspect.scroll = scrollState{}
@@ -181,11 +181,11 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, m.client.InspectContainer(c.ID)
 		}
 	case keyCopy:
-		if c, ok := m.selectedContainer(); ok {
+		if c, ok := m.selectedContainer(); ok && c.ID != "" {
 			return m, copyToClipboard(c.Names, c.ID)
 		}
 	case keyStats:
-		if c, ok := m.selectedContainer(); ok && c.State == "running" {
+		if c, ok := m.selectedContainer(); ok && c.ID != "" && c.State == "running" {
 			m.stats.visible = true
 			m.stats.entry = nil
 			m.stats.container = c.Names
@@ -213,6 +213,45 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 				m = m.rebuildTable(m.currentSelectedID())
 			}
 		}
+	}
+
+	switch msg.Code {
+	case tea.KeyLeft:
+		if c, ok := m.selectedContainer(); ok {
+			proj := c.ComposeProject()
+			if proj == "" || c.State == "collapsed" {
+				return m, nil
+			}
+			m.collapsedProjects[proj] = true
+			m = m.rebuildTable("")
+			filtered := m.filtered()
+			for i, fc := range filtered {
+				if fc.State == "collapsed" && fc.ComposeProject() == proj {
+					m.table.SetCursor(i)
+					break
+				}
+			}
+			m = m.rebuildTable(m.currentSelectedID())
+		}
+		return m, nil
+	case tea.KeyRight:
+		if c, ok := m.selectedContainer(); ok {
+			proj := c.ComposeProject()
+			if c.State != "collapsed" || proj == "" {
+				return m, nil
+			}
+			delete(m.collapsedProjects, proj)
+			m = m.rebuildTable("")
+			filtered := m.filtered()
+			for i, fc := range filtered {
+				if fc.ComposeProject() == proj {
+					m.table.SetCursor(i)
+					break
+				}
+			}
+			m = m.rebuildTable(m.currentSelectedID())
+		}
+		return m, nil
 	}
 
 	var tableMsg tea.Msg = msg

@@ -19,6 +19,7 @@ func (m App) renderHelpOverlay() string {
 			{"↓ / j", "move down"},
 			{"g", "jump to top"},
 			{"G", "jump to bottom"},
+			{"← / →", "collapse / expand group"},
 		}},
 		{"Container", []entry{
 			{"S", "start / stop"},

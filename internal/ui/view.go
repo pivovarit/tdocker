@@ -158,6 +158,8 @@ func (m App) View() tea.View {
 				}
 				if containerIdx != cursor {
 					switch filtered[containerIdx].State {
+					case "collapsed":
+						lines[i] = collapsedRowStyle.Render(line)
 					case "paused":
 						lines[i] = pausedRowStyle.Render(line)
 					case "running":
@@ -231,6 +233,8 @@ func (m App) helpBar() string {
 		return helpBarRename(m.rename.input)
 	case m.filtering:
 		return helpBarFilter(m.filterQuery)
+	case m.isCollapsedSelected():
+		return helpBarCollapsed()
 	default:
 		return helpBarDefault(m.warnMsg, m.copiedName, m.filterQuery)
 	}
@@ -333,6 +337,19 @@ func helpBarRename(input string) string {
 func helpBarFilter(query string) string {
 	return helpStyle.Render(
 		"  / " + keyStyle.Render(query+"▌") + " · esc/enter exit",
+	)
+}
+
+func (m App) isCollapsedSelected() bool {
+	c, ok := m.selectedContainer()
+	return ok && c.State == "collapsed"
+}
+
+func helpBarCollapsed() string {
+	return helpStyle.Render(
+		"  " + keyStyle.Render("→") + " expand · " +
+			keyStyle.Render("?") + " help · " +
+			keyStyle.Render("q") + " quit",
 	)
 }
 
