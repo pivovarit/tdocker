@@ -745,6 +745,69 @@
     .install-copy-btn:hover { color: var(--accent); border-color: rgba(56,189,248,0.3); }
     .install-copy-btn.copied { color: var(--green); border-color: rgba(74,222,128,0.3); }
 
+    /* ─── Sponsor ──────────────────────────────────────────────────────────── */
+    .sponsor { border-top: 1px solid var(--border2); }
+
+    .sponsor-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 32px;
+      padding: 40px 36px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+    }
+
+    .sponsor-text { flex: 1; }
+
+    .sponsor-text h3 {
+      font-family: var(--font-mono);
+      font-size: 16px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .sponsor-text p {
+      font-size: 14px;
+      color: var(--text2);
+      line-height: 1.65;
+      max-width: 480px;
+    }
+
+    .btn-sponsor {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 10px 20px;
+      border-radius: var(--radius);
+      text-decoration: none;
+      color: #db61a2;
+      border: 1px solid rgba(219, 97, 162, 0.25);
+      background: rgba(219, 97, 162, 0.05);
+      transition: all 0.2s;
+      white-space: nowrap;
+      letter-spacing: -0.01em;
+    }
+
+    .btn-sponsor:hover {
+      background: rgba(219, 97, 162, 0.1);
+      border-color: rgba(219, 97, 162, 0.4);
+      box-shadow: 0 0 20px rgba(219, 97, 162, 0.08);
+    }
+
+    .btn-sponsor svg {
+      width: 15px;
+      height: 15px;
+      fill: #db61a2;
+      flex-shrink: 0;
+    }
+
     /* ─── Footer ────────────────────────────────────────────────────────────── */
     footer {
       border-top: 1px solid var(--border2);
@@ -828,7 +891,7 @@
       .nav-links { display: none; }
       section { padding: 70px 0; }
       .hero { padding: 120px 0 80px; }
-
+      .sponsor-inner { flex-direction: column; align-items: flex-start; }
     }
 
     @media (max-width: 480px) {
@@ -1215,6 +1278,22 @@
           <button class="install-copy-btn" data-copy="git clone https://github.com/pivovarit/tdocker && cd tdocker && go run .">copy</button>
         </div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Sponsor ──────────────────────────────────────────────────────────────── -->
+<section class="sponsor">
+  <div class="container">
+    <div class="sponsor-inner reveal">
+      <div class="sponsor-text">
+        <h3>Support this project</h3>
+        <p>tdocker is free, open-source, and maintained in spare time. If it saves you time, consider sponsoring to help keep it going.</p>
+      </div>
+      <a href="https://github.com/sponsors/pivovarit" class="btn-sponsor" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        Sponsor on GitHub
+      </a>
     </div>
   </div>
 </section>
