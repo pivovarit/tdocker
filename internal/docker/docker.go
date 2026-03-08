@@ -53,6 +53,7 @@ type Container struct {
 	ID         string `json:"ID"`
 	Names      string `json:"Names"`
 	Image      string `json:"Image"`
+	Command    string `json:"Command"`
 	State      string `json:"State"`
 	Status     string `json:"Status"`
 	RunningFor string `json:"RunningFor"`
