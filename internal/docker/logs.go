@@ -22,8 +22,13 @@ type (
 	}
 )
 
-func (CLI) StartLogs(ctx context.Context, id string, tail string, gen int) tea.Cmd {
-	cmd := exec.CommandContext(ctx, "docker", "logs", "--follow", "--tail", tail, id)
+func (CLI) StartLogs(ctx context.Context, id string, tail string, timestamps bool, gen int) tea.Cmd {
+	args := []string{"logs", "--follow", "--tail", tail}
+	if timestamps {
+		args = append(args, "--timestamps")
+	}
+	args = append(args, id)
+	cmd := exec.CommandContext(ctx, "docker", args...)
 	pr, pw := io.Pipe()
 	cmd.Stdout = pw
 	cmd.Stderr = pw

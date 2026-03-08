@@ -228,6 +228,7 @@ func (m App) helpBar() string {
 				keyStyle.Render("G") + " bottom · " +
 				searchHint +
 				keyStyle.Render("f") + " toggle all · " +
+				keyStyle.Render("T") + " timestamps · " +
 				keyStyle.Render("l") + " close · " +
 				keyStyle.Render("q") + " close",
 		)
