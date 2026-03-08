@@ -5,28 +5,29 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/pivovarit/tdocker/internal/docker"
 )
+
+type confirmEntry struct {
+	op     Operation
+	execFn func(docker.Client, string) tea.Cmd
+}
+
+var confirmActions = map[string]confirmEntry{
+	"stop":    {OpStopping, docker.Client.StopContainer},
+	"start":   {OpStarting, docker.Client.StartContainer},
+	"restart": {OpRestarting, docker.Client.RestartContainer},
+	"delete":  {OpDeleting, docker.Client.DeleteContainer},
+}
 
 func (m App) handleConfirmKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch msg.Code {
 	case 'y', 'Y':
-		m.err = nil
-		m.op.gen++
-		id := m.op.id
-		gen := m.op.gen
-		switch m.op.action {
-		case "stop":
-			m.op.kind = OpStopping
-			return m, tea.Batch(m.client.StopContainer(id), opDisplayCmd(gen), opSlowCmd(gen))
-		case "start":
-			m.op.kind = OpStarting
-			return m, tea.Batch(m.client.StartContainer(id), opDisplayCmd(gen), opSlowCmd(gen))
-		case "restart":
-			m.op.kind = OpRestarting
-			return m, tea.Batch(m.client.RestartContainer(id), opDisplayCmd(gen), opSlowCmd(gen))
-		case "delete":
-			m.op.kind = OpDeleting
-			return m, tea.Batch(m.client.DeleteContainer(id), opDisplayCmd(gen), opSlowCmd(gen))
+		if entry, ok := confirmActions[m.op.action]; ok {
+			m.err = nil
+			m.op.gen++
+			m.op.kind = entry.op
+			return m, tea.Batch(entry.execFn(m.client, m.op.id), opDisplayCmd(m.op.gen), opSlowCmd(m.op.gen))
 		}
 	case 'n', 'N', tea.KeyEsc:
 		m.op = operationState{}
