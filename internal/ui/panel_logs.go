@@ -19,6 +19,7 @@ type logsState struct {
 	searching   bool
 	searchQuery string
 	timestamps  bool
+	grepMode    bool
 }
 
 func (m App) closeLogs() App {
@@ -44,11 +45,15 @@ func (m App) restartLogs() (tea.Model, tea.Cmd) {
 	if m.logs.allMode {
 		tail = "all"
 	}
-	return m, m.client.StartLogs(ctx, m.logs.containerID, tail, m.logs.timestamps, m.logs.gen)
+	grep := ""
+	if m.logs.grepMode {
+		grep = m.logs.searchQuery
+	}
+	return m, m.client.StartLogs(ctx, m.logs.containerID, tail, m.logs.timestamps, grep, m.logs.gen)
 }
 
 func (m App) logsFiltered() []string {
-	if m.logs.searchQuery == "" {
+	if m.logs.searchQuery == "" || m.logs.grepMode {
 		return m.logs.lines
 	}
 	q := strings.ToLower(m.logs.searchQuery)
@@ -65,15 +70,22 @@ func (m App) handleLogsKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	if m.logs.searching {
 		return m.handleLogsSearchKey(msg)
 	}
+	if msg.String() == "ctrl+g" && m.grepSupported && m.logs.searchQuery != "" {
+		m.logs.grepMode = !m.logs.grepMode
+		return m.restartLogs()
+	}
 	lines := m.logsFiltered()
 	switch msg.Code {
 	case tea.KeyEsc:
 		if m.logs.searchQuery != "" {
+			wasGrep := m.logs.grepMode
 			m.logs.searchQuery = ""
+			m.logs.grepMode = false
 			m.logs.scroll = scrollState{autoScroll: true}
-			if m.logs.scroll.autoScroll {
-				m.logs.scroll.offset = max(0, len(m.logs.lines)-(m.logsPanelHeight()-2))
+			if wasGrep {
+				return m.restartLogs()
 			}
+			m.logs.scroll.offset = max(0, len(m.logs.lines)-(m.logsPanelHeight()-2))
 			return m, nil
 		}
 		m = m.closeLogs()
@@ -105,25 +117,31 @@ func (m App) handleLogsKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+func (m App) confirmLogsSearch() App {
+	m.logs.searching = false
+	if m.logs.searchQuery != "" {
+		m.logs.scroll = scrollState{}
+	}
+	return m
+}
+
 func (m App) handleLogsSearchKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch msg.Code {
 	case tea.KeyEsc:
 		m.logs.searching = false
 		m.logs.searchQuery = ""
 		m.logs.scroll = scrollState{autoScroll: true}
-		if m.logs.scroll.autoScroll {
-			m.logs.scroll.offset = max(0, len(m.logs.lines)-(m.logsPanelHeight()-2))
-		}
+		m.logs.scroll.offset = max(0, len(m.logs.lines)-(m.logsPanelHeight()-2))
 	case tea.KeyEnter:
-		m.logs.searching = false
-		if m.logs.searchQuery != "" {
-			m.logs.scroll = scrollState{}
-		}
+		m = m.confirmLogsSearch()
 	case tea.KeyBackspace:
 		if len(m.logs.searchQuery) > 0 {
 			m.logs.searchQuery = m.logs.searchQuery[:len(m.logs.searchQuery)-1]
 		}
 		m.logs.scroll = scrollState{}
+	case tea.KeyUp, tea.KeyDown, tea.KeyHome, tea.KeyEnd:
+		m = m.confirmLogsSearch()
+		return m.handleLogsKey(msg)
 	default:
 		if msg.Text != "" {
 			m.logs.searchQuery += msg.Text
@@ -143,7 +161,11 @@ func (m App) renderLogsPanel() string {
 	}
 	searchLabel := ""
 	if m.logs.searchQuery != "" || m.logs.searching {
-		searchLabel = " [/" + m.logs.searchQuery
+		prefix := " [/"
+		if m.logs.grepMode {
+			prefix = " [grep: "
+		}
+		searchLabel = prefix + m.logs.searchQuery
 		if m.logs.searching {
 			searchLabel += "▌"
 		}

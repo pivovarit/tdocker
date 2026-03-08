@@ -111,7 +111,7 @@ func TestClient_TKey_CallsFetchStatsWithID(t *testing.T) {
 func TestClient_LKey_CallsStartLogsWithID(t *testing.T) {
 	mc := newStubClient()
 	var gotID string
-	mc.startLogs = func(_ context.Context, id string, _ string, _ bool, _ int) tea.Cmd {
+	mc.startLogs = func(_ context.Context, id string, _ string, _ bool, _ string, _ int) tea.Cmd {
 		gotID = id
 		return func() tea.Msg { return nil }
 	}

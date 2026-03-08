@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os/exec"
+	"strings"
 
 	tea "charm.land/bubbletea/v2"
 )
@@ -22,10 +23,25 @@ type (
 	}
 )
 
-func (CLI) StartLogs(ctx context.Context, id string, tail string, timestamps bool, gen int) tea.Cmd {
+func (CLI) SupportsGrep() tea.Cmd {
+	return func() tea.Msg {
+		ctx, cancel := context.WithTimeout(context.Background(), timeoutDebug)
+		defer cancel()
+		out, err := exec.CommandContext(ctx, "docker", "logs", "--help").CombinedOutput()
+		if err != nil {
+			return GrepSupportMsg{Available: false}
+		}
+		return GrepSupportMsg{Available: strings.Contains(string(out), "--grep")}
+	}
+}
+
+func (CLI) StartLogs(ctx context.Context, id string, tail string, timestamps bool, grep string, gen int) tea.Cmd {
 	args := []string{"logs", "--follow", "--tail", tail}
 	if timestamps {
 		args = append(args, "--timestamps")
+	}
+	if grep != "" {
+		args = append(args, "--grep", grep)
 	}
 	args = append(args, id)
 	cmd := exec.CommandContext(ctx, "docker", args...)
