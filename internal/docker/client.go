@@ -25,4 +25,5 @@ type Client interface {
 	SwitchContext(name string) tea.Cmd
 	PauseContainer(id string) tea.Cmd
 	UnpauseContainer(id string) tea.Cmd
+	RenameContainer(id, newName string) tea.Cmd
 }

@@ -61,3 +61,13 @@ func (CLI) PauseContainer(id string) tea.Cmd {
 func (CLI) UnpauseContainer(id string) tea.Cmd {
 	return runContainerCmd(id, "unpause", func(err error) tea.Msg { return UnpauseMsg{Err: err} })
 }
+
+func (CLI) RenameContainer(id, newName string) tea.Cmd {
+	return func() tea.Msg {
+		out, err := exec.Command("docker", "rename", id, newName).CombinedOutput()
+		if err != nil {
+			return RenameMsg{Err: fmt.Errorf("docker rename: %w\n%s", err, strings.TrimSpace(string(out)))}
+		}
+		return RenameMsg{}
+	}
+}

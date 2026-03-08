@@ -95,6 +95,8 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if msg.String() == keyQuit {
 			switch {
+			case m.renaming:
+				return m.handleRenameKey(msg)
 			case m.helpVisible:
 				m.helpVisible = false
 				return m, nil
@@ -153,6 +155,9 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if m.op == OpConfirming {
 			return m.handleConfirmKey(msg)
+		}
+		if m.renaming {
+			return m.handleRenameKey(msg)
 		}
 		if m.filtering {
 			return m.handleFilterKey(msg)
@@ -221,6 +226,9 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleLifecycleMsg(msg.Err)
 
 	case docker.UnpauseMsg:
+		return m.handleLifecycleMsg(msg.Err)
+
+	case docker.RenameMsg:
 		return m.handleLifecycleMsg(msg.Err)
 
 	case docker.DeleteMsg:

@@ -42,6 +42,7 @@ const (
 	OpDeleting
 	OpPausing
 	OpUnpausing
+	OpRenaming
 )
 
 type App struct {
@@ -58,6 +59,9 @@ type App struct {
 	confirmName   string
 	filtering     bool
 	filterQuery   string
+	renaming      bool
+	renameID      string
+	renameInput   string
 	err           error
 	width         int
 	height        int

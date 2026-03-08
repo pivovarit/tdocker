@@ -21,5 +21,6 @@ const (
 	keyVimDown      = "j"
 	keyVimUp        = "k"
 	keyScrollBottom = "G"
+	keyRename       = "N"
 	keyHelp         = "?"
 )

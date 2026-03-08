@@ -93,6 +93,7 @@ type (
 	ContextSwitchMsg struct{ Err error }
 	PauseMsg         struct{ Err error }
 	UnpauseMsg       struct{ Err error }
+	RenameMsg        struct{ Err error }
 	GrepSupportMsg   struct{ Available bool }
 )
 
