@@ -389,8 +389,8 @@ func TestParseNumber_InvalidReturnsNotOk(t *testing.T) {
 
 func TestView_LoadingState(t *testing.T) {
 	m := viewApp()
-	m.loading = true
-	m.loadingVisible = true
+	m.fetch.loading = true
+	m.fetch.visible = true
 	out := m.View().Content
 	if !strings.Contains(out, "Fetching") {
 		t.Errorf("want 'Fetching' in loading view, got:\n%s", out)
@@ -399,7 +399,7 @@ func TestView_LoadingState(t *testing.T) {
 
 func TestView_ErrorState(t *testing.T) {
 	m := viewApp()
-	m.loading = false
+	m.fetch.loading = false
 	m.err = errSentinel("something went wrong")
 	out := m.View().Content
 	if !strings.Contains(out, "something went wrong") {
@@ -409,7 +409,7 @@ func TestView_ErrorState(t *testing.T) {
 
 func TestView_EmptyRunningContainers(t *testing.T) {
 	m := viewApp()
-	m.loading = false
+	m.fetch.loading = false
 	m.showAll = false
 	out := m.View().Content
 	if !strings.Contains(out, "No running") {
@@ -419,7 +419,7 @@ func TestView_EmptyRunningContainers(t *testing.T) {
 
 func TestView_EmptyAllContainers(t *testing.T) {
 	m := viewApp()
-	m.loading = false
+	m.fetch.loading = false
 	m.showAll = true
 	out := m.View().Content
 	if !strings.Contains(out, "No containers") {

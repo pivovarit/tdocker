@@ -45,54 +45,61 @@ const (
 	OpRenaming
 )
 
+type operationState struct {
+	kind    Operation
+	visible bool
+	gen     int
+	action  string
+	id      string
+	name    string
+}
+
+type fetchState struct {
+	start   time.Time
+	gen     int
+	slow    bool
+	loading bool
+	visible bool
+}
+
+type renameState struct {
+	active bool
+	id     string
+	input  string
+}
+
 type App struct {
-	client        docker.Client
-	table         table.Model
-	containers    []docker.Container
-	sorted        []docker.Container
-	viewportStart int
-	showAll       bool
-	loading       bool
-	op            Operation
-	confirmAction string
-	confirmID     string
-	confirmName   string
-	filtering     bool
-	filterQuery   string
-	renaming      bool
-	renameID      string
-	renameInput   string
-	err           error
-	width         int
-	height        int
+	client         docker.Client
+	table          table.Model
+	containers     []docker.Container
+	sorted         []docker.Container
+	containersByID map[string]docker.Container
+	viewportStart  int
+	showAll        bool
+	filtering      bool
+	filterQuery    string
+	err            error
+	width          int
+	height         int
 
-	logs    logsState
-	inspect inspectState
+	op     operationState
+	fetch  fetchState
+	rename renameState
 
-	fetchStart time.Time
-	fetchGen   int
-	fetchSlow  bool
+	logs      logsState
+	inspect   inspectState
+	stats     statsState
+	events    eventsState
+	ctxPicker ctxPickerState
 
 	copiedName      string
 	warnMsg         string
-	opGen           int
-	opVisible       bool
-	loadingVisible  bool
 	version         string
 	updateAvailable string
-
-	ctxPicker ctxPickerState
-
-	stats statsState
-
-	containersByID map[string]docker.Container
-
-	events         eventsState
-	bgEventsGen    int
-	pendingRefresh bool
-
-	helpVisible   bool
-	grepSupported bool
+	bgEventsGen     int
+	pendingRefresh  bool
+	helpVisible     bool
+	grepSupported   bool
 }
 
 func New(version string) App {
@@ -101,13 +108,15 @@ func New(version string) App {
 
 func newWithClient(c docker.Client, version string) App {
 	return App{
-		client:      c,
-		version:     version,
-		loading:     true,
-		fetchStart:  time.Now(),
-		fetchGen:    1,
-		showAll:     true,
-		table:       buildTable(nil, 120),
+		client:  c,
+		version: version,
+		showAll: true,
+		table:   buildTable(nil, 120),
+		fetch: fetchState{
+			loading: true,
+			start:   time.Now(),
+			gen:     1,
+		},
 		logs:        logsState{scroll: scrollState{autoScroll: true}},
 		events:      eventsState{scroll: scrollState{autoScroll: true}},
 		bgEventsGen: 1,
@@ -121,7 +130,7 @@ func (m App) Init() tea.Cmd {
 		m.client.StartEvents(context.Background(), m.bgEventsGen),
 		m.client.SupportsGrep(),
 		fetchTimerCmd(),
-		fetchSlowCmd(m.fetchGen),
+		fetchSlowCmd(m.fetch.gen),
 		checkUpdateCmd(m.version),
 	)
 }

@@ -16,49 +16,49 @@ var (
 func TestUpdate_ShiftSOnRunningEntersStopConfirm(t *testing.T) {
 	m := modelWithSorted([]docker.Container{runningContainer})
 	got := update(m, runeKey("S"))
-	if got.op != OpConfirming {
+	if got.op.kind != OpConfirming {
 		t.Fatal("want op=OpConfirming")
 	}
-	if got.confirmAction != "stop" {
-		t.Errorf("want confirmAction=%q, got %q", "stop", got.confirmAction)
+	if got.op.action != "stop" {
+		t.Errorf("want confirmAction=%q, got %q", "stop", got.op.action)
 	}
-	if got.confirmID != runningContainer.ID {
-		t.Errorf("want confirmID=%q, got %q", runningContainer.ID, got.confirmID)
+	if got.op.id != runningContainer.ID {
+		t.Errorf("want confirmID=%q, got %q", runningContainer.ID, got.op.id)
 	}
 }
 
 func TestUpdate_ShiftSOnStoppedEntersStartConfirm(t *testing.T) {
 	m := modelWithSorted([]docker.Container{stoppedContainer})
 	got := update(m, runeKey("S"))
-	if got.op != OpConfirming {
+	if got.op.kind != OpConfirming {
 		t.Fatal("want op=OpConfirming")
 	}
-	if got.confirmAction != "start" {
-		t.Errorf("want confirmAction=%q, got %q", "start", got.confirmAction)
+	if got.op.action != "start" {
+		t.Errorf("want confirmAction=%q, got %q", "start", got.op.action)
 	}
-	if got.confirmID != stoppedContainer.ID {
-		t.Errorf("want confirmID=%q, got %q", stoppedContainer.ID, got.confirmID)
+	if got.op.id != stoppedContainer.ID {
+		t.Errorf("want confirmID=%q, got %q", stoppedContainer.ID, got.op.id)
 	}
 }
 
 func TestUpdate_DKeyOnStoppedEntersDeleteConfirm(t *testing.T) {
 	m := modelWithSorted([]docker.Container{stoppedContainer})
 	got := update(m, runeKey("D"))
-	if got.op != OpConfirming {
+	if got.op.kind != OpConfirming {
 		t.Fatal("want op=OpConfirming")
 	}
-	if got.confirmAction != "delete" {
-		t.Errorf("want confirmAction=%q, got %q", "delete", got.confirmAction)
+	if got.op.action != "delete" {
+		t.Errorf("want confirmAction=%q, got %q", "delete", got.op.action)
 	}
-	if got.confirmID != stoppedContainer.ID {
-		t.Errorf("want confirmID=%q, got %q", stoppedContainer.ID, got.confirmID)
+	if got.op.id != stoppedContainer.ID {
+		t.Errorf("want confirmID=%q, got %q", stoppedContainer.ID, got.op.id)
 	}
 }
 
 func TestUpdate_DKeyOnRunningDoesNothing(t *testing.T) {
 	m := modelWithSorted([]docker.Container{runningContainer})
 	got := update(m, runeKey("D"))
-	if got.op == OpConfirming {
+	if got.op.kind == OpConfirming {
 		t.Error("want op!=OpConfirming for running container")
 	}
 }
@@ -66,10 +66,10 @@ func TestUpdate_DKeyOnRunningDoesNothing(t *testing.T) {
 func TestUpdate_ConfirmYSetsStoppingFlag(t *testing.T) {
 	m := confirming("stop", runningContainer)
 	got := update(m, runeKey("y"))
-	if got.op == OpConfirming {
+	if got.op.kind == OpConfirming {
 		t.Error("want op!=OpConfirming after y")
 	}
-	if got.op != OpStopping {
+	if got.op.kind != OpStopping {
 		t.Error("want op=OpStopping")
 	}
 }
@@ -77,10 +77,10 @@ func TestUpdate_ConfirmYSetsStoppingFlag(t *testing.T) {
 func TestUpdate_ConfirmYSetsStartingFlag(t *testing.T) {
 	m := confirming("start", stoppedContainer)
 	got := update(m, runeKey("y"))
-	if got.op == OpConfirming {
+	if got.op.kind == OpConfirming {
 		t.Error("want op!=OpConfirming after y")
 	}
-	if got.op != OpStarting {
+	if got.op.kind != OpStarting {
 		t.Error("want op=OpStarting")
 	}
 }
@@ -88,10 +88,10 @@ func TestUpdate_ConfirmYSetsStartingFlag(t *testing.T) {
 func TestUpdate_ConfirmYSetsDeletingFlag(t *testing.T) {
 	m := confirming("delete", stoppedContainer)
 	got := update(m, runeKey("y"))
-	if got.op == OpConfirming {
+	if got.op.kind == OpConfirming {
 		t.Error("want op!=OpConfirming after y")
 	}
-	if got.op != OpDeleting {
+	if got.op.kind != OpDeleting {
 		t.Error("want op=OpDeleting")
 	}
 }
@@ -105,10 +105,10 @@ func TestUpdate_ConfirmCancelKeys(t *testing.T) {
 	for _, key := range cancelKeys {
 		m := confirming("stop", runningContainer)
 		got := update(m, key)
-		if got.op == OpConfirming {
+		if got.op.kind == OpConfirming {
 			t.Errorf("key %v: want op!=OpConfirming", key)
 		}
-		if got.op == OpStopping {
+		if got.op.kind == OpStopping {
 			t.Errorf("key %v: want op!=OpStopping", key)
 		}
 	}
@@ -117,10 +117,10 @@ func TestUpdate_ConfirmCancelKeys(t *testing.T) {
 func TestUpdate_DeleteMsgRemovesContainerLocally(t *testing.T) {
 	m := modelWithSorted([]docker.Container{runningContainer, stoppedContainer})
 	got := update(m, docker.DeleteMsg{ID: stoppedContainer.ID})
-	if got.op == OpDeleting {
+	if got.op.kind == OpDeleting {
 		t.Error("want op!=OpDeleting")
 	}
-	if got.loading {
+	if got.fetch.loading {
 		t.Error("want no reload - smooth deletion should update locally")
 	}
 	if len(got.containers) != 1 {
@@ -160,13 +160,13 @@ func TestUpdate_DeleteAllContainersLeavesEmptyList(t *testing.T) {
 
 func TestUpdate_StartMsgTriggersReload(t *testing.T) {
 	m := modelWithSorted([]docker.Container{stoppedContainer})
-	m.op = OpStarting
+	m.op.kind = OpStarting
 	result, cmd := m.Update(docker.StartMsg{})
 	got := result.(App)
-	if got.op == OpStarting {
+	if got.op.kind == OpStarting {
 		t.Error("want op!=OpStarting")
 	}
-	if !got.loading {
+	if !got.fetch.loading {
 		t.Error("want loading=true to trigger reload")
 	}
 	if cmd == nil {
@@ -176,12 +176,12 @@ func TestUpdate_StartMsgTriggersReload(t *testing.T) {
 
 func TestUpdate_StartMsgErrorSetsErr(t *testing.T) {
 	m := modelWithSorted([]docker.Container{stoppedContainer})
-	m.op = OpStarting
+	m.op.kind = OpStarting
 	got, cmd := m.Update(docker.StartMsg{Err: errors.New("no such container")})
 	if got.(App).err == nil {
 		t.Error("want err set")
 	}
-	if got.(App).loading {
+	if got.(App).fetch.loading {
 		t.Error("want no reload on error")
 	}
 	if cmd != nil {
@@ -191,13 +191,13 @@ func TestUpdate_StartMsgErrorSetsErr(t *testing.T) {
 
 func TestUpdate_StopMsgTriggersReload(t *testing.T) {
 	m := modelWithSorted([]docker.Container{runningContainer})
-	m.op = OpStopping
+	m.op.kind = OpStopping
 	result, cmd := m.Update(docker.StopMsg{})
 	got := result.(App)
-	if got.op == OpStopping {
+	if got.op.kind == OpStopping {
 		t.Error("want op!=OpStopping")
 	}
-	if !got.loading {
+	if !got.fetch.loading {
 		t.Error("want loading=true to trigger reload")
 	}
 	if cmd == nil {
@@ -207,12 +207,12 @@ func TestUpdate_StopMsgTriggersReload(t *testing.T) {
 
 func TestUpdate_StopMsgErrorSetsErr(t *testing.T) {
 	m := modelWithSorted([]docker.Container{runningContainer})
-	m.op = OpStopping
+	m.op.kind = OpStopping
 	got, _ := m.Update(docker.StopMsg{Err: errors.New("failed")})
 	if got.(App).err == nil {
 		t.Error("want err set")
 	}
-	if got.(App).loading {
+	if got.(App).fetch.loading {
 		t.Error("want no reload on error")
 	}
 }
@@ -223,7 +223,7 @@ func TestUpdate_ExecDoneMsgWithErrorSetsErr(t *testing.T) {
 	if got.(App).err == nil {
 		t.Error("want err surfaced in app")
 	}
-	if got.(App).loading {
+	if got.(App).fetch.loading {
 		t.Error("want no loading triggered on exec error")
 	}
 	if cmd != nil {
@@ -237,7 +237,7 @@ func TestUpdate_ExecDoneMsgSuccessTriggersReload(t *testing.T) {
 	if got.(App).err != nil {
 		t.Errorf("want no error on success, got %v", got.(App).err)
 	}
-	if !got.(App).loading {
+	if !got.(App).fetch.loading {
 		t.Error("want loading=true after successful exec")
 	}
 	if cmd == nil {
@@ -252,9 +252,6 @@ func update(m App, msg tea.Msg) App {
 
 func confirming(action string, c docker.Container) App {
 	m := modelWithSorted([]docker.Container{c})
-	m.op = OpConfirming
-	m.confirmAction = action
-	m.confirmID = c.ID
-	m.confirmName = c.Names
+	m.op = operationState{kind: OpConfirming, action: action, id: c.ID, name: c.Names}
 	return m
 }

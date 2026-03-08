@@ -10,25 +10,26 @@ import (
 func (m App) handleConfirmKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch msg.Code {
 	case 'y', 'Y':
-		m.op = OpNone
 		m.err = nil
-		m.opGen++
-		switch m.confirmAction {
+		m.op.gen++
+		id := m.op.id
+		gen := m.op.gen
+		switch m.op.action {
 		case "stop":
-			m.op = OpStopping
-			return m, tea.Batch(m.client.StopContainer(m.confirmID), opDisplayCmd(m.opGen), opSlowCmd(m.opGen))
+			m.op.kind = OpStopping
+			return m, tea.Batch(m.client.StopContainer(id), opDisplayCmd(gen), opSlowCmd(gen))
 		case "start":
-			m.op = OpStarting
-			return m, tea.Batch(m.client.StartContainer(m.confirmID), opDisplayCmd(m.opGen), opSlowCmd(m.opGen))
+			m.op.kind = OpStarting
+			return m, tea.Batch(m.client.StartContainer(id), opDisplayCmd(gen), opSlowCmd(gen))
 		case "restart":
-			m.op = OpRestarting
-			return m, tea.Batch(m.client.RestartContainer(m.confirmID), opDisplayCmd(m.opGen), opSlowCmd(m.opGen))
+			m.op.kind = OpRestarting
+			return m, tea.Batch(m.client.RestartContainer(id), opDisplayCmd(gen), opSlowCmd(gen))
 		case "delete":
-			m.op = OpDeleting
-			return m, tea.Batch(m.client.DeleteContainer(m.confirmID), opDisplayCmd(m.opGen), opSlowCmd(m.opGen))
+			m.op.kind = OpDeleting
+			return m, tea.Batch(m.client.DeleteContainer(id), opDisplayCmd(gen), opSlowCmd(gen))
 		}
 	case 'n', 'N', tea.KeyEsc:
-		m.op = OpNone
+		m.op = operationState{}
 	}
 	return m, nil
 }
@@ -60,32 +61,26 @@ func (m App) handleFilterKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 func (m App) handleRenameKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch msg.Code {
 	case tea.KeyEsc:
-		m.renaming = false
-		m.renameID = ""
-		m.renameInput = ""
+		m.rename = renameState{}
 	case tea.KeyEnter:
-		newName := strings.TrimSpace(m.renameInput)
+		newName := strings.TrimSpace(m.rename.input)
 		if newName == "" {
-			m.renaming = false
-			m.renameID = ""
-			m.renameInput = ""
+			m.rename = renameState{}
 			return m, nil
 		}
-		m.renaming = false
-		m.op = OpRenaming
-		m.opGen++
-		id := m.renameID
-		m.renameID = ""
-		m.renameInput = ""
-		return m, tea.Batch(m.client.RenameContainer(id, newName), opDisplayCmd(m.opGen), opSlowCmd(m.opGen))
+		id := m.rename.id
+		m.rename = renameState{}
+		m.op.gen++
+		m.op.kind = OpRenaming
+		return m, tea.Batch(m.client.RenameContainer(id, newName), opDisplayCmd(m.op.gen), opSlowCmd(m.op.gen))
 	case tea.KeyBackspace, tea.KeyDelete:
-		if len(m.renameInput) > 0 {
-			runes := []rune(m.renameInput)
-			m.renameInput = string(runes[:len(runes)-1])
+		if len(m.rename.input) > 0 {
+			runes := []rune(m.rename.input)
+			m.rename.input = string(runes[:len(runes)-1])
 		}
 	default:
 		if len(msg.Text) > 0 {
-			m.renameInput += msg.Text
+			m.rename.input += msg.Text
 		}
 	}
 	return m, nil
@@ -97,12 +92,12 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 	switch msg.Text {
 	case keyRefresh:
-		m.loading = true
+		m.fetch.loading = true
 		m.err = nil
 		return m, m.client.FetchContainers(m.showAll)
 	case keyToggleAll:
 		m.showAll = !m.showAll
-		m.loading = true
+		m.fetch.loading = true
 		m.err = nil
 		return m, m.client.FetchContainers(m.showAll)
 	case keyFilter:
@@ -126,26 +121,21 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case keyStop:
 		if cursor >= 0 && cursor < len(filtered) {
 			c := filtered[cursor]
-			m.op = OpConfirming
-			m.confirmID = c.ID
-			m.confirmName = c.Names
+			action := "start"
 			if c.State == "running" {
-				m.confirmAction = "stop"
-			} else {
-				m.confirmAction = "start"
+				action = "stop"
 			}
+			m.op = operationState{kind: OpConfirming, id: c.ID, name: c.Names, action: action}
 			return m, nil
 		}
 	case keyRestart:
 		if cursor >= 0 && cursor < len(filtered) {
-			m.op = OpConfirming
-			m.confirmID = filtered[cursor].ID
-			m.confirmName = filtered[cursor].Names
-			if filtered[cursor].State == "running" {
-				m.confirmAction = "restart"
-			} else {
-				m.confirmAction = "start"
+			c := filtered[cursor]
+			action := "start"
+			if c.State == "running" {
+				action = "restart"
 			}
+			m.op = operationState{kind: OpConfirming, id: c.ID, name: c.Names, action: action}
 			return m, nil
 		}
 	case keyDelete:
@@ -154,30 +144,27 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 				m.warnMsg = "stop the container before deleting"
 				return m, nil
 			}
-			m.op = OpConfirming
-			m.confirmAction = "delete"
-			m.confirmID = filtered[cursor].ID
-			m.confirmName = filtered[cursor].Names
+			c := filtered[cursor]
+			m.op = operationState{kind: OpConfirming, id: c.ID, name: c.Names, action: "delete"}
 			return m, nil
 		}
 	case keyPause:
 		if cursor >= 0 && cursor < len(filtered) {
 			c := filtered[cursor]
-			m.opGen++
+			m.op.gen++
+			gen := m.op.gen
 			if c.State == "running" {
-				m.op = OpPausing
-				return m, tea.Batch(m.client.PauseContainer(c.ID), opDisplayCmd(m.opGen), opSlowCmd(m.opGen))
+				m.op.kind = OpPausing
+				return m, tea.Batch(m.client.PauseContainer(c.ID), opDisplayCmd(gen), opSlowCmd(gen))
 			} else if c.State == "paused" {
-				m.op = OpUnpausing
-				return m, tea.Batch(m.client.UnpauseContainer(c.ID), opDisplayCmd(m.opGen), opSlowCmd(m.opGen))
+				m.op.kind = OpUnpausing
+				return m, tea.Batch(m.client.UnpauseContainer(c.ID), opDisplayCmd(gen), opSlowCmd(gen))
 			}
 		}
 	case keyRename:
 		if cursor >= 0 && cursor < len(filtered) {
 			c := filtered[cursor]
-			m.renaming = true
-			m.renameID = c.ID
-			m.renameInput = strings.TrimPrefix(c.Names, "/")
+			m.rename = renameState{active: true, id: c.ID, input: strings.TrimPrefix(c.Names, "/")}
 			return m, nil
 		}
 	case keyExec:

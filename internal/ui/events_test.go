@@ -123,7 +123,7 @@ func TestAutoRefreshMsg_TriggersFetch(t *testing.T) {
 	if app.pendingRefresh {
 		t.Error("want pendingRefresh cleared after autoRefreshMsg")
 	}
-	if !app.loading {
+	if !app.fetch.loading {
 		t.Error("want loading=true after autoRefreshMsg")
 	}
 	if cmd == nil {
@@ -142,7 +142,7 @@ func TestAutoRefreshMsg_SkipsWhenAlreadyLoading(t *testing.T) {
 		return func() tea.Msg { return nil }
 	}
 	m := modelWithMock(mc, nil)
-	m.loading = true
+	m.fetch.loading = true
 	m.pendingRefresh = true
 
 	_, cmd := m.Update(autoRefreshMsg{})

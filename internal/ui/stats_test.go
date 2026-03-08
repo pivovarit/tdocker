@@ -94,7 +94,7 @@ func TestUpdate_RKeyWithStatsPanelOpenResetsEntry(t *testing.T) {
 	if cmd == nil {
 		t.Fatal("want non-nil batch cmd")
 	}
-	if !got.(App).loading {
+	if !got.(App).fetch.loading {
 		t.Error("want loading=true after r")
 	}
 	if got.(App).stats.entry != nil {
