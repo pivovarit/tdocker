@@ -212,23 +212,9 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.fetch.loading = false
 		return m, nil
 
-	case docker.StopMsg:
-		return m.handleLifecycleMsg(msg.Err)
-
-	case docker.StartMsg:
-		return m.handleLifecycleMsg(msg.Err)
-
-	case docker.RestartMsg:
-		return m.handleLifecycleMsg(msg.Err)
-
-	case docker.PauseMsg:
-		return m.handleLifecycleMsg(msg.Err)
-
-	case docker.UnpauseMsg:
-		return m.handleLifecycleMsg(msg.Err)
-
-	case docker.RenameMsg:
-		return m.handleLifecycleMsg(msg.Err)
+	case docker.StopMsg, docker.StartMsg, docker.RestartMsg,
+		docker.PauseMsg, docker.UnpauseMsg, docker.RenameMsg:
+		return m.handleLifecycleMsg(msg.(docker.LifecycleMsg).GetErr())
 
 	case docker.DeleteMsg:
 		m.op = operationState{}

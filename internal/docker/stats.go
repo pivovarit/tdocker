@@ -33,7 +33,7 @@ func (CLI) FetchStats(id string) tea.Cmd {
 		defer cancel()
 		out, err := exec.CommandContext(ctx, "docker", "stats", "--no-stream", "--format", "{{json .}}", id).CombinedOutput()
 		if err != nil {
-			return StatsMsg{Err: fmt.Errorf("docker stats: %w\n%s", err, strings.TrimSpace(string(out)))}
+			return StatsMsg{Err: cmdErr("stats", out, err)}
 		}
 		line := strings.TrimSpace(string(out))
 		var entry StatsEntry

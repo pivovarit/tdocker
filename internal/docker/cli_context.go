@@ -3,7 +3,6 @@ package docker
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"os/exec"
 	"strings"
 
@@ -17,9 +16,9 @@ func (CLI) FetchContexts() tea.Cmd {
 		out, err := exec.CommandContext(ctx, "docker", "context", "ls", "--format", "{{json .}}").CombinedOutput()
 		if err != nil {
 			if isDaemonUnavailable(out) {
-				return ErrMsg{fmt.Errorf("docker context ls: %w\n%s", ErrDaemonUnavailable, strings.TrimSpace(string(out)))}
+				return ErrMsg{cmdErr("context ls", out, ErrDaemonUnavailable)}
 			}
-			return ErrMsg{fmt.Errorf("docker context ls: %w\n%s", err, strings.TrimSpace(string(out)))}
+			return ErrMsg{cmdErr("context ls", out, err)}
 		}
 		var contexts []DockerContext
 		for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
@@ -41,7 +40,7 @@ func (CLI) SwitchContext(name string) tea.Cmd {
 		defer cancel()
 		out, err := exec.CommandContext(ctx, "docker", "context", "use", name).CombinedOutput()
 		if err != nil {
-			return ContextSwitchMsg{Err: fmt.Errorf("docker context use: %w\n%s", err, strings.TrimSpace(string(out)))}
+			return ContextSwitchMsg{Err: cmdErr("context use", out, err)}
 		}
 		return ContextSwitchMsg{}
 	}

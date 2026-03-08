@@ -69,6 +69,10 @@ func (c Container) ComposeService() string {
 	return c.Labels["com.docker.compose.service"]
 }
 
+type LifecycleMsg interface {
+	GetErr() error
+}
+
 type (
 	ContainersMsg []Container
 	ErrMsg        struct{ Err error }
@@ -97,6 +101,13 @@ type (
 	GrepSupportMsg   struct{ Available bool }
 )
 
+func (m StopMsg) GetErr() error    { return m.Err }
+func (m StartMsg) GetErr() error   { return m.Err }
+func (m RestartMsg) GetErr() error { return m.Err }
+func (m PauseMsg) GetErr() error   { return m.Err }
+func (m UnpauseMsg) GetErr() error { return m.Err }
+func (m RenameMsg) GetErr() error  { return m.Err }
+
 type DockerContext struct {
 	Name           string `json:"Name"`
 	Current        bool   `json:"Current"`
@@ -104,11 +115,15 @@ type DockerContext struct {
 	DockerEndpoint string `json:"DockerEndpoint"`
 }
 
+func cmdErr(subcmd string, out []byte, err error) error {
+	return fmt.Errorf("docker %s: %w\n%s", subcmd, err, strings.TrimSpace(string(out)))
+}
+
 func runContainerCmd(id string, subcmd string, mkMsg func(error) tea.Msg) tea.Cmd {
 	return func() tea.Msg {
 		out, err := exec.Command("docker", subcmd, id).CombinedOutput()
 		if err != nil {
-			return mkMsg(fmt.Errorf("docker %s: %w\n%s", subcmd, err, strings.TrimSpace(string(out))))
+			return mkMsg(cmdErr(subcmd, out, err))
 		}
 		return mkMsg(nil)
 	}

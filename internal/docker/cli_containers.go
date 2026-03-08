@@ -2,7 +2,6 @@ package docker
 
 import (
 	"encoding/json"
-	"fmt"
 	"os/exec"
 	"strings"
 
@@ -20,9 +19,9 @@ func (CLI) FetchContainers(all bool) tea.Cmd {
 		out, err := exec.Command("docker", args...).CombinedOutput()
 		if err != nil {
 			if isDaemonUnavailable(out) {
-				return ErrMsg{fmt.Errorf("docker ps: %w\n%s", ErrDaemonUnavailable, strings.TrimSpace(string(out)))}
+				return ErrMsg{cmdErr("ps", out, ErrDaemonUnavailable)}
 			}
-			return ErrMsg{fmt.Errorf("docker ps: %w\n%s", err, strings.TrimSpace(string(out)))}
+			return ErrMsg{cmdErr("ps", out, err)}
 		}
 		var containers []Container
 		for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
@@ -66,7 +65,7 @@ func (CLI) RenameContainer(id, newName string) tea.Cmd {
 	return func() tea.Msg {
 		out, err := exec.Command("docker", "rename", id, newName).CombinedOutput()
 		if err != nil {
-			return RenameMsg{Err: fmt.Errorf("docker rename: %w\n%s", err, strings.TrimSpace(string(out)))}
+			return RenameMsg{Err: cmdErr("rename", out, err)}
 		}
 		return RenameMsg{}
 	}
