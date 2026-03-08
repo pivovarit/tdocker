@@ -27,6 +27,7 @@ func (m App) renderHelpOverlay() string {
 			{"D", "delete (stopped only)"},
 			{"e", "exec shell"},
 			{"x", "docker debug"},
+			{"N", "rename"},
 			{"c", "copy ID"},
 		}},
 		{"Panels", []entry{

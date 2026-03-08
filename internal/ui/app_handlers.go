@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"strings"
 
 	tea "charm.land/bubbletea/v2"
 )
@@ -51,6 +52,40 @@ func (m App) handleFilterKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			selectedID := m.currentSelectedID()
 			m.filterQuery += msg.Text
 			m = m.rebuildTable(selectedID)
+		}
+	}
+	return m, nil
+}
+
+func (m App) handleRenameKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	switch msg.Code {
+	case tea.KeyEsc:
+		m.renaming = false
+		m.renameID = ""
+		m.renameInput = ""
+	case tea.KeyEnter:
+		newName := strings.TrimSpace(m.renameInput)
+		if newName == "" {
+			m.renaming = false
+			m.renameID = ""
+			m.renameInput = ""
+			return m, nil
+		}
+		m.renaming = false
+		m.op = OpRenaming
+		m.opGen++
+		id := m.renameID
+		m.renameID = ""
+		m.renameInput = ""
+		return m, tea.Batch(m.client.RenameContainer(id, newName), opDisplayCmd(m.opGen), opSlowCmd(m.opGen))
+	case tea.KeyBackspace, tea.KeyDelete:
+		if len(m.renameInput) > 0 {
+			runes := []rune(m.renameInput)
+			m.renameInput = string(runes[:len(runes)-1])
+		}
+	default:
+		if len(msg.Text) > 0 {
+			m.renameInput += msg.Text
 		}
 	}
 	return m, nil
@@ -136,6 +171,14 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 				m.op = OpUnpausing
 				return m, tea.Batch(m.client.UnpauseContainer(c.ID), opDisplayCmd(m.opGen), opSlowCmd(m.opGen))
 			}
+		}
+	case keyRename:
+		if cursor >= 0 && cursor < len(filtered) {
+			c := filtered[cursor]
+			m.renaming = true
+			m.renameID = c.ID
+			m.renameInput = strings.TrimPrefix(c.Names, "/")
+			return m, nil
 		}
 	case keyExec:
 		if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State == "running" {

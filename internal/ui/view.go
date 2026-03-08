@@ -205,6 +205,8 @@ func (m App) helpBar() string {
 		return confirmStyle.Render("  Restarting container…")
 	case m.opVisible && m.op == OpDeleting:
 		return confirmStyle.Render("  Deleting container…")
+	case m.opVisible && m.op == OpRenaming:
+		return confirmStyle.Render("  Renaming container…")
 	case m.events.visible:
 		return helpStyle.Render(
 			"  ↑/↓ scroll · " +
@@ -277,6 +279,12 @@ func (m App) helpBar() string {
 				keyStyle.Render("enter") + " switch · " +
 				keyStyle.Render("esc") + " cancel",
 		)
+	case m.renaming:
+		return helpStyle.Render(
+			"  rename: " + keyStyle.Render(m.renameInput+"▌") + " · " +
+				keyStyle.Render("enter") + " confirm · " +
+				keyStyle.Render("esc") + " cancel",
+		)
 	case m.filtering:
 		return helpStyle.Render(
 			"  / " + keyStyle.Render(m.filterQuery+"▌") + " · esc/enter exit",
@@ -302,6 +310,7 @@ func (m App) helpBar() string {
 				keyStyle.Render("S") + " start/stop · " +
 				keyStyle.Render("R") + " restart · " +
 				keyStyle.Render("P") + " pause · " +
+				keyStyle.Render("N") + " rename · " +
 				keyStyle.Render("D") + " delete · " +
 				keyStyle.Render("t") + " stats · " +
 				keyStyle.Render("v") + " events · " +

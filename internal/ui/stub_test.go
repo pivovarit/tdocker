@@ -25,6 +25,7 @@ type stubClient struct {
 	switchContext    func(string) tea.Cmd
 	pauseContainer   func(string) tea.Cmd
 	unpauseContainer func(string) tea.Cmd
+	renameContainer  func(string, string) tea.Cmd
 }
 
 func newStubClient() *stubClient {
@@ -49,6 +50,7 @@ func newStubClient() *stubClient {
 		switchContext:    noopStr,
 		pauseContainer:   noopStr,
 		unpauseContainer: noopStr,
+		renameContainer:  func(_ string, _ string) tea.Cmd { return noop },
 	}
 }
 
@@ -74,3 +76,6 @@ func (c *stubClient) FetchContexts() tea.Cmd             { return c.fetchContext
 func (c *stubClient) SwitchContext(name string) tea.Cmd  { return c.switchContext(name) }
 func (c *stubClient) PauseContainer(id string) tea.Cmd   { return c.pauseContainer(id) }
 func (c *stubClient) UnpauseContainer(id string) tea.Cmd { return c.unpauseContainer(id) }
+func (c *stubClient) RenameContainer(id, newName string) tea.Cmd {
+	return c.renameContainer(id, newName)
+}
