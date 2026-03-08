@@ -100,6 +100,16 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			case m.logs.searching:
 				return m.handleLogsKey(msg)
+			case m.logs.visible && m.logs.searchQuery != "":
+				wasGrep := m.logs.grepMode
+				m.logs.searchQuery = ""
+				m.logs.grepMode = false
+				m.logs.scroll = scrollState{autoScroll: true}
+				if wasGrep {
+					return m.restartLogs()
+				}
+				m.logs.scroll.offset = max(0, len(m.logs.lines)-(m.logsPanelHeight()-2))
+				return m, nil
 			case m.logs.visible:
 				m = m.closeLogs()
 				return m, nil
@@ -380,6 +390,10 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		return m, m.client.StartEvents(context.Background(), m.bgEventsGen)
+
+	case docker.GrepSupportMsg:
+		m.grepSupported = msg.Available
+		return m, nil
 
 	case docker.ContextSwitchMsg:
 		m.ctxPicker.visible = false

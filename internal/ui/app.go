@@ -87,7 +87,8 @@ type App struct {
 	bgEventsGen    int
 	pendingRefresh bool
 
-	helpVisible bool
+	helpVisible   bool
+	grepSupported bool
 }
 
 func New(version string) App {
@@ -114,6 +115,7 @@ func (m App) Init() tea.Cmd {
 		m.client.FetchContainers(m.showAll),
 		m.client.FetchContexts(),
 		m.client.StartEvents(context.Background(), m.bgEventsGen),
+		m.client.SupportsGrep(),
 		fetchTimerCmd(),
 		fetchSlowCmd(m.fetchGen),
 		checkUpdateCmd(m.version),

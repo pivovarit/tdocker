@@ -18,7 +18,8 @@ type Client interface {
 	DebugContainer(id string) tea.Cmd
 	InspectContainer(id string) tea.Cmd
 	FetchStats(id string) tea.Cmd
-	StartLogs(ctx context.Context, id string, tail string, timestamps bool, gen int) tea.Cmd
+	StartLogs(ctx context.Context, id string, tail string, timestamps bool, grep string, gen int) tea.Cmd
+	SupportsGrep() tea.Cmd
 	StartEvents(ctx context.Context, gen int) tea.Cmd
 	FetchContexts() tea.Cmd
 	SwitchContext(name string) tea.Cmd

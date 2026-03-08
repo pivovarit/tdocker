@@ -18,7 +18,8 @@ type stubClient struct {
 	debugContainer   func(string) tea.Cmd
 	inspectContainer func(string) tea.Cmd
 	fetchStats       func(string) tea.Cmd
-	startLogs        func(context.Context, string, string, bool, int) tea.Cmd
+	startLogs        func(context.Context, string, string, bool, string, int) tea.Cmd
+	supportsGrep     func() tea.Cmd
 	startEvents      func(context.Context, int) tea.Cmd
 	fetchContexts    func() tea.Cmd
 	switchContext    func(string) tea.Cmd
@@ -41,7 +42,8 @@ func newStubClient() *stubClient {
 		debugContainer:   noopStr,
 		inspectContainer: noopStr,
 		fetchStats:       noopStr,
-		startLogs:        func(_ context.Context, _ string, _ string, _ bool, _ int) tea.Cmd { return noop },
+		startLogs:        func(_ context.Context, _ string, _ string, _ bool, _ string, _ int) tea.Cmd { return noop },
+		supportsGrep:     func() tea.Cmd { return noop },
 		startEvents:      func(_ context.Context, _ int) tea.Cmd { return noop },
 		fetchContexts:    func() tea.Cmd { return noop },
 		switchContext:    noopStr,
@@ -61,9 +63,10 @@ func (c *stubClient) CheckDebugAvailable(id string) tea.Cmd  { return c.checkDeb
 func (c *stubClient) DebugContainer(id string) tea.Cmd       { return c.debugContainer(id) }
 func (c *stubClient) InspectContainer(id string) tea.Cmd     { return c.inspectContainer(id) }
 func (c *stubClient) FetchStats(id string) tea.Cmd           { return c.fetchStats(id) }
-func (c *stubClient) StartLogs(ctx context.Context, id string, tail string, timestamps bool, gen int) tea.Cmd {
-	return c.startLogs(ctx, id, tail, timestamps, gen)
+func (c *stubClient) StartLogs(ctx context.Context, id string, tail string, timestamps bool, grep string, gen int) tea.Cmd {
+	return c.startLogs(ctx, id, tail, timestamps, grep, gen)
 }
+func (c *stubClient) SupportsGrep() tea.Cmd { return c.supportsGrep() }
 func (c *stubClient) StartEvents(ctx context.Context, gen int) tea.Cmd {
 	return c.startEvents(ctx, gen)
 }

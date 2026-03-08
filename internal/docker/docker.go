@@ -92,6 +92,7 @@ type (
 	ContextSwitchMsg struct{ Err error }
 	PauseMsg         struct{ Err error }
 	UnpauseMsg       struct{ Err error }
+	GrepSupportMsg   struct{ Available bool }
 )
 
 type DockerContext struct {

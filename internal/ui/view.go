@@ -220,7 +220,15 @@ func (m App) helpBar() string {
 	case m.logs.visible:
 		searchHint := keyStyle.Render("/") + " search · "
 		if m.logs.searchQuery != "" {
-			searchHint = keyStyle.Render("["+m.logs.searchQuery+"]") + " · " + keyStyle.Render("esc") + " clear · "
+			grepHint := ""
+			if m.grepSupported {
+				if m.logs.grepMode {
+					grepHint = keyStyle.Render("ctrl+g") + " client filter · "
+				} else {
+					grepHint = keyStyle.Render("ctrl+g") + " server grep · "
+				}
+			}
+			searchHint = keyStyle.Render("["+m.logs.searchQuery+"]") + " · " + grepHint + keyStyle.Render("esc") + " clear · "
 		}
 		return helpStyle.Render(
 			"  ↑/↓ scroll · " +

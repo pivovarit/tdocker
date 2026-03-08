@@ -84,7 +84,7 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			m.logs.gen++
 			ctx, cancel := context.WithCancel(context.Background())
 			m.logs.cancel = cancel
-			firstLine := m.client.StartLogs(ctx, filtered[cursor].ID, logsTailDefault, false, m.logs.gen)
+			firstLine := m.client.StartLogs(ctx, filtered[cursor].ID, logsTailDefault, false, "", m.logs.gen)
 			m.table.SetHeight(m.tableHeight())
 			return m, firstLine
 		}
