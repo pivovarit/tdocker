@@ -158,11 +158,18 @@ func (m App) inspectPanelHeight() int { return max(5, m.height-tableChrome) }
 func (m App) eventsPanelHeight() int  { return max(5, min(12, m.height/3)) }
 
 func (m App) currentSelectedID() string {
-	filtered := m.filtered()
-	if c := m.table.Cursor(); c >= 0 && c < len(filtered) {
-		return filtered[c].ID
+	if c, ok := m.selectedContainer(); ok {
+		return c.ID
 	}
 	return ""
+}
+
+func (m App) selectedContainer() (docker.Container, bool) {
+	filtered := m.filtered()
+	if c := m.table.Cursor(); c >= 0 && c < len(filtered) {
+		return filtered[c], true
+	}
+	return docker.Container{}, false
 }
 
 func (m App) containerByID(id string) (docker.Container, bool) {

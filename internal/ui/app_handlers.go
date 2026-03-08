@@ -87,9 +87,6 @@ func (m App) handleRenameKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
-	cursor := m.table.Cursor()
-	filtered := m.filtered()
-
 	switch msg.Text {
 	case keyRefresh:
 		m.fetch.loading = true
@@ -104,9 +101,9 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m.filtering = true
 		return m, nil
 	case keyLogs:
-		if cursor >= 0 && cursor < len(filtered) {
-			m.logs.container = filtered[cursor].Names
-			m.logs.containerID = filtered[cursor].ID
+		if c, ok := m.selectedContainer(); ok {
+			m.logs.container = c.Names
+			m.logs.containerID = c.ID
 			m.logs.lines = nil
 			m.logs.scroll = scrollState{autoScroll: true}
 			m.logs.allMode = false
@@ -114,13 +111,12 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			m.logs.gen++
 			ctx, cancel := context.WithCancel(context.Background())
 			m.logs.cancel = cancel
-			firstLine := m.client.StartLogs(ctx, filtered[cursor].ID, logsTailDefault, false, "", m.logs.gen)
+			firstLine := m.client.StartLogs(ctx, c.ID, logsTailDefault, false, "", m.logs.gen)
 			m.table.SetHeight(m.tableHeight())
 			return m, firstLine
 		}
 	case keyStop:
-		if cursor >= 0 && cursor < len(filtered) {
-			c := filtered[cursor]
+		if c, ok := m.selectedContainer(); ok {
 			action := "start"
 			if c.State == "running" {
 				action = "stop"
@@ -129,8 +125,7 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 	case keyRestart:
-		if cursor >= 0 && cursor < len(filtered) {
-			c := filtered[cursor]
+		if c, ok := m.selectedContainer(); ok {
 			action := "start"
 			if c.State == "running" {
 				action = "restart"
@@ -139,18 +134,16 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 	case keyDelete:
-		if cursor >= 0 && cursor < len(filtered) {
-			if filtered[cursor].State == "running" {
+		if c, ok := m.selectedContainer(); ok {
+			if c.State == "running" {
 				m.warnMsg = "stop the container before deleting"
 				return m, nil
 			}
-			c := filtered[cursor]
 			m.op = operationState{kind: OpConfirming, id: c.ID, name: c.Names, action: "delete"}
 			return m, nil
 		}
 	case keyPause:
-		if cursor >= 0 && cursor < len(filtered) {
-			c := filtered[cursor]
+		if c, ok := m.selectedContainer(); ok {
 			m.op.gen++
 			gen := m.op.gen
 			if c.State == "running" {
@@ -162,45 +155,43 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			}
 		}
 	case keyRename:
-		if cursor >= 0 && cursor < len(filtered) {
-			c := filtered[cursor]
+		if c, ok := m.selectedContainer(); ok {
 			m.rename = renameState{active: true, id: c.ID, input: strings.TrimPrefix(c.Names, "/")}
 			return m, nil
 		}
 	case keyExec:
-		if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State == "running" {
-			return m, m.client.CheckShellAvailable(filtered[cursor].ID)
+		if c, ok := m.selectedContainer(); ok && c.State == "running" {
+			return m, m.client.CheckShellAvailable(c.ID)
 		}
 	case keyDebug:
-		if cursor >= 0 && cursor < len(filtered) {
-			return m, m.client.CheckDebugAvailable(filtered[cursor].ID)
+		if c, ok := m.selectedContainer(); ok {
+			return m, m.client.CheckDebugAvailable(c.ID)
 		}
 	case keyContext:
 		m.ctxPicker.requested = true
 		return m, m.client.FetchContexts()
 	case keyInspect:
-		if cursor >= 0 && cursor < len(filtered) {
+		if c, ok := m.selectedContainer(); ok {
 			m.inspect.visible = true
 			m.inspect.lines = nil
 			m.inspect.scroll = scrollState{}
-			m.inspect.container = filtered[cursor].Names
+			m.inspect.container = c.Names
 			m.table.SetHeight(m.tableHeight())
-			return m, m.client.InspectContainer(filtered[cursor].ID)
+			return m, m.client.InspectContainer(c.ID)
 		}
 	case keyCopy:
-		if cursor >= 0 && cursor < len(filtered) {
-			c := filtered[cursor]
+		if c, ok := m.selectedContainer(); ok {
 			return m, copyToClipboard(c.Names, c.ID)
 		}
 	case keyStats:
-		if cursor >= 0 && cursor < len(filtered) && filtered[cursor].State == "running" {
+		if c, ok := m.selectedContainer(); ok && c.State == "running" {
 			m.stats.visible = true
 			m.stats.entry = nil
-			m.stats.container = filtered[cursor].Names
-			m.stats.containerID = filtered[cursor].ID
+			m.stats.container = c.Names
+			m.stats.containerID = c.ID
 			m.stats.fetching = true
 			m.table.SetHeight(m.tableHeight())
-			return m, m.client.FetchStats(filtered[cursor].ID)
+			return m, m.client.FetchStats(c.ID)
 		}
 	case keyEvents:
 		if m.events.visible {
@@ -217,12 +208,8 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	default:
 		if msg.Code == tea.KeyEsc {
 			if m.filterQuery != "" {
-				selectedID := ""
-				if cursor >= 0 && cursor < len(filtered) {
-					selectedID = filtered[cursor].ID
-				}
 				m.filterQuery = ""
-				m = m.rebuildTable(selectedID)
+				m = m.rebuildTable(m.currentSelectedID())
 			}
 		}
 	}
@@ -237,7 +224,7 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 	var cmd tea.Cmd
 	m.table, cmd = m.table.Update(tableMsg)
-	cursor = m.table.Cursor()
+	cursor := m.table.Cursor()
 	height := m.tableHeight()
 	if cursor < m.viewportStart {
 		m.viewportStart = cursor

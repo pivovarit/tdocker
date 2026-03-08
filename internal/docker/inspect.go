@@ -143,7 +143,7 @@ func (CLI) InspectContainer(id string) tea.Cmd {
 		defer cancel()
 		out, err := exec.CommandContext(ctx, "docker", "inspect", id).CombinedOutput()
 		if err != nil {
-			return InspectMsg{Err: fmt.Errorf("docker inspect: %w\n%s", err, strings.TrimSpace(string(out)))}
+			return InspectMsg{Err: cmdErr("inspect", out, err)}
 		}
 		var raw []inspectRaw
 		if err := json.Unmarshal(out, &raw); err != nil {
