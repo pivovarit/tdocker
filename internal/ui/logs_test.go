@@ -29,7 +29,7 @@ func logsOpenWithLines(lines []string) App {
 func TestLogs_FToggle_SwitchesToAllTail(t *testing.T) {
 	mc := newStubClient()
 	var gotTail string
-	mc.startLogs = func(_ context.Context, _ string, tail string, _ int) tea.Cmd {
+	mc.startLogs = func(_ context.Context, _ string, tail string, _ bool, _ int) tea.Cmd {
 		gotTail = tail
 		return func() tea.Msg { return nil }
 	}
@@ -43,7 +43,7 @@ func TestLogs_FToggle_SwitchesToAllTail(t *testing.T) {
 func TestLogs_FToggle_SwitchesBackToTail200(t *testing.T) {
 	mc := newStubClient()
 	var gotTail string
-	mc.startLogs = func(_ context.Context, _ string, tail string, _ int) tea.Cmd {
+	mc.startLogs = func(_ context.Context, _ string, tail string, _ bool, _ int) tea.Cmd {
 		gotTail = tail
 		return func() tea.Msg { return nil }
 	}
@@ -68,7 +68,7 @@ func TestLogs_FToggle_ClearsLines(t *testing.T) {
 func TestLogs_FToggle_IncrementsGen(t *testing.T) {
 	mc := newStubClient()
 	var gotGen int
-	mc.startLogs = func(_ context.Context, _ string, _ string, gen int) tea.Cmd {
+	mc.startLogs = func(_ context.Context, _ string, _ string, _ bool, gen int) tea.Cmd {
 		gotGen = gen
 		return func() tea.Msg { return nil }
 	}
@@ -83,7 +83,7 @@ func TestLogs_FToggle_IncrementsGen(t *testing.T) {
 func TestLogs_FToggle_PassesContainerID(t *testing.T) {
 	mc := newStubClient()
 	var gotID string
-	mc.startLogs = func(_ context.Context, id string, _ string, _ int) tea.Cmd {
+	mc.startLogs = func(_ context.Context, id string, _ string, _ bool, _ int) tea.Cmd {
 		gotID = id
 		return func() tea.Msg { return nil }
 	}
