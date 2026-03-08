@@ -94,14 +94,14 @@ func (m App) View() tea.View {
 	case m.helpVisible:
 		b.WriteString(m.renderHelpOverlay())
 
-	case m.loadingVisible && len(m.containers) == 0:
-		elapsed := time.Since(m.fetchStart)
+	case m.fetch.visible && len(m.containers) == 0:
+		elapsed := time.Since(m.fetch.start)
 		loadingMsg := "Fetching containers…"
 		if elapsed >= time.Second {
 			loadingMsg += fmt.Sprintf(" (%ds)", int(elapsed.Seconds()))
 		}
 		b.WriteString(emptyStyle.Render(loadingMsg))
-		if m.fetchSlow {
+		if m.fetch.slow {
 			b.WriteString("\n")
 			b.WriteString(helpStyle.Render("  Docker is taking a long time to respond. Press " +
 				keyStyle.Render("q") + " to quit or keep waiting."))
@@ -197,15 +197,15 @@ func (m App) helpBar() string {
 	switch {
 	case m.helpVisible:
 		return helpStyle.Render("  " + keyStyle.Render("?") + "/" + keyStyle.Render("esc") + "/" + keyStyle.Render("q") + " close")
-	case m.opVisible && m.op == OpStopping:
+	case m.op.visible && m.op.kind == OpStopping:
 		return confirmStyle.Render("  Stopping container…")
-	case m.opVisible && m.op == OpStarting:
+	case m.op.visible && m.op.kind == OpStarting:
 		return confirmStyle.Render("  Starting container…")
-	case m.opVisible && m.op == OpRestarting:
+	case m.op.visible && m.op.kind == OpRestarting:
 		return confirmStyle.Render("  Restarting container…")
-	case m.opVisible && m.op == OpDeleting:
+	case m.op.visible && m.op.kind == OpDeleting:
 		return confirmStyle.Render("  Deleting container…")
-	case m.opVisible && m.op == OpRenaming:
+	case m.op.visible && m.op.kind == OpRenaming:
 		return confirmStyle.Render("  Renaming container…")
 	case m.events.visible:
 		return helpStyle.Render(
@@ -256,9 +256,9 @@ func (m App) helpBar() string {
 				keyStyle.Render("esc") + "/" + keyStyle.Render("t") + " close · " +
 				keyStyle.Render("q") + " close",
 		)
-	case m.op == OpConfirming:
+	case m.op.kind == OpConfirming:
 		verb := "Stop"
-		switch m.confirmAction {
+		switch m.op.action {
 		case "start":
 			verb = "Start"
 		case "restart":
@@ -267,7 +267,7 @@ func (m App) helpBar() string {
 			verb = "Delete"
 		}
 		return confirmStyle.Render("  "+verb+" ") +
-			confirmNameStyle.Render(m.confirmName) +
+			confirmNameStyle.Render(m.op.name) +
 			confirmStyle.Render("? press ") +
 			keyStyle.Render("y") +
 			confirmStyle.Render(" to confirm, ") +
@@ -279,9 +279,9 @@ func (m App) helpBar() string {
 				keyStyle.Render("enter") + " switch · " +
 				keyStyle.Render("esc") + " cancel",
 		)
-	case m.renaming:
+	case m.rename.active:
 		return helpStyle.Render(
-			"  rename: " + keyStyle.Render(m.renameInput+"▌") + " · " +
+			"  rename: " + keyStyle.Render(m.rename.input+"▌") + " · " +
 				keyStyle.Render("enter") + " confirm · " +
 				keyStyle.Render("esc") + " cancel",
 		)

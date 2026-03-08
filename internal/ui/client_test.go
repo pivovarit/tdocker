@@ -12,7 +12,7 @@ func modelWithMock(mc *stubClient, containers []docker.Container) App {
 	m := newWithClient(mc, "")
 	m.sorted = containers
 	m.containers = containers
-	m.loading = false
+	m.fetch.loading = false
 	m.width = 120
 	return m.rebuildTable("")
 }
@@ -176,7 +176,7 @@ func TestClient_StopMsg_FetchesContainers(t *testing.T) {
 		return func() tea.Msg { return nil }
 	}
 	m := modelWithMock(mc, []docker.Container{runningContainer})
-	m.op = OpStopping
+	m.op.kind = OpStopping
 	update(m, docker.StopMsg{})
 	if !fetched {
 		t.Error("want FetchContainers called after StopMsg")
@@ -191,7 +191,7 @@ func TestClient_StartMsg_FetchesContainers(t *testing.T) {
 		return func() tea.Msg { return nil }
 	}
 	m := modelWithMock(mc, []docker.Container{stoppedContainer})
-	m.op = OpStarting
+	m.op.kind = OpStarting
 	update(m, docker.StartMsg{})
 	if !fetched {
 		t.Error("want FetchContainers called after StartMsg")

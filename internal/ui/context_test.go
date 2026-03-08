@@ -158,7 +158,7 @@ func TestContextPicker_SwitchMsg_ClosesAndRefreshes(t *testing.T) {
 	if app.ctxPicker.visible {
 		t.Error("want ctxPicker.visible=false after switch")
 	}
-	if !app.loading {
+	if !app.fetch.loading {
 		t.Error("want loading=true after switch")
 	}
 	if cmd == nil {

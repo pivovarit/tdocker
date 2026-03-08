@@ -32,7 +32,7 @@ func (m App) handleStatsKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		if m.stats.fetching {
 			return m, nil
 		}
-		m.loading = true
+		m.fetch.loading = true
 		m.err = nil
 		if m.stats.entry != nil {
 			m.stats.prevEntry = m.stats.entry

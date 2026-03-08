@@ -18,7 +18,7 @@ func modelWithSorted(containers []docker.Container) App {
 	m := newWithClient(newStubClient(), "")
 	m.sorted = containers
 	m.containers = containers
-	m.loading = false
+	m.fetch.loading = false
 	m.width = 120
 	m.height = 60
 	return m.rebuildTable("")

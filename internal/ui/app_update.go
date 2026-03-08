@@ -57,16 +57,15 @@ func opDisplayCmd(gen int) tea.Cmd {
 }
 
 func (m App) startFetch() (App, tea.Cmd) {
-	m.loading = true
-	m.fetchStart = time.Now()
-	m.fetchGen++
-	m.fetchSlow = false
-	return m, tea.Batch(m.client.FetchContainers(m.showAll), fetchTimerCmd(), fetchSlowCmd(m.fetchGen))
+	m.fetch.loading = true
+	m.fetch.start = time.Now()
+	m.fetch.gen++
+	m.fetch.slow = false
+	return m, tea.Batch(m.client.FetchContainers(m.showAll), fetchTimerCmd(), fetchSlowCmd(m.fetch.gen))
 }
 
 func (m App) handleLifecycleMsg(err error) (tea.Model, tea.Cmd) {
-	m.op = OpNone
-	m.opVisible = false
+	m.op = operationState{}
 	m.warnMsg = ""
 	if err != nil {
 		m.err = err
@@ -95,7 +94,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if msg.String() == keyQuit {
 			switch {
-			case m.renaming:
+			case m.rename.active:
 				return m.handleRenameKey(msg)
 			case m.helpVisible:
 				m.helpVisible = false
@@ -153,10 +152,10 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.events.visible {
 			return m.handleEventsKey(msg)
 		}
-		if m.op == OpConfirming {
+		if m.op.kind == OpConfirming {
 			return m.handleConfirmKey(msg)
 		}
-		if m.renaming {
+		if m.rename.active {
 			return m.handleRenameKey(msg)
 		}
 		if m.filtering {
@@ -168,15 +167,15 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleMainKey(msg)
 
 	case fetchTimerTickMsg:
-		if m.loading {
-			m.loadingVisible = true
+		if m.fetch.loading {
+			m.fetch.visible = true
 			return m, fetchTimerCmd()
 		}
 		return m, nil
 
 	case opDisplayMsg:
-		if msg.gen == m.opGen && m.op != OpNone && m.op != OpConfirming {
-			m.opVisible = true
+		if msg.gen == m.op.gen && m.op.kind != OpNone && m.op.kind != OpConfirming {
+			m.op.visible = true
 		}
 		return m, nil
 
@@ -185,13 +184,13 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case fetchSlowMsg:
-		if m.loading && msg.gen == m.fetchGen {
-			m.fetchSlow = true
+		if m.fetch.loading && msg.gen == m.fetch.gen {
+			m.fetch.slow = true
 		}
 		return m, nil
 
 	case opSlowMsg:
-		if msg.gen == m.opGen && m.op != OpNone && m.op != OpConfirming {
+		if msg.gen == m.op.gen && m.op.kind != OpNone && m.op.kind != OpConfirming {
 			m.warnMsg = "Docker is taking a long time to respond…"
 		}
 		return m, nil
@@ -201,16 +200,16 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.containers = msg
 		m.sorted = docker.Sort(m.containers)
 		m.containersByID = indexContainers(m.containers)
-		m.loading = false
-		m.loadingVisible = false
-		m.fetchSlow = false
+		m.fetch.loading = false
+		m.fetch.visible = false
+		m.fetch.slow = false
 		m.err = nil
 		m = m.rebuildTable(selectedID)
 		return m, nil
 
 	case docker.ErrMsg:
 		m.err = msg.Err
-		m.loading = false
+		m.fetch.loading = false
 		return m, nil
 
 	case docker.StopMsg:
@@ -232,7 +231,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleLifecycleMsg(msg.Err)
 
 	case docker.DeleteMsg:
-		m.op = OpNone
+		m.op = operationState{}
 		if msg.Err != nil {
 			m.err = msg.Err
 			return m, nil
@@ -357,8 +356,8 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, msg.Next
 		}
 		var debounceCmd tea.Cmd
-		opIdle := m.op == OpNone || m.op == OpConfirming
-		if !m.loading && !m.pendingRefresh && opIdle && isContainerLifecycleEvent(msg.Event) {
+		opIdle := m.op.kind == OpNone || m.op.kind == OpConfirming
+		if !m.fetch.loading && !m.pendingRefresh && opIdle && isContainerLifecycleEvent(msg.Event) {
 			m.pendingRefresh = true
 			debounceCmd = tea.Tick(300*time.Millisecond, func(time.Time) tea.Msg {
 				return autoRefreshMsg{}
@@ -378,7 +377,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case autoRefreshMsg:
 		m.pendingRefresh = false
-		if !m.loading {
+		if !m.fetch.loading {
 			return m.startFetch()
 		}
 		return m, nil
