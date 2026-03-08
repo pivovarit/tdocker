@@ -69,7 +69,7 @@ func buildInspectLines(d *docker.InspectData, width int) []string {
 		case docker.InspectLineSection:
 			lines = append(lines, inspectSectionStyle.Render(l.Key))
 		case docker.InspectLineKeyValue:
-			lines = append(lines, "  "+keyStyle.Render(l.Key)+"  "+inspectValueStyle.Render(l.Value))
+			lines = append(lines, "  "+keyStyle.Render(l.Key)+inspectValueStyle.Render(l.Value))
 		case docker.InspectLineValue:
 			lines = append(lines, "  "+inspectValueStyle.Render(l.Value))
 		case docker.InspectLineBlank:
