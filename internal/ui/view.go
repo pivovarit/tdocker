@@ -193,131 +193,177 @@ func (m App) View() tea.View {
 	return v
 }
 
+var opLabels = map[Operation]string{
+	OpStopping:   "Stopping container…",
+	OpStarting:   "Starting container…",
+	OpRestarting: "Restarting container…",
+	OpDeleting:   "Deleting container…",
+	OpRenaming:   "Renaming container…",
+}
+
+var confirmVerbs = map[string]string{
+	"stop": "Stop", "start": "Start", "restart": "Restart", "delete": "Delete",
+}
+
 func (m App) helpBar() string {
 	switch {
 	case m.helpVisible:
-		return helpStyle.Render("  " + keyStyle.Render("?") + "/" + keyStyle.Render("esc") + "/" + keyStyle.Render("q") + " close")
-	case m.op.visible && m.op.kind == OpStopping:
-		return confirmStyle.Render("  Stopping container…")
-	case m.op.visible && m.op.kind == OpStarting:
-		return confirmStyle.Render("  Starting container…")
-	case m.op.visible && m.op.kind == OpRestarting:
-		return confirmStyle.Render("  Restarting container…")
-	case m.op.visible && m.op.kind == OpDeleting:
-		return confirmStyle.Render("  Deleting container…")
-	case m.op.visible && m.op.kind == OpRenaming:
-		return confirmStyle.Render("  Renaming container…")
+		return helpBarHelp()
+	case m.op.visible:
+		if label, ok := opLabels[m.op.kind]; ok {
+			return confirmStyle.Render("  " + label)
+		}
 	case m.events.visible:
-		return helpStyle.Render(
-			"  ↑/↓ scroll · " +
-				keyStyle.Render("g") + " top · " +
-				keyStyle.Render("G") + " bottom · " +
-				keyStyle.Render("esc") + "/" + keyStyle.Render("v") + " close · " +
-				keyStyle.Render("q") + " close",
-		)
+		return helpBarEvents()
 	case m.logs.searching:
-		return helpStyle.Render(
-			"  / " + keyStyle.Render(m.logs.searchQuery+"▌") + " · esc cancel · enter confirm",
-		)
+		return helpBarLogsSearch(m.logs.searchQuery)
 	case m.logs.visible:
-		searchHint := keyStyle.Render("/") + " search · "
-		if m.logs.searchQuery != "" {
-			grepHint := ""
-			if m.grepSupported {
-				if m.logs.grepMode {
-					grepHint = keyStyle.Render("ctrl+g") + " client filter · "
-				} else {
-					grepHint = keyStyle.Render("ctrl+g") + " server grep · "
-				}
-			}
-			searchHint = keyStyle.Render("["+m.logs.searchQuery+"]") + " · " + grepHint + keyStyle.Render("esc") + " clear · "
-		}
-		return helpStyle.Render(
-			"  ↑/↓ scroll · " +
-				keyStyle.Render("g") + " top · " +
-				keyStyle.Render("G") + " bottom · " +
-				searchHint +
-				keyStyle.Render("f") + " toggle all · " +
-				keyStyle.Render("T") + " timestamps · " +
-				keyStyle.Render("l") + " close · " +
-				keyStyle.Render("q") + " close",
-		)
+		return helpBarLogs(m.logs.searchQuery, m.logs.grepMode, m.grepSupported)
 	case m.inspect.visible:
-		return helpStyle.Render(
-			"  ↑/↓ scroll · " +
-				keyStyle.Render("g") + " top · " +
-				keyStyle.Render("G") + " bottom · " +
-				keyStyle.Render("esc") + "/" + keyStyle.Render("i") + " close · " +
-				keyStyle.Render("q") + " close",
-		)
+		return helpBarInspect()
 	case m.stats.visible:
-		return helpStyle.Render(
-			"  " + keyStyle.Render("r") + " refresh · " +
-				keyStyle.Render("esc") + "/" + keyStyle.Render("t") + " close · " +
-				keyStyle.Render("q") + " close",
-		)
+		return helpBarStats()
 	case m.op.kind == OpConfirming:
-		verb := "Stop"
-		switch m.op.action {
-		case "start":
-			verb = "Start"
-		case "restart":
-			verb = "Restart"
-		case "delete":
-			verb = "Delete"
-		}
-		return confirmStyle.Render("  "+verb+" ") +
-			confirmNameStyle.Render(m.op.name) +
-			confirmStyle.Render("? press ") +
-			keyStyle.Render("y") +
-			confirmStyle.Render(" to confirm, ") +
-			keyStyle.Render("n") +
-			confirmStyle.Render(" to cancel")
+		return helpBarConfirm(m.op.action, m.op.name)
 	case m.ctxPicker.visible:
-		return helpStyle.Render(
-			"  ↑/↓/j/k navigate · " +
-				keyStyle.Render("enter") + " switch · " +
-				keyStyle.Render("esc") + " cancel",
-		)
+		return helpBarCtxPicker()
 	case m.rename.active:
-		return helpStyle.Render(
-			"  rename: " + keyStyle.Render(m.rename.input+"▌") + " · " +
-				keyStyle.Render("enter") + " confirm · " +
-				keyStyle.Render("esc") + " cancel",
-		)
+		return helpBarRename(m.rename.input)
 	case m.filtering:
-		return helpStyle.Render(
-			"  / " + keyStyle.Render(m.filterQuery+"▌") + " · esc/enter exit",
-		)
+		return helpBarFilter(m.filterQuery)
 	default:
-		if m.warnMsg != "" {
-			return helpStyle.Render("  ") + eventWarnStyle.Render("⚠ "+m.warnMsg)
+		return helpBarDefault(m.warnMsg, m.copiedName, m.filterQuery)
+	}
+	return ""
+}
+
+func helpBarHelp() string {
+	return helpStyle.Render("  " + keyStyle.Render("?") + "/" + keyStyle.Render("esc") + "/" + keyStyle.Render("q") + " close")
+}
+
+func helpBarEvents() string {
+	return helpStyle.Render(
+		"  ↑/↓ scroll · " +
+			keyStyle.Render("g") + " top · " +
+			keyStyle.Render("G") + " bottom · " +
+			keyStyle.Render("esc") + "/" + keyStyle.Render("v") + " close · " +
+			keyStyle.Render("q") + " close",
+	)
+}
+
+func helpBarLogsSearch(query string) string {
+	return helpStyle.Render(
+		"  / " + keyStyle.Render(query+"▌") + " · esc cancel · enter confirm",
+	)
+}
+
+func helpBarLogs(searchQuery string, grepMode, grepSupported bool) string {
+	searchHint := keyStyle.Render("/") + " search · "
+	if searchQuery != "" {
+		grepHint := ""
+		if grepSupported {
+			if grepMode {
+				grepHint = keyStyle.Render("ctrl+g") + " client filter · "
+			} else {
+				grepHint = keyStyle.Render("ctrl+g") + " server grep · "
+			}
 		}
-		if m.copiedName != "" {
-			return helpStyle.Render(
-				"  " + confirmStyle.Render("✓ copied ID of ") + keyStyle.Render(m.copiedName),
-			)
-		}
-		prefix := ""
-		if m.filterQuery != "" {
-			prefix = keyStyle.Render("["+m.filterQuery+"]") + " · " + keyStyle.Render("esc") + " clear · "
-		}
+		searchHint = keyStyle.Render("["+searchQuery+"]") + " · " + grepHint + keyStyle.Render("esc") + " clear · "
+	}
+	return helpStyle.Render(
+		"  ↑/↓ scroll · " +
+			keyStyle.Render("g") + " top · " +
+			keyStyle.Render("G") + " bottom · " +
+			searchHint +
+			keyStyle.Render("f") + " toggle all · " +
+			keyStyle.Render("T") + " timestamps · " +
+			keyStyle.Render("l") + " close · " +
+			keyStyle.Render("q") + " close",
+	)
+}
+
+func helpBarInspect() string {
+	return helpStyle.Render(
+		"  ↑/↓ scroll · " +
+			keyStyle.Render("g") + " top · " +
+			keyStyle.Render("G") + " bottom · " +
+			keyStyle.Render("esc") + "/" + keyStyle.Render("i") + " close · " +
+			keyStyle.Render("q") + " close",
+	)
+}
+
+func helpBarStats() string {
+	return helpStyle.Render(
+		"  " + keyStyle.Render("r") + " refresh · " +
+			keyStyle.Render("esc") + "/" + keyStyle.Render("t") + " close · " +
+			keyStyle.Render("q") + " close",
+	)
+}
+
+func helpBarConfirm(action, name string) string {
+	verb := confirmVerbs[action]
+	if verb == "" {
+		verb = "Stop"
+	}
+	return confirmStyle.Render("  "+verb+" ") +
+		confirmNameStyle.Render(name) +
+		confirmStyle.Render("? press ") +
+		keyStyle.Render("y") +
+		confirmStyle.Render(" to confirm, ") +
+		keyStyle.Render("n") +
+		confirmStyle.Render(" to cancel")
+}
+
+func helpBarCtxPicker() string {
+	return helpStyle.Render(
+		"  ↑/↓/j/k navigate · " +
+			keyStyle.Render("enter") + " switch · " +
+			keyStyle.Render("esc") + " cancel",
+	)
+}
+
+func helpBarRename(input string) string {
+	return helpStyle.Render(
+		"  rename: " + keyStyle.Render(input+"▌") + " · " +
+			keyStyle.Render("enter") + " confirm · " +
+			keyStyle.Render("esc") + " cancel",
+	)
+}
+
+func helpBarFilter(query string) string {
+	return helpStyle.Render(
+		"  / " + keyStyle.Render(query+"▌") + " · esc/enter exit",
+	)
+}
+
+func helpBarDefault(warnMsg, copiedName, filterQuery string) string {
+	if warnMsg != "" {
+		return helpStyle.Render("  ") + eventWarnStyle.Render("⚠ "+warnMsg)
+	}
+	if copiedName != "" {
 		return helpStyle.Render(
-			"  " + prefix +
-				keyStyle.Render("l") + " logs · " +
-				keyStyle.Render("i") + " inspect · " +
-				keyStyle.Render("e") + " exec · " +
-				keyStyle.Render("S") + " start/stop · " +
-				keyStyle.Render("R") + " restart · " +
-				keyStyle.Render("P") + " pause · " +
-				keyStyle.Render("N") + " rename · " +
-				keyStyle.Render("D") + " delete · " +
-				keyStyle.Render("t") + " stats · " +
-				keyStyle.Render("v") + " events · " +
-				keyStyle.Render("c") + " copy id · " +
-				keyStyle.Render("x") + " debug",
+			"  " + confirmStyle.Render("✓ copied ID of ") + keyStyle.Render(copiedName),
 		)
 	}
+	prefix := ""
+	if filterQuery != "" {
+		prefix = keyStyle.Render("["+filterQuery+"]") + " · " + keyStyle.Render("esc") + " clear · "
+	}
+	return helpStyle.Render(
+		"  " + prefix +
+			keyStyle.Render("l") + " logs · " +
+			keyStyle.Render("i") + " inspect · " +
+			keyStyle.Render("e") + " exec · " +
+			keyStyle.Render("S") + " start/stop · " +
+			keyStyle.Render("R") + " restart · " +
+			keyStyle.Render("P") + " pause · " +
+			keyStyle.Render("N") + " rename · " +
+			keyStyle.Render("D") + " delete · " +
+			keyStyle.Render("t") + " stats · " +
+			keyStyle.Render("v") + " events · " +
+			keyStyle.Render("c") + " copy id · " +
+			keyStyle.Render("x") + " debug",
+	)
 }
 
 func (m App) renderPanel(title string, body func(*strings.Builder)) string {
