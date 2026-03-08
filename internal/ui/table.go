@@ -11,13 +11,13 @@ import (
 func buildTable(containers []docker.Container, width int) table.Model {
 	const (
 		idW         = 13
-		stateW      = 9
+		commandW    = 20
 		runningForW = 13
 		overhead    = 15
 	)
 
 	names := make([]string, len(containers))
-	nameW, imageW, statusW, portsW := 4, 5, 6, 0
+	nameW, imageW, statusW, portsW := 5, 5, 6, 0
 	hasPorts := false
 	for i, c := range containers {
 		names[i] = buildTableName(containers, i)
@@ -38,39 +38,39 @@ func buildTable(containers []docker.Container, width int) table.Model {
 		}
 	}
 
-	remaining := width - idW - stateW - runningForW - overhead
+	remaining := width - idW - commandW - runningForW - overhead
 
 	if hasPorts {
-		minR := 8 + 5 + 6 + 5
+		minR := 5 + 5 + 6 + 5
 		if remaining < minR {
 			remaining = minR
 		}
-		total := nameW + imageW + statusW + portsW
-		nameW = max(remaining*nameW/total, 8)
+		total := imageW + statusW + portsW + nameW
 		imageW = max(remaining*imageW/total, 5)
 		statusW = max(remaining*statusW/total, 6)
 		portsW = max(remaining*portsW/total, 5)
-		if leftover := remaining - nameW - imageW - statusW - portsW; leftover > 0 {
-			portsW += leftover
+		nameW = max(remaining*nameW/total, 5)
+		if leftover := remaining - imageW - statusW - portsW - nameW; leftover > 0 {
+			nameW += leftover
 		}
 	} else {
-		minR := 8 + 5 + 6
+		minR := 5 + 6 + 5
 		if remaining < minR {
 			remaining = minR
 		}
-		total := nameW + imageW + statusW
-		nameW = max(remaining*nameW/total, 8)
+		total := imageW + statusW + nameW
 		imageW = max(remaining*imageW/total, 5)
-		statusW = max(remaining-nameW-imageW, 6)
+		statusW = max(remaining*statusW/total, 6)
+		nameW = max(remaining-imageW-statusW, 5)
 	}
 
 	cols := []table.Column{
 		{Title: "ID", Width: idW},
-		{Title: "Name", Width: nameW},
+		{Title: "Names", Width: nameW},
 		{Title: "Image", Width: imageW},
-		{Title: "State", Width: stateW},
+		{Title: "Command", Width: commandW},
+		{Title: "Created", Width: runningForW},
 		{Title: "Status", Width: statusW},
-		{Title: "Running for", Width: runningForW},
 	}
 	if hasPorts {
 		cols = append(cols, table.Column{Title: "Ports", Width: portsW})
@@ -82,9 +82,9 @@ func buildTable(containers []docker.Container, width int) table.Model {
 			trunc(c.ID, idW),
 			trunc(names[i], nameW),
 			trunc(c.Image, imageW),
-			trunc(c.State, stateW),
-			trunc(c.Status, statusW),
+			trunc(c.Command, commandW),
 			trunc(c.RunningFor, runningForW),
+			trunc(c.Status, statusW),
 		}
 		if hasPorts {
 			row = append(row, trunc(formatPorts(c.Ports), portsW))
