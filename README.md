@@ -4,7 +4,7 @@ A minimalistic terminal UI for everyday Docker operations. Not a dashboard, not 
 
 
 
-https://github.com/user-attachments/assets/225b071c-cd62-4f93-9705-15ab6aff7e4c
+<video src="docs/tdocker.mov" autoplay loop muted playsinline width="100%"></video>
 
 
 
