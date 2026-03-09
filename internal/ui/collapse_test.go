@@ -29,7 +29,7 @@ func TestCollapseSummary(t *testing.T) {
 				{ID: "a1", Names: "web", State: "running", Labels: composeLabels("myapp")},
 				{ID: "a2", Names: "db", State: "running", Labels: composeLabels("myapp")},
 			},
-			wantNames:      "▶ myapp (2 running)",
+			wantNames:      "+ myapp (2 running)",
 			wantState:      "collapsed",
 			wantID:         "",
 			wantHasProject: true,
@@ -42,7 +42,7 @@ func TestCollapseSummary(t *testing.T) {
 				{ID: "a2", Names: "worker", State: "running", Labels: composeLabels("myapp")},
 				{ID: "a3", Names: "db", State: "exited", Labels: composeLabels("myapp")},
 			},
-			wantNames:      "▶ myapp (2 running, 1 exited)",
+			wantNames:      "+ myapp (2 running, 1 exited)",
 			wantState:      "collapsed",
 			wantID:         "",
 			wantHasProject: true,
@@ -57,7 +57,7 @@ func TestCollapseSummary(t *testing.T) {
 				{ID: "a4", State: "dead", Labels: composeLabels("stack")},
 				{ID: "a5", State: "running", Labels: composeLabels("stack")},
 			},
-			wantNames:      "▶ stack (2 running, 1 paused, 1 dead, 1 exited)",
+			wantNames:      "+ stack (2 running, 1 paused, 1 dead, 1 exited)",
 			wantState:      "collapsed",
 			wantID:         "",
 			wantHasProject: true,
@@ -68,7 +68,7 @@ func TestCollapseSummary(t *testing.T) {
 			containers: []docker.Container{
 				{ID: "s1", Names: "app", State: "running", Labels: composeLabels("solo")},
 			},
-			wantNames:      "▶ solo (1 running)",
+			wantNames:      "+ solo (1 running)",
 			wantState:      "collapsed",
 			wantID:         "",
 			wantHasProject: true,
@@ -81,7 +81,7 @@ func TestCollapseSummary(t *testing.T) {
 				{ID: "x2", State: "exited", Labels: composeLabels("stopped")},
 				{ID: "x3", State: "exited", Labels: composeLabels("stopped")},
 			},
-			wantNames:      "▶ stopped (3 exited)",
+			wantNames:      "+ stopped (3 exited)",
 			wantState:      "collapsed",
 			wantID:         "",
 			wantHasProject: true,
@@ -92,7 +92,7 @@ func TestCollapseSummary(t *testing.T) {
 			containers: []docker.Container{
 				{ID: "c1", Names: "web", Image: "nginx", State: "running", Status: "Up 5m", Ports: "80/tcp", Labels: composeLabels("app")},
 			},
-			wantNames:      "▶ app (1 running)",
+			wantNames:      "+ app (1 running)",
 			wantState:      "collapsed",
 			wantID:         "",
 			wantHasProject: true,
@@ -436,7 +436,7 @@ func TestComposeStop_ConfirmCallsClient(t *testing.T) {
 		{ID: "a1", Names: "web", State: "running", Labels: composeLabels("myapp")},
 	}
 	m := modelWithMock(mc, containers)
-	m.op = operationState{kind: OpConfirming, id: "myapp", action: "compose-stop", name: "▶ myapp (1 running)"}
+	m.op = operationState{kind: OpConfirming, id: "myapp", action: "compose-stop", name: "+ myapp (1 running)"}
 	update(m, runeKey("y"))
 	if gotProject != "myapp" {
 		t.Errorf("want StopCompose(%q), got %q", "myapp", gotProject)
@@ -467,10 +467,10 @@ func TestExpand_CursorLandsOnFirstContainerInGroup(t *testing.T) {
 
 func TestBuildTableName_CollapsedRow(t *testing.T) {
 	containers := []docker.Container{
-		{Names: "▶ myapp (2 running)", State: "collapsed", Labels: composeLabels("myapp")},
+		{Names: "+ myapp (2 running)", State: "collapsed", Labels: composeLabels("myapp")},
 	}
 	got := buildTableName(containers, 0)
-	want := "▶ myapp (2 running)"
+	want := "+ myapp (2 running)"
 	if got != want {
 		t.Errorf("want %q, got %q", want, got)
 	}

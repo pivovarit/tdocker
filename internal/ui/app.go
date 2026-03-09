@@ -82,7 +82,9 @@ type App struct {
 	width          int
 	height         int
 
-	collapsedProjects map[string]bool
+	collapsedProjects  map[string]bool
+	expandedContainers map[string]*docker.InspectData
+	cachedExpand       map[string]*docker.InspectData
 
 	op     operationState
 	fetch  fetchState
@@ -110,11 +112,13 @@ func New(version string) App {
 
 func newWithClient(c docker.Client, version string) App {
 	return App{
-		client:            c,
-		version:           version,
-		showAll:           true,
-		collapsedProjects: map[string]bool{},
-		table:             buildTable(nil, 120),
+		client:             c,
+		version:            version,
+		showAll:            true,
+		collapsedProjects:  map[string]bool{},
+		expandedContainers: map[string]*docker.InspectData{},
+		cachedExpand:       map[string]*docker.InspectData{},
+		table:              buildTable(nil, 120),
 		fetch: fetchState{
 			loading: true,
 			start:   time.Now(),
@@ -158,8 +162,18 @@ func (m App) filtered() []docker.Container {
 		return out
 	}
 
-	if len(m.collapsedProjects) == 0 {
+	if len(m.collapsedProjects) == 0 && len(m.expandedContainers) == 0 {
 		return m.sorted
+	}
+	if len(m.collapsedProjects) == 0 {
+		var out []docker.Container
+		for _, c := range m.sorted {
+			out = append(out, c)
+			if data, expanded := m.expandedContainers[c.ID]; expanded {
+				out = append(out, detailRows(data)...)
+			}
+		}
+		return out
 	}
 
 	collapsedGroups := map[string][]docker.Container{}
@@ -182,6 +196,9 @@ func (m App) filtered() []docker.Container {
 			}
 		} else {
 			out = append(out, c)
+			if data, expanded := m.expandedContainers[c.ID]; expanded {
+				out = append(out, detailRows(data)...)
+			}
 		}
 	}
 

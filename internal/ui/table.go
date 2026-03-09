@@ -38,7 +38,21 @@ func buildTable(containers []docker.Container, width int) table.Model {
 		}
 	}
 
-	remaining := width - idW - commandW - runningForW - overhead
+	treeChars := make([]string, len(containers))
+	hasTree := false
+	for i := range containers {
+		treeChars[i] = composeTreeChar(containers, i)
+		if treeChars[i] != "" {
+			hasTree = true
+		}
+	}
+
+	actualIDW := idW
+	if hasTree {
+		actualIDW = idW + 2
+	}
+
+	remaining := width - actualIDW - commandW - runningForW - overhead
 
 	if hasPorts {
 		minR := 5 + 5 + 6 + 5
@@ -65,7 +79,7 @@ func buildTable(containers []docker.Container, width int) table.Model {
 	}
 
 	cols := []table.Column{
-		{Title: "ID", Width: idW},
+		{Title: "ID", Width: actualIDW},
 		{Title: "Names", Width: nameW},
 		{Title: "Image", Width: imageW},
 		{Title: "Command", Width: commandW},
@@ -78,8 +92,20 @@ func buildTable(containers []docker.Container, width int) table.Model {
 
 	rows := make([]table.Row, len(containers))
 	for i, c := range containers {
+		id := trunc(c.ID, actualIDW)
+		if ch := treeChars[i]; ch != "" {
+			short := trunc(c.ID, idW)
+			if pad := idW - len([]rune(short)); pad > 0 {
+				short += strings.Repeat(" ", pad)
+			}
+			id = short + " " + ch
+		} else if hasTree && c.State == "detail" {
+			if ch := detailTreeChar(containers, i); ch != "" {
+				id = strings.Repeat(" ", idW) + " " + ch
+			}
+		}
 		row := table.Row{
-			trunc(c.ID, idW),
+			id,
 			trunc(names[i], nameW),
 			trunc(c.Image, imageW),
 			trunc(c.Command, commandW),
@@ -117,30 +143,114 @@ func buildTable(containers []docker.Container, width int) table.Model {
 
 func buildTableName(containers []docker.Container, i int) string {
 	c := containers[i]
+	if c.State == "detail" {
+		return c.Names
+	}
 	if c.State == "collapsed" {
 		return c.Names
 	}
 	p := c.ComposeProject()
 	if p == "" {
-		return strings.TrimPrefix(c.Names, "/")
+		name := strings.TrimPrefix(c.Names, "/")
+		if i < len(containers)-1 && containers[i+1].State == "detail" {
+			return "⊟ " + name
+		}
+		return name
 	}
 	s := c.ComposeService()
 	if s == "" {
 		s = strings.TrimPrefix(c.Names, "/")
 	}
 	label := p + "/" + s
-	prev := i > 0 && containers[i-1].ComposeProject() == p
-	next := i < len(containers)-1 && containers[i+1].ComposeProject() == p
-	switch {
-	case !prev && next:
-		return "┬ " + label
-	case prev && next:
-		return "├ " + label
-	case prev:
-		return "└ " + label
-	default:
-		return label
+	expanded := i+1 < len(containers) && containers[i+1].State == "detail"
+	if expanded {
+		return "⊟ " + label
 	}
+	return label
+}
+
+func composeTreeChar(containers []docker.Container, i int) string {
+	c := containers[i]
+	if c.State == "detail" || c.State == "collapsed" {
+		return ""
+	}
+	if c.ComposeProject() == "" {
+		return ""
+	}
+	if !inComposeGroup(containers, i) {
+		return ""
+	}
+	p := c.ComposeProject()
+	tree := func(ch string) string { return "\x1b[38;2;100;116;139m" + ch + "\x1b[39m" }
+
+	prevIdx := i - 1
+	for prevIdx >= 0 && containers[prevIdx].State == "detail" {
+		prevIdx--
+	}
+	hasPrev := prevIdx >= 0 && containers[prevIdx].ComposeProject() == p
+
+	nextIdx := i + 1
+	for nextIdx < len(containers) && containers[nextIdx].State == "detail" {
+		nextIdx++
+	}
+	hasNext := nextIdx < len(containers) && containers[nextIdx].ComposeProject() == p
+
+	switch {
+	case !hasPrev:
+		return tree("┬")
+	case !hasNext:
+		if i+1 < len(containers) && containers[i+1].State == "detail" {
+			return tree("├")
+		}
+		return tree("└")
+	default:
+		return tree("├")
+	}
+}
+
+func detailTreeChar(containers []docker.Container, i int) string {
+	parentIdx := i - 1
+	for parentIdx >= 0 && containers[parentIdx].State == "detail" {
+		parentIdx--
+	}
+	if parentIdx < 0 || containers[parentIdx].ComposeProject() == "" {
+		return ""
+	}
+	if !inComposeGroup(containers, parentIdx) {
+		return ""
+	}
+	proj := containers[parentIdx].ComposeProject()
+	nextIdx := i + 1
+	for nextIdx < len(containers) && containers[nextIdx].State == "detail" {
+		nextIdx++
+	}
+	if nextIdx < len(containers) && containers[nextIdx].ComposeProject() == proj {
+		return "│"
+	}
+	isLastDetail := i+1 >= len(containers) || containers[i+1].State != "detail"
+	if isLastDetail {
+		return "└"
+	}
+	return "│"
+}
+
+func inComposeGroup(containers []docker.Container, i int) bool {
+	p := containers[i].ComposeProject()
+	if p == "" {
+		return false
+	}
+	prevIdx := i - 1
+	for prevIdx >= 0 && containers[prevIdx].State == "detail" {
+		prevIdx--
+	}
+	if prevIdx >= 0 && containers[prevIdx].ComposeProject() == p {
+		return true
+	}
+	nextIdx := i + 1
+	for nextIdx < len(containers) && containers[nextIdx].State == "detail" {
+		nextIdx++
+	}
+	return nextIdx < len(containers) && containers[nextIdx].ComposeProject() == p
 }
 
 func trunc(s string, max int) string {

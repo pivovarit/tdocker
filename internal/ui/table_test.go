@@ -57,7 +57,7 @@ func TestBuildTableName_SingleComposeContainer(t *testing.T) {
 	}
 }
 
-func TestBuildTableName_TreeChars(t *testing.T) {
+func TestBuildTableName_ComposeNoTreeChars(t *testing.T) {
 	labels := func(project, service string) docker.Labels {
 		return docker.Labels{"com.docker.compose.project": project, "com.docker.compose.service": service}
 	}
@@ -70,9 +70,9 @@ func TestBuildTableName_TreeChars(t *testing.T) {
 		i    int
 		want string
 	}{
-		{0, "┬ app/db"},
-		{1, "├ app/cache"},
-		{2, "└ app/web"},
+		{0, "app/db"},
+		{1, "app/cache"},
+		{2, "app/web"},
 	}
 	for _, tc := range tests {
 		if got := buildTableName(containers, tc.i); got != tc.want {
@@ -81,7 +81,32 @@ func TestBuildTableName_TreeChars(t *testing.T) {
 	}
 }
 
-func TestBuildTableName_TwoInGroup(t *testing.T) {
+func TestComposeTreeChar(t *testing.T) {
+	labels := func(project, service string) docker.Labels {
+		return docker.Labels{"com.docker.compose.project": project, "com.docker.compose.service": service}
+	}
+	containers := []docker.Container{
+		{Names: "db", Labels: labels("app", "db")},
+		{Names: "cache", Labels: labels("app", "cache")},
+		{Names: "web", Labels: labels("app", "web")},
+	}
+	tests := []struct {
+		i    int
+		want string
+	}{
+		{0, "┬"},
+		{1, "├"},
+		{2, "└"},
+	}
+	for _, tc := range tests {
+		got := ansiRe.ReplaceAllString(composeTreeChar(containers, tc.i), "")
+		if got != tc.want {
+			t.Errorf("i=%d: want %q, got %q", tc.i, tc.want, got)
+		}
+	}
+}
+
+func TestComposeTreeChar_TwoInGroup(t *testing.T) {
 	labels := func(project, service string) docker.Labels {
 		return docker.Labels{"com.docker.compose.project": project, "com.docker.compose.service": service}
 	}
@@ -89,15 +114,15 @@ func TestBuildTableName_TwoInGroup(t *testing.T) {
 		{Names: "api", Labels: labels("proj", "api")},
 		{Names: "db", Labels: labels("proj", "db")},
 	}
-	if got := buildTableName(containers, 0); got != "┬ proj/api" {
-		t.Errorf("want %q, got %q", "┬ proj/api", got)
+	if got := ansiRe.ReplaceAllString(composeTreeChar(containers, 0), ""); got != "┬" {
+		t.Errorf("want %q, got %q", "┬", got)
 	}
-	if got := buildTableName(containers, 1); got != "└ proj/db" {
-		t.Errorf("want %q, got %q", "└ proj/db", got)
+	if got := ansiRe.ReplaceAllString(composeTreeChar(containers, 1), ""); got != "└" {
+		t.Errorf("want %q, got %q", "└", got)
 	}
 }
 
-func TestBuildTableName_AdjacentProjects(t *testing.T) {
+func TestComposeTreeChar_AdjacentProjects(t *testing.T) {
 	labels := func(project, service string) docker.Labels {
 		return docker.Labels{"com.docker.compose.project": project, "com.docker.compose.service": service}
 	}
@@ -107,11 +132,46 @@ func TestBuildTableName_AdjacentProjects(t *testing.T) {
 		{Names: "c", Labels: labels("proj2", "c")},
 		{Names: "d", Labels: labels("proj2", "d")},
 	}
-	if got := buildTableName(containers, 1); got != "└ proj1/b" {
-		t.Errorf("want %q, got %q", "└ proj1/b", got)
+	if got := ansiRe.ReplaceAllString(composeTreeChar(containers, 1), ""); got != "└" {
+		t.Errorf("want %q, got %q", "└", got)
 	}
-	if got := buildTableName(containers, 2); got != "┬ proj2/c" {
-		t.Errorf("want %q, got %q", "┬ proj2/c", got)
+	if got := ansiRe.ReplaceAllString(composeTreeChar(containers, 2), ""); got != "┬" {
+		t.Errorf("want %q, got %q", "┬", got)
+	}
+}
+
+func TestBuildTableName_ExpandedStandaloneContainer(t *testing.T) {
+	containers := []docker.Container{
+		{ID: "s1", Names: "solo", State: "running"},
+		{State: "detail", Names: "└  Network  bridge (172.17.0.2)"},
+	}
+	got := buildTableName(containers, 0)
+	want := "⊟ solo"
+	if got != want {
+		t.Errorf("want %q, got %q", want, got)
+	}
+}
+
+func TestBuildTableName_DetailRowPassesThrough(t *testing.T) {
+	containers := []docker.Container{
+		{State: "detail", Names: "│  Ports    80/tcp → 0.0.0.0:80"},
+	}
+	got := buildTableName(containers, 0)
+	want := "│  Ports    80/tcp → 0.0.0.0:80"
+	if got != want {
+		t.Errorf("want %q, got %q", want, got)
+	}
+}
+
+func TestBuildTableName_NotExpandedStandaloneNoPrefix(t *testing.T) {
+	containers := []docker.Container{
+		{ID: "s1", Names: "solo", State: "running"},
+		{ID: "s2", Names: "other", State: "running"},
+	}
+	got := buildTableName(containers, 0)
+	want := "solo"
+	if got != want {
+		t.Errorf("want %q, got %q", want, got)
 	}
 }
 

@@ -200,6 +200,11 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.containers = msg
 		m.sorted = docker.Sort(m.containers)
 		m.containersByID = indexContainers(m.containers)
+		for id := range m.expandedContainers {
+			if _, exists := m.containersByID[id]; !exists {
+				delete(m.expandedContainers, id)
+			}
+		}
 		m.fetch.loading = false
 		m.fetch.visible = false
 		m.fetch.slow = false
@@ -276,6 +281,15 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.inspect.lines = buildInspectLines(msg.Data, m.width)
 		return m, nil
+
+	case docker.ExpandInspectMsg:
+		if msg.Err != nil {
+			delete(m.expandedContainers, msg.ContainerID)
+			m.err = msg.Err
+			return m.rebuildTable(m.currentSelectedID()), nil
+		}
+		m.expandedContainers[msg.ContainerID] = msg.Data
+		return m.rebuildTable(m.currentSelectedID()), nil
 
 	case docker.ShellAvailableMsg:
 		if !msg.Available {

@@ -102,6 +102,11 @@ type (
 	ComposeStartMsg   struct{ Err error }
 	ComposeRestartMsg struct{ Err error }
 	GrepSupportMsg    struct{ Available bool }
+	ExpandInspectMsg  struct {
+		ContainerID string
+		Data        *InspectData
+		Err         error
+	}
 )
 
 func (m StopMsg) GetErr() error           { return m.Err }

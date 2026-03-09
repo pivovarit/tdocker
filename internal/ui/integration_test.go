@@ -146,12 +146,12 @@ func TestIntegration_App_ComposeGroupingVisible(t *testing.T) {
 	}
 
 	rows := buildTable(filtered, 160).Rows()
-	name1 := rows[idx1][1]
-	name2 := rows[idx2][1]
+	id1Col := rows[idx1][0]
+	id2Col := rows[idx2][0]
 	hasTree := func(s string) bool {
 		return strings.ContainsAny(s, "┬├└")
 	}
-	if !hasTree(name1) || !hasTree(name2) {
-		t.Errorf("expected tree chars in compose rows, got %q and %q", name1, name2)
+	if !hasTree(id1Col) || !hasTree(id2Col) {
+		t.Errorf("expected tree chars in compose ID column, got %q and %q", id1Col, id2Col)
 	}
 }

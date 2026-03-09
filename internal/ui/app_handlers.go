@@ -244,37 +244,63 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case tea.KeyLeft:
 		if c, ok := m.selectedContainer(); ok {
 			proj := c.ComposeProject()
-			if proj == "" || c.State == "collapsed" {
-				return m, nil
-			}
-			m.collapsedProjects[proj] = true
-			m = m.rebuildTable("")
-			filtered := m.filtered()
-			for i, fc := range filtered {
-				if fc.State == "collapsed" && fc.ComposeProject() == proj {
-					m.table.SetCursor(i)
-					break
+			if c.ID != "" {
+				if data, expanded := m.expandedContainers[c.ID]; expanded {
+					delete(m.expandedContainers, c.ID)
+					if data != nil {
+						m.cachedExpand[c.ID] = data
+					}
+					m = m.rebuildTable(c.ID)
+					return m, nil
 				}
 			}
-			m = m.rebuildTable(m.currentSelectedID())
+			if proj != "" && c.State != "collapsed" {
+				m.collapsedProjects[proj] = true
+				m = m.rebuildTable("")
+				filtered := m.filtered()
+				for i, fc := range filtered {
+					if fc.State == "collapsed" && fc.ComposeProject() == proj {
+						m.table.SetCursor(i)
+						break
+					}
+				}
+				m = m.rebuildTable(m.currentSelectedID())
+				return m, nil
+			}
 		}
 		return m, nil
 	case tea.KeyRight:
 		if c, ok := m.selectedContainer(); ok {
 			proj := c.ComposeProject()
-			if c.State != "collapsed" || proj == "" {
+			if c.State == "collapsed" && proj != "" {
+				delete(m.collapsedProjects, proj)
+				m = m.rebuildTable("")
+				filtered := m.filtered()
+				for i, fc := range filtered {
+					if fc.ComposeProject() == proj {
+						m.table.SetCursor(i)
+						break
+					}
+				}
+				m = m.rebuildTable(m.currentSelectedID())
 				return m, nil
 			}
-			delete(m.collapsedProjects, proj)
-			m = m.rebuildTable("")
-			filtered := m.filtered()
-			for i, fc := range filtered {
-				if fc.ComposeProject() == proj {
-					m.table.SetCursor(i)
-					break
+			if c.ID != "" {
+				if _, alreadyExpanded := m.expandedContainers[c.ID]; alreadyExpanded {
+					return m, nil
 				}
+				if cached, ok := m.cachedExpand[c.ID]; ok {
+					m.expandedContainers[c.ID] = cached
+					delete(m.cachedExpand, c.ID)
+				} else {
+					m.expandedContainers[c.ID] = nil
+				}
+				m = m.rebuildTable(c.ID)
+				if m.expandedContainers[c.ID] != nil {
+					return m, nil
+				}
+				return m, m.client.InspectContainerExpand(c.ID)
 			}
-			m = m.rebuildTable(m.currentSelectedID())
 		}
 		return m, nil
 	}
@@ -296,5 +322,24 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	} else if height > 0 && cursor >= m.viewportStart+height {
 		m.viewportStart = cursor - height + 1
 	}
+
+	isDown := msg.Code == tea.KeyDown || msg.Text == keyVimDown
+	isUp := msg.Code == tea.KeyUp || msg.Text == keyVimUp
+	if isDown || isUp {
+		filtered := m.filtered()
+		for cursor >= 0 && cursor < len(filtered) && filtered[cursor].State == "detail" {
+			if isDown {
+				cursor++
+			} else {
+				cursor--
+			}
+			if cursor < 0 || cursor >= len(filtered) {
+				break
+			}
+			m.table.SetCursor(cursor)
+			cursor = m.table.Cursor()
+		}
+	}
+
 	return m, cmd
 }
