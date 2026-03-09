@@ -106,5 +106,8 @@ var (
 			Foreground(lipgloss.Color("#E2E8F0"))
 
 	collapsedRowStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#A78BFA"))
+				Foreground(lipgloss.Color("#64748B"))
+
+	detailRowStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#64748B"))
 )

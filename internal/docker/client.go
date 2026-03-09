@@ -17,6 +17,7 @@ type Client interface {
 	CheckDebugAvailable(id string) tea.Cmd
 	DebugContainer(id string) tea.Cmd
 	InspectContainer(id string) tea.Cmd
+	InspectContainerExpand(id string) tea.Cmd
 	FetchStats(id string) tea.Cmd
 	StartLogs(ctx context.Context, id string, tail string, timestamps bool, grep string, gen int) tea.Cmd
 	SupportsGrep() tea.Cmd

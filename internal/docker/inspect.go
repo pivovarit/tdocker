@@ -26,11 +26,17 @@ type Mount struct {
 	RW          bool   `json:"RW"`
 }
 
+type NetworkInfo struct {
+	Name      string
+	IPAddress string
+}
+
 type InspectData struct {
 	ImageDigest string
 	Ports       map[string][]PortBinding
 	Env         []string
 	Mounts      []Mount
+	Networks    []NetworkInfo
 }
 
 type InspectMsg struct {
@@ -122,6 +128,21 @@ func (d *InspectData) Lines(width int) []InspectLine {
 			kv(src, "→  "+mount.Destination+"  ("+rw+")")
 		}
 	}
+	blank()
+
+	section("Networks")
+	if len(d.Networks) == 0 {
+		val("(none)")
+	} else {
+		for _, n := range d.Networks {
+			ip := n.IPAddress
+			if ip == "" {
+				ip = "—"
+			}
+			kv(n.Name, ip)
+		}
+	}
+	blank()
 
 	return out
 }
@@ -133,8 +154,34 @@ type inspectRaw struct {
 	} `json:"Config"`
 	Mounts          []Mount `json:"Mounts"`
 	NetworkSettings struct {
-		Ports map[string][]PortBinding `json:"Ports"`
+		Ports    map[string][]PortBinding `json:"Ports"`
+		Networks map[string]struct {
+			IPAddress string `json:"IPAddress"`
+		} `json:"Networks"`
 	} `json:"NetworkSettings"`
+}
+
+func parseInspectData(out []byte) (*InspectData, error) {
+	var raw []inspectRaw
+	if err := json.Unmarshal(out, &raw); err != nil {
+		return nil, fmt.Errorf("parse inspect output: %w", err)
+	}
+	if len(raw) == 0 {
+		return nil, fmt.Errorf("no inspect data returned")
+	}
+	r := raw[0]
+	nets := make([]NetworkInfo, 0, len(r.NetworkSettings.Networks))
+	for name, n := range r.NetworkSettings.Networks {
+		nets = append(nets, NetworkInfo{Name: name, IPAddress: n.IPAddress})
+	}
+	slices.SortFunc(nets, func(a, b NetworkInfo) int { return strings.Compare(a.Name, b.Name) })
+	return &InspectData{
+		ImageDigest: r.Image,
+		Ports:       r.NetworkSettings.Ports,
+		Env:         r.Config.Env,
+		Mounts:      r.Mounts,
+		Networks:    nets,
+	}, nil
 }
 
 func (CLI) InspectContainer(id string) tea.Cmd {
@@ -145,19 +192,26 @@ func (CLI) InspectContainer(id string) tea.Cmd {
 		if err != nil {
 			return InspectMsg{Err: cmdErr("inspect", out, err)}
 		}
-		var raw []inspectRaw
-		if err := json.Unmarshal(out, &raw); err != nil {
-			return InspectMsg{Err: fmt.Errorf("parse inspect output: %w", err)}
+		data, err := parseInspectData(out)
+		if err != nil {
+			return InspectMsg{Err: err}
 		}
-		if len(raw) == 0 {
-			return InspectMsg{Err: fmt.Errorf("no inspect data returned")}
+		return InspectMsg{Data: data}
+	}
+}
+
+func (CLI) InspectContainerExpand(id string) tea.Cmd {
+	return func() tea.Msg {
+		ctx, cancel := context.WithTimeout(context.Background(), timeoutInspect)
+		defer cancel()
+		out, err := exec.CommandContext(ctx, "docker", "inspect", id).CombinedOutput()
+		if err != nil {
+			return ExpandInspectMsg{ContainerID: id, Err: cmdErr("inspect", out, err)}
 		}
-		r := raw[0]
-		return InspectMsg{Data: &InspectData{
-			ImageDigest: r.Image,
-			Ports:       r.NetworkSettings.Ports,
-			Env:         r.Config.Env,
-			Mounts:      r.Mounts,
-		}}
+		data, err := parseInspectData(out)
+		if err != nil {
+			return ExpandInspectMsg{ContainerID: id, Err: err}
+		}
+		return ExpandInspectMsg{ContainerID: id, Data: data}
 	}
 }

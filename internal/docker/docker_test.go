@@ -146,3 +146,38 @@ func TestExecErr_OtherExitCode_OriginalError(t *testing.T) {
 		t.Errorf("want original error for exit 1, got %q", got.Error())
 	}
 }
+
+func TestExpandInspectMsg_HasContainerID(t *testing.T) {
+	msg := ExpandInspectMsg{ContainerID: "abc123", Data: nil, Err: nil}
+	if msg.ContainerID != "abc123" {
+		t.Errorf("want ContainerID=%q, got %q", "abc123", msg.ContainerID)
+	}
+}
+
+func TestInspectData_Networks_ParsedFromJSON(t *testing.T) {
+	raw := `[{
+		"Image": "sha256:abc",
+		"Config": {"Env": []},
+		"Mounts": [],
+		"NetworkSettings": {
+			"Ports": {},
+			"Networks": {
+				"bridge": {"IPAddress": "172.17.0.2"},
+				"mynet":  {"IPAddress": "10.0.0.5"}
+			}
+		}
+	}]`
+	data, err := parseInspectData([]byte(raw))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(data.Networks) != 2 {
+		t.Fatalf("want 2 networks, got %d", len(data.Networks))
+	}
+	if data.Networks[0].Name != "bridge" || data.Networks[0].IPAddress != "172.17.0.2" {
+		t.Errorf("first network: got {%q %q}", data.Networks[0].Name, data.Networks[0].IPAddress)
+	}
+	if data.Networks[1].Name != "mynet" || data.Networks[1].IPAddress != "10.0.0.5" {
+		t.Errorf("second network: got {%q %q}", data.Networks[1].Name, data.Networks[1].IPAddress)
+	}
+}

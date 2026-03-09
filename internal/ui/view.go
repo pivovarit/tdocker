@@ -3,12 +3,27 @@ package ui
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/pivovarit/tdocker/internal/docker"
 )
+
+var ansiRe = regexp.MustCompile(`\x1b\[[0-9;]*m`)
+
+func isContainerLine(line string) bool {
+	plain := strings.TrimLeft(ansiRe.ReplaceAllString(line, ""), " ")
+	if plain == "" {
+		return false
+	}
+	first := plain[0]
+	if (first >= '0' && first <= '9') || (first >= 'a' && first <= 'f') {
+		return true
+	}
+	return strings.HasPrefix(plain, "+")
+}
 
 func errorHintFor(err error) string {
 	if errors.Is(err, docker.ErrDaemonUnavailable) {
@@ -145,11 +160,16 @@ func (m App) View() tea.View {
 		} else {
 			const headerLines = 2
 
-			lines := strings.Split(m.table.View(), "\n")
+			tableView := m.table.View()
+			lines := strings.Split(tableView, "\n")
 			cursor := m.table.Cursor()
 			for i, line := range lines {
 				dataIdx := i - headerLines
 				if dataIdx < 0 {
+					continue
+				}
+				if !isContainerLine(line) {
+					lines[i] = detailRowStyle.Render(ansiRe.ReplaceAllString(line, ""))
 					continue
 				}
 				containerIdx := m.viewportStart + dataIdx
