@@ -93,20 +93,26 @@ type (
 		ID        string
 		Available bool
 	}
-	ContextsMsg      []DockerContext
-	ContextSwitchMsg struct{ Err error }
-	PauseMsg         struct{ Err error }
-	UnpauseMsg       struct{ Err error }
-	RenameMsg        struct{ Err error }
-	GrepSupportMsg   struct{ Available bool }
+	ContextsMsg       []DockerContext
+	ContextSwitchMsg  struct{ Err error }
+	PauseMsg          struct{ Err error }
+	UnpauseMsg        struct{ Err error }
+	RenameMsg         struct{ Err error }
+	ComposeStopMsg    struct{ Err error }
+	ComposeStartMsg   struct{ Err error }
+	ComposeRestartMsg struct{ Err error }
+	GrepSupportMsg    struct{ Available bool }
 )
 
-func (m StopMsg) GetErr() error    { return m.Err }
-func (m StartMsg) GetErr() error   { return m.Err }
-func (m RestartMsg) GetErr() error { return m.Err }
-func (m PauseMsg) GetErr() error   { return m.Err }
-func (m UnpauseMsg) GetErr() error { return m.Err }
-func (m RenameMsg) GetErr() error  { return m.Err }
+func (m StopMsg) GetErr() error           { return m.Err }
+func (m StartMsg) GetErr() error          { return m.Err }
+func (m RestartMsg) GetErr() error        { return m.Err }
+func (m PauseMsg) GetErr() error          { return m.Err }
+func (m UnpauseMsg) GetErr() error        { return m.Err }
+func (m RenameMsg) GetErr() error         { return m.Err }
+func (m ComposeStopMsg) GetErr() error    { return m.Err }
+func (m ComposeStartMsg) GetErr() error   { return m.Err }
+func (m ComposeRestartMsg) GetErr() error { return m.Err }
 
 type DockerContext struct {
 	Name           string `json:"Name"`

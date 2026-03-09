@@ -342,7 +342,7 @@ func TestOperations_NoopOnCollapsedRow(t *testing.T) {
 	m.collapsedProjects["myapp"] = true
 	m = m.rebuildTable("")
 
-	keys := []string{"S", "R", "D", "P", "N", "e", "x", "l", "i", "c", "t"}
+	keys := []string{"D", "P", "N", "e", "x", "l", "i", "c", "t"}
 	for _, k := range keys {
 		got := update(m, runeKey(k))
 		if got.op.kind != OpNone {
@@ -357,6 +357,89 @@ func TestOperations_NoopOnCollapsedRow(t *testing.T) {
 		if got.stats.visible {
 			t.Errorf("key %q: want stats not opened on collapsed row", k)
 		}
+	}
+}
+
+func TestComposeStop_OnCollapsedRow(t *testing.T) {
+	containers := []docker.Container{
+		{ID: "a1", Names: "web", State: "running", Labels: composeLabels("myapp")},
+		{ID: "a2", Names: "db", State: "running", Labels: composeLabels("myapp")},
+	}
+	m := modelWithSorted(containers)
+	m.collapsedProjects["myapp"] = true
+	m = m.rebuildTable("")
+
+	got := update(m, runeKey("S"))
+	if got.op.kind != OpConfirming {
+		t.Fatalf("want OpConfirming, got %v", got.op.kind)
+	}
+	if got.op.action != "compose-stop" {
+		t.Errorf("want action compose-stop, got %q", got.op.action)
+	}
+	if got.op.id != "myapp" {
+		t.Errorf("want id=myapp (project name), got %q", got.op.id)
+	}
+}
+
+func TestComposeRestart_OnCollapsedRow(t *testing.T) {
+	containers := []docker.Container{
+		{ID: "a1", Names: "web", State: "running", Labels: composeLabels("myapp")},
+		{ID: "a2", Names: "db", State: "running", Labels: composeLabels("myapp")},
+	}
+	m := modelWithSorted(containers)
+	m.collapsedProjects["myapp"] = true
+	m = m.rebuildTable("")
+
+	got := update(m, runeKey("R"))
+	if got.op.kind != OpConfirming {
+		t.Fatalf("want OpConfirming, got %v", got.op.kind)
+	}
+	if got.op.action != "compose-restart" {
+		t.Errorf("want action compose-restart, got %q", got.op.action)
+	}
+	if got.op.id != "myapp" {
+		t.Errorf("want id=myapp (project name), got %q", got.op.id)
+	}
+}
+
+func TestComposeStart_OnCollapsedRowAllExited(t *testing.T) {
+	containers := []docker.Container{
+		{ID: "a1", Names: "web", State: "exited", Labels: composeLabels("myapp")},
+		{ID: "a2", Names: "db", State: "exited", Labels: composeLabels("myapp")},
+	}
+	m := modelWithSorted(containers)
+	m.collapsedProjects["myapp"] = true
+	m = m.rebuildTable("")
+
+	got := update(m, runeKey("S"))
+	if got.op.kind != OpConfirming {
+		t.Fatalf("want OpConfirming, got %v", got.op.kind)
+	}
+	if got.op.action != "compose-start" {
+		t.Errorf("want action compose-start, got %q", got.op.action)
+	}
+
+	got = update(m, runeKey("R"))
+	if got.op.action != "compose-start" {
+		t.Errorf("want action compose-start for R key too, got %q", got.op.action)
+	}
+}
+
+func TestComposeStop_ConfirmCallsClient(t *testing.T) {
+	mc := newStubClient()
+	var gotProject string
+	mc.stopCompose = func(project string) tea.Cmd {
+		gotProject = project
+		return func() tea.Msg { return nil }
+	}
+	containers := []docker.Container{
+		{ID: "a1", Names: "web", State: "running", Labels: composeLabels("myapp")},
+	}
+	m := modelWithMock(mc, containers)
+	m.op = operationState{kind: OpConfirming, id: "myapp", action: "compose-stop", name: "▶ myapp (1 running)"}
+	update(m, runeKey("y"))
+	if gotProject != "myapp" {
+		t.Errorf("want StopCompose(%q), got %q", "myapp", gotProject)
 	}
 }
 

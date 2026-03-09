@@ -207,6 +207,15 @@ func (m App) selectedContainer() (docker.Container, bool) {
 	return docker.Container{}, false
 }
 
+func (m App) projectHasRunning(project string) bool {
+	for _, c := range m.containers {
+		if c.ComposeProject() == project && c.State == "running" {
+			return true
+		}
+	}
+	return false
+}
+
 func (m App) containerByID(id string) (docker.Container, bool) {
 	c, ok := m.containersByID[id]
 	return c, ok

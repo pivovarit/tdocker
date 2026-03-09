@@ -26,6 +26,9 @@ type stubClient struct {
 	pauseContainer   func(string) tea.Cmd
 	unpauseContainer func(string) tea.Cmd
 	renameContainer  func(string, string) tea.Cmd
+	stopCompose      func(string) tea.Cmd
+	startCompose     func(string) tea.Cmd
+	restartCompose   func(string) tea.Cmd
 }
 
 func newStubClient() *stubClient {
@@ -51,6 +54,9 @@ func newStubClient() *stubClient {
 		pauseContainer:   noopStr,
 		unpauseContainer: noopStr,
 		renameContainer:  func(_ string, _ string) tea.Cmd { return noop },
+		stopCompose:      noopStr,
+		startCompose:     noopStr,
+		restartCompose:   noopStr,
 	}
 }
 
@@ -79,3 +85,6 @@ func (c *stubClient) UnpauseContainer(id string) tea.Cmd { return c.unpauseConta
 func (c *stubClient) RenameContainer(id, newName string) tea.Cmd {
 	return c.renameContainer(id, newName)
 }
+func (c *stubClient) StopCompose(project string) tea.Cmd    { return c.stopCompose(project) }
+func (c *stubClient) StartCompose(project string) tea.Cmd   { return c.startCompose(project) }
+func (c *stubClient) RestartCompose(project string) tea.Cmd { return c.restartCompose(project) }
