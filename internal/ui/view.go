@@ -205,6 +205,7 @@ var opLabels = map[Operation]string{
 
 var confirmVerbs = map[string]string{
 	"stop": "Stop", "start": "Start", "restart": "Restart", "delete": "Delete",
+	"compose-stop": "Stop", "compose-start": "Start", "compose-restart": "Restart",
 }
 
 func (m App) helpBar() string {
@@ -234,9 +235,14 @@ func (m App) helpBar() string {
 	case m.filtering:
 		return helpBarFilter(m.filterQuery)
 	case m.isCollapsedSelected():
-		return helpBarCollapsed()
+		c, _ := m.selectedContainer()
+		return helpBarCollapsed(m.projectHasRunning(c.ComposeProject()))
 	default:
-		return helpBarDefault(m.warnMsg, m.copiedName, m.filterQuery)
+		canCollapse := false
+		if c, ok := m.selectedContainer(); ok {
+			canCollapse = c.ComposeProject() != ""
+		}
+		return helpBarDefault(m.warnMsg, m.copiedName, m.filterQuery, canCollapse)
 	}
 	return ""
 }
@@ -345,15 +351,23 @@ func (m App) isCollapsedSelected() bool {
 	return ok && c.State == "collapsed"
 }
 
-func helpBarCollapsed() string {
+func helpBarCollapsed(hasRunning bool) string {
+	stopLabel := " start/stop · "
+	restartLabel := " restart · "
+	if !hasRunning {
+		stopLabel = " start · "
+		restartLabel = " start · "
+	}
 	return helpStyle.Render(
 		"  " + keyStyle.Render("→") + " expand · " +
+			keyStyle.Render("S") + stopLabel +
+			keyStyle.Render("R") + restartLabel +
 			keyStyle.Render("?") + " help · " +
 			keyStyle.Render("q") + " quit",
 	)
 }
 
-func helpBarDefault(warnMsg, copiedName, filterQuery string) string {
+func helpBarDefault(warnMsg, copiedName, filterQuery string, canCollapse bool) string {
 	if warnMsg != "" {
 		return helpStyle.Render("  ") + eventWarnStyle.Render("⚠ "+warnMsg)
 	}
@@ -366,8 +380,13 @@ func helpBarDefault(warnMsg, copiedName, filterQuery string) string {
 	if filterQuery != "" {
 		prefix = keyStyle.Render("["+filterQuery+"]") + " · " + keyStyle.Render("esc") + " clear · "
 	}
+	collapseHint := ""
+	if canCollapse {
+		collapseHint = keyStyle.Render("←") + " collapse · "
+	}
 	return helpStyle.Render(
 		"  " + prefix +
+			collapseHint +
 			keyStyle.Render("l") + " logs · " +
 			keyStyle.Render("i") + " inspect · " +
 			keyStyle.Render("e") + " exec · " +

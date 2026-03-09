@@ -70,3 +70,25 @@ func (CLI) RenameContainer(id, newName string) tea.Cmd {
 		return RenameMsg{}
 	}
 }
+
+func (CLI) StopCompose(project string) tea.Cmd {
+	return runComposeCmd(project, "stop", func(err error) tea.Msg { return ComposeStopMsg{Err: err} })
+}
+
+func (CLI) StartCompose(project string) tea.Cmd {
+	return runComposeCmd(project, "start", func(err error) tea.Msg { return ComposeStartMsg{Err: err} })
+}
+
+func (CLI) RestartCompose(project string) tea.Cmd {
+	return runComposeCmd(project, "restart", func(err error) tea.Msg { return ComposeRestartMsg{Err: err} })
+}
+
+func runComposeCmd(project string, subcmd string, mkMsg func(error) tea.Msg) tea.Cmd {
+	return func() tea.Msg {
+		out, err := exec.Command("docker", "compose", "-p", project, subcmd).CombinedOutput()
+		if err != nil {
+			return mkMsg(cmdErr("compose "+subcmd, out, err))
+		}
+		return mkMsg(nil)
+	}
+}

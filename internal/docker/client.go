@@ -26,4 +26,7 @@ type Client interface {
 	PauseContainer(id string) tea.Cmd
 	UnpauseContainer(id string) tea.Cmd
 	RenameContainer(id, newName string) tea.Cmd
+	StopCompose(project string) tea.Cmd
+	StartCompose(project string) tea.Cmd
+	RestartCompose(project string) tea.Cmd
 }

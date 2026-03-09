@@ -14,10 +14,13 @@ type confirmEntry struct {
 }
 
 var confirmActions = map[string]confirmEntry{
-	"stop":    {OpStopping, docker.Client.StopContainer},
-	"start":   {OpStarting, docker.Client.StartContainer},
-	"restart": {OpRestarting, docker.Client.RestartContainer},
-	"delete":  {OpDeleting, docker.Client.DeleteContainer},
+	"stop":            {OpStopping, docker.Client.StopContainer},
+	"start":           {OpStarting, docker.Client.StartContainer},
+	"restart":         {OpRestarting, docker.Client.RestartContainer},
+	"delete":          {OpDeleting, docker.Client.DeleteContainer},
+	"compose-stop":    {OpStopping, docker.Client.StopCompose},
+	"compose-start":   {OpStarting, docker.Client.StartCompose},
+	"compose-restart": {OpRestarting, docker.Client.RestartCompose},
 }
 
 func (m App) handleConfirmKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
@@ -117,22 +120,44 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, firstLine
 		}
 	case keyStop:
-		if c, ok := m.selectedContainer(); ok && c.ID != "" {
-			action := "start"
-			if c.State == "running" {
-				action = "stop"
+		if c, ok := m.selectedContainer(); ok {
+			if c.State == "collapsed" {
+				proj := c.ComposeProject()
+				action := "compose-start"
+				if m.projectHasRunning(proj) {
+					action = "compose-stop"
+				}
+				m.op = operationState{kind: OpConfirming, id: proj, name: c.Names, action: action}
+				return m, nil
 			}
-			m.op = operationState{kind: OpConfirming, id: c.ID, name: c.Names, action: action}
-			return m, nil
+			if c.ID != "" {
+				action := "start"
+				if c.State == "running" {
+					action = "stop"
+				}
+				m.op = operationState{kind: OpConfirming, id: c.ID, name: c.Names, action: action}
+				return m, nil
+			}
 		}
 	case keyRestart:
-		if c, ok := m.selectedContainer(); ok && c.ID != "" {
-			action := "start"
-			if c.State == "running" {
-				action = "restart"
+		if c, ok := m.selectedContainer(); ok {
+			if c.State == "collapsed" {
+				proj := c.ComposeProject()
+				action := "compose-start"
+				if m.projectHasRunning(proj) {
+					action = "compose-restart"
+				}
+				m.op = operationState{kind: OpConfirming, id: proj, name: c.Names, action: action}
+				return m, nil
 			}
-			m.op = operationState{kind: OpConfirming, id: c.ID, name: c.Names, action: action}
-			return m, nil
+			if c.ID != "" {
+				action := "start"
+				if c.State == "running" {
+					action = "restart"
+				}
+				m.op = operationState{kind: OpConfirming, id: c.ID, name: c.Names, action: action}
+				return m, nil
+			}
 		}
 	case keyDelete:
 		if c, ok := m.selectedContainer(); ok && c.ID != "" {
