@@ -106,6 +106,9 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case keyLogs:
 		if c, ok := m.selectedContainer(); ok && c.ID != "" {
+			if m.logs.cancel != nil {
+				m.logs.cancel()
+			}
 			m.logs.container = c.Names
 			m.logs.containerID = c.ID
 			m.logs.lines = nil
