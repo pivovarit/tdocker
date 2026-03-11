@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/pivovarit/tdocker/internal/docker"
 )
 
@@ -47,40 +48,83 @@ func (m App) handleContextKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m App) renderContextPicker() string {
-	return m.renderPanel(" Docker Contexts", func(b *strings.Builder) {
-		if len(m.ctxPicker.contexts) == 0 {
-			b.WriteString(emptyStyle.Render("No contexts found."))
-			b.WriteString("\n")
-			return
-		}
+	var b strings.Builder
+
+	if len(m.ctxPicker.contexts) == 0 {
+		b.WriteString(emptyStyle.MarginLeft(0).Render("No contexts found."))
+		b.WriteString("\n")
+	} else {
 		maxRows := min(len(m.ctxPicker.contexts), ctxPanelMaxRows)
 		start := m.ctxPicker.viewportStart
 		end := min(start+maxRows, len(m.ctxPicker.contexts))
+
+		labels := make([]string, end-start)
+		maxWidth := 0
 		for i := start; i < end; i++ {
 			c := m.ctxPicker.contexts[i]
-			name := c.Name
-			label := "  " + name
+			label := "  " + c.Name
 			if c.Description != "" {
 				label += "  " + c.Description
 			}
 			if c.Current {
-				label = "* " + name
+				label = "* " + c.Name
 				if c.Description != "" {
 					label += "  " + c.Description
 				}
+				if i == m.ctxPicker.cursor {
+					label += "  ✓"
+				}
 			}
-			switch {
-			case i == m.ctxPicker.cursor && c.Current:
-				b.WriteString(contextCursorStyle.Render("* " + name + "  ✓"))
-			case i == m.ctxPicker.cursor:
-				b.WriteString(contextCursorStyle.Render(label))
-			case c.Current:
-				b.WriteString(contextActiveStyle.Render(label))
-			default:
-				b.WriteString(logsLineStyle.Render(label))
+			labels[i-start] = label
+			if w := len([]rune(label)); w > maxWidth {
+				maxWidth = w
 			}
-			b.WriteString("\n")
 		}
-		panelPad(b, end-start, maxRows)
-	})
+
+		for i := start; i < end; i++ {
+			label := labels[i-start]
+			c := m.ctxPicker.contexts[i]
+			padded := label + strings.Repeat(" ", maxWidth-len([]rune(label)))
+
+			var line string
+			switch {
+			case i == m.ctxPicker.cursor:
+				line = contextCursorStyle.Render(padded)
+			case c.Current:
+				line = contextActiveStyle.Render(label)
+			default:
+				line = logsLineStyle.Render(label)
+			}
+			b.WriteString(line)
+			if i < end-1 {
+				b.WriteString("\n")
+			}
+		}
+	}
+
+	popup := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("#0369A1")).
+		Padding(1, 2).
+		Render(b.String())
+
+	title := " Docker Contexts "
+	styledTitle := logsTitleStyle.Render(title)
+	borderColor := lipgloss.NewStyle().Foreground(lipgloss.Color("#0369A1"))
+
+	popupLines := strings.Split(popup, "\n")
+	if len(popupLines) > 0 {
+		plain := ansiRe.ReplaceAllString(popupLines[0], "")
+		runes := []rune(plain)
+		titleStart := 2
+		titleRunes := []rune(title)
+		if titleStart+len(titleRunes) < len(runes) {
+			popupLines[0] = borderColor.Render(string(runes[:titleStart])) +
+				styledTitle +
+				borderColor.Render(string(runes[titleStart+len(titleRunes):]))
+		}
+		popup = strings.Join(popupLines, "\n")
+	}
+
+	return popup
 }
