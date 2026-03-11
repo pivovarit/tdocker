@@ -269,7 +269,7 @@ func TestExpandInspectMsg_ErrorClearsExpansion(t *testing.T) {
 	}
 }
 
-func TestNavigation_DownArrow_SkipsDetailRows(t *testing.T) {
+func TestNavigation_DownArrow_LandsOnDetailRows(t *testing.T) {
 	containers := []docker.Container{
 		{ID: "s1", Names: "solo", State: "running"},
 		{ID: "s2", Names: "other", State: "running"},
@@ -284,15 +284,12 @@ func TestNavigation_DownArrow_SkipsDetailRows(t *testing.T) {
 	got := update(m, tea.KeyPressMsg{Code: tea.KeyDown})
 	cursor := got.table.Cursor()
 	filtered := got.filtered()
-	if filtered[cursor].State == "detail" {
-		t.Errorf("cursor should not rest on detail row, filtered[%d]=%q", cursor, filtered[cursor].Names)
-	}
-	if filtered[cursor].ID != "s2" {
-		t.Errorf("want cursor on s2, got ID=%q", filtered[cursor].ID)
+	if filtered[cursor].State != "detail" {
+		t.Errorf("want cursor on detail row, got state=%q", filtered[cursor].State)
 	}
 }
 
-func TestNavigation_UpArrow_SkipsDetailRows(t *testing.T) {
+func TestNavigation_UpArrow_LandsOnDetailRows(t *testing.T) {
 	containers := []docker.Container{
 		{ID: "s1", Names: "solo", State: "running"},
 		{ID: "s2", Names: "other", State: "running"},
@@ -307,10 +304,7 @@ func TestNavigation_UpArrow_SkipsDetailRows(t *testing.T) {
 	got := update(m, tea.KeyPressMsg{Code: tea.KeyUp})
 	cursor := got.table.Cursor()
 	filtered := got.filtered()
-	if filtered[cursor].State == "detail" {
-		t.Errorf("cursor should not rest on detail row, filtered[%d]=%q", cursor, filtered[cursor].Names)
-	}
-	if filtered[cursor].ID != "s1" {
-		t.Errorf("want cursor on s1, got ID=%q", filtered[cursor].ID)
+	if filtered[cursor].State != "detail" {
+		t.Errorf("want cursor on detail row, got state=%q", filtered[cursor].State)
 	}
 }

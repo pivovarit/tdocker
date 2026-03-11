@@ -94,9 +94,18 @@ func buildTable(containers []docker.Container, width int) table.Model {
 	for i, c := range containers {
 		id := trunc(c.ID, actualIDW)
 		if ch := treeChars[i]; ch != "" {
-			short := trunc(c.ID, idW)
-			if pad := idW - len([]rune(short)); pad > 0 {
-				short += strings.Repeat(" ", pad)
+			var short string
+			if c.State == "collapsed" {
+				const placeholder = "—"
+				pad := idW - len([]rune(placeholder))
+				left := pad / 2
+				right := pad - left
+				short = strings.Repeat(" ", left) + placeholder + strings.Repeat(" ", right)
+			} else {
+				short = trunc(c.ID, idW)
+				if pad := idW - len([]rune(short)); pad > 0 {
+					short += strings.Repeat(" ", pad)
+				}
 			}
 			id = short + " " + ch
 		} else if hasTree && c.State == "detail" {

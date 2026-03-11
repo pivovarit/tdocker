@@ -169,23 +169,34 @@ func (m App) View() tea.View {
 				if dataIdx < 0 {
 					continue
 				}
+				containerIdx := m.viewportStart + dataIdx
 				if !isContainerLine(line) {
-					lines[i] = detailRowStyle.Render(ansiRe.ReplaceAllString(line, ""))
+					plain := ansiRe.ReplaceAllString(line, "")
+					if containerIdx == cursor {
+						trimmed := strings.TrimLeft(plain, " ")
+						indent := len(plain) - len(trimmed)
+						lines[i] = plain[:indent] + detailRowSelectedStyle.Render(trimmed)
+					} else {
+						lines[i] = detailRowStyle.Render(plain)
+					}
 					continue
 				}
-				containerIdx := m.viewportStart + dataIdx
 				if containerIdx >= len(filtered) {
 					break
 				}
 				if containerIdx != cursor {
 					switch filtered[containerIdx].State {
 					case "collapsed":
-						lines[i] = collapsedRowStyle.Render(line)
+						if proj := filtered[containerIdx].ComposeProject(); proj != "" && !m.projectHasRunning(proj) {
+							lines[i] = stoppedRowStyle.Render(strings.ReplaceAll(line, "\x1b[39m", "\x1b[38;2;82;82;91m"))
+						} else {
+							lines[i] = collapsedRowStyle.Render(strings.ReplaceAll(line, "\x1b[39m", "\x1b[38;2;100;116;139m"))
+						}
 					case "paused":
-						lines[i] = pausedRowStyle.Render(line)
+						lines[i] = pausedRowStyle.Render(strings.ReplaceAll(line, "\x1b[39m", "\x1b[38;2;146;64;14m"))
 					case "running":
 					default:
-						lines[i] = stoppedRowStyle.Render(line)
+						lines[i] = stoppedRowStyle.Render(strings.ReplaceAll(line, "\x1b[39m", "\x1b[38;2;82;82;91m"))
 					}
 				}
 			}
@@ -256,6 +267,8 @@ func (m App) helpBar() string {
 		return helpBarRename(m.rename.input)
 	case m.filtering:
 		return helpBarFilter(m.filterQuery)
+	case m.isDetailSelected():
+		return helpBarDetail(m.copiedName)
 	case m.isCollapsedSelected():
 		c, _ := m.selectedContainer()
 		return helpBarCollapsed(m.projectHasRunning(c.ComposeProject()))
@@ -371,6 +384,24 @@ func helpBarFilter(query string) string {
 func (m App) isCollapsedSelected() bool {
 	c, ok := m.selectedContainer()
 	return ok && c.State == "collapsed"
+}
+
+func (m App) isDetailSelected() bool {
+	c, ok := m.selectedContainer()
+	return ok && c.State == "detail"
+}
+
+func helpBarDetail(copiedName string) string {
+	if copiedName != "" {
+		return helpStyle.Render(
+			"  " + confirmStyle.Render("✓ copied ") + keyStyle.Render(copiedName),
+		)
+	}
+	return helpStyle.Render(
+		"  ↑/↓ navigate · " +
+			keyStyle.Render("c") + " copy · " +
+			keyStyle.Render("←") + " collapse",
+	)
 }
 
 func helpBarCollapsed(hasRunning bool) string {

@@ -155,17 +155,33 @@ func execErr(err error) error {
 }
 
 func Sort(containers []Container) []Container {
+	groupHasRunning := map[string]bool{}
+	for _, c := range containers {
+		if p := c.ComposeProject(); p != "" && c.State == "running" {
+			groupHasRunning[p] = true
+		}
+	}
+
 	sorted := make([]Container, len(containers))
 	copy(sorted, containers)
 	slices.SortStableFunc(sorted, func(a, b Container) int {
-		ra, rb := a.State == "running", b.State == "running"
+		pa, pb := a.ComposeProject(), b.ComposeProject()
+
+		ra := a.State == "running"
+		if pa != "" {
+			ra = groupHasRunning[pa]
+		}
+		rb := b.State == "running"
+		if pb != "" {
+			rb = groupHasRunning[pb]
+		}
 		if ra != rb {
 			if ra {
 				return -1
 			}
 			return 1
 		}
-		pa, pb := a.ComposeProject(), b.ComposeProject()
+
 		if pa != pb {
 			if pa == "" {
 				return 1
@@ -175,6 +191,17 @@ func Sort(containers []Container) []Container {
 			}
 			return strings.Compare(pa, pb)
 		}
+
+		if pa != "" {
+			ra2, rb2 := a.State == "running", b.State == "running"
+			if ra2 != rb2 {
+				if ra2 {
+					return -1
+				}
+				return 1
+			}
+		}
+
 		sa, sb := a.ComposeService(), b.ComposeService()
 		if sa != sb {
 			return strings.Compare(sa, sb)
