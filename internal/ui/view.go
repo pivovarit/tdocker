@@ -23,7 +23,7 @@ func isContainerLine(line string) bool {
 	if (first >= '0' && first <= '9') || (first >= 'a' && first <= 'f') {
 		return true
 	}
-	return strings.HasPrefix(plain, "+")
+	return strings.HasPrefix(plain, "▸")
 }
 
 func errorHintFor(err error) string {

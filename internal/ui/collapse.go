@@ -43,7 +43,7 @@ func collapseSummary(project string, containers []docker.Container) docker.Conta
 	}
 
 	return docker.Container{
-		Names:  fmt.Sprintf("+ %s (%s)", project, strings.Join(parts, ", ")),
+		Names:  fmt.Sprintf("%s (%s)", project, strings.Join(parts, ", ")),
 		State:  "collapsed",
 		Labels: docker.Labels{"com.docker.compose.project": project},
 	}

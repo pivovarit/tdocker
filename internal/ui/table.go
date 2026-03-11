@@ -151,28 +151,23 @@ func buildTableName(containers []docker.Container, i int) string {
 	}
 	p := c.ComposeProject()
 	if p == "" {
-		name := strings.TrimPrefix(c.Names, "/")
-		if i < len(containers)-1 && containers[i+1].State == "detail" {
-			return "⊟ " + name
-		}
-		return name
+		return strings.TrimPrefix(c.Names, "/")
 	}
 	s := c.ComposeService()
 	if s == "" {
 		s = strings.TrimPrefix(c.Names, "/")
 	}
-	label := p + "/" + s
-	expanded := i+1 < len(containers) && containers[i+1].State == "detail"
-	if expanded {
-		return "⊟ " + label
-	}
-	return label
+	return p + "/" + s
 }
 
 func composeTreeChar(containers []docker.Container, i int) string {
 	c := containers[i]
-	if c.State == "detail" || c.State == "collapsed" {
+	if c.State == "detail" {
 		return ""
+	}
+	if c.State == "collapsed" {
+		tree := func(ch string) string { return "\x1b[38;2;100;116;139m" + ch + "\x1b[39m" }
+		return tree("▸")
 	}
 	if c.ComposeProject() == "" {
 		return ""
