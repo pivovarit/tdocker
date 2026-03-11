@@ -8,6 +8,7 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/pivovarit/tdocker/internal/docker"
 )
 
@@ -197,11 +198,6 @@ func (m App) View() tea.View {
 		b.WriteString(m.renderStatsPanel())
 	}
 
-	if m.ctxPicker.visible {
-		b.WriteString("\n")
-		b.WriteString(m.renderContextPicker())
-	}
-
 	if m.events.visible {
 		b.WriteString("\n")
 		b.WriteString(m.renderEventsPanel())
@@ -210,7 +206,13 @@ func (m App) View() tea.View {
 	b.WriteString("\n")
 	b.WriteString(m.helpBar())
 
-	v := tea.NewView(b.String())
+	content := b.String()
+
+	if m.ctxPicker.visible {
+		content = placeOverlay(content, m.renderContextPicker(), m.width, m.height)
+	}
+
+	v := tea.NewView(content)
 	v.AltScreen = true
 	return v
 }
@@ -420,6 +422,19 @@ func helpBarDefault(warnMsg, copiedName, filterQuery string, canCollapse bool) s
 			keyStyle.Render("c") + " copy id · " +
 			keyStyle.Render("x") + " debug",
 	)
+}
+
+func placeOverlay(bg, overlay string, width, height int) string {
+	overlayW := lipgloss.Width(overlay)
+	overlayH := lipgloss.Height(overlay)
+
+	x := max(0, (width-overlayW)/2)
+	y := max(0, (height-overlayH)/2)
+
+	bgLayer := lipgloss.NewLayer(bg)
+	popupLayer := lipgloss.NewLayer(overlay).X(x).Y(y).Z(1)
+
+	return lipgloss.NewCompositor(bgLayer, popupLayer).Render()
 }
 
 func (m App) renderPanel(title string, body func(*strings.Builder)) string {
