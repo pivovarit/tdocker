@@ -3,9 +3,18 @@ package ui
 import (
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/pivovarit/tdocker/internal/docker"
 )
+
+func detailRowContent(names string) string {
+	runes := []rune(names)
+	if len(runes) >= 3 && (runes[0] == '│' || runes[0] == '└') {
+		return strings.TrimSpace(string(runes[3:]))
+	}
+	return strings.TrimSpace(names)
+}
 
 func detailRows(data *docker.InspectData) []docker.Container {
 	if data == nil {

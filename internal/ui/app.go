@@ -84,7 +84,6 @@ type App struct {
 
 	collapsedProjects  map[string]bool
 	expandedContainers map[string]*docker.InspectData
-	cachedExpand       map[string]*docker.InspectData
 
 	op     operationState
 	fetch  fetchState
@@ -117,7 +116,6 @@ func newWithClient(c docker.Client, version string) App {
 		showAll:            true,
 		collapsedProjects:  map[string]bool{},
 		expandedContainers: map[string]*docker.InspectData{},
-		cachedExpand:       map[string]*docker.InspectData{},
 		table:              buildTable(nil, 120),
 		fetch: fetchState{
 			loading: true,
@@ -257,8 +255,12 @@ func (m App) rebuildTable(selectedID string) App {
 		if _, ok := m.containersByID[selectedID]; ok {
 			if i := slices.IndexFunc(filtered, func(c docker.Container) bool { return c.ID == selectedID }); i >= 0 {
 				m.table.SetCursor(i)
-				if h := m.tableHeight(); h > 0 && i >= h {
-					m.viewportStart = i - h + 1
+				lastRow := i
+				for j := i + 1; j < len(filtered) && filtered[j].State == "detail"; j++ {
+					lastRow = j
+				}
+				if h := m.tableHeight(); h > 0 && lastRow >= h {
+					m.viewportStart = lastRow - h + 1
 				}
 			}
 		}

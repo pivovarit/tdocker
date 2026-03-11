@@ -209,8 +209,14 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, m.client.InspectContainer(c.ID)
 		}
 	case keyCopy:
-		if c, ok := m.selectedContainer(); ok && c.ID != "" {
-			return m, copyToClipboard(c.Names, c.ID)
+		if c, ok := m.selectedContainer(); ok {
+			if c.State == "detail" {
+				content := detailRowContent(c.Names)
+				return m, copyToClipboard(content, content)
+			}
+			if c.ID != "" {
+				return m, copyToClipboard(c.Names, c.ID)
+			}
 		}
 	case keyStats:
 		if c, ok := m.selectedContainer(); ok && c.ID != "" && c.State == "running" {
@@ -248,11 +254,8 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		if c, ok := m.selectedContainer(); ok {
 			proj := c.ComposeProject()
 			if c.ID != "" {
-				if data, expanded := m.expandedContainers[c.ID]; expanded {
+				if _, expanded := m.expandedContainers[c.ID]; expanded {
 					delete(m.expandedContainers, c.ID)
-					if data != nil {
-						m.cachedExpand[c.ID] = data
-					}
 					m = m.rebuildTable(c.ID)
 					return m, nil
 				}
@@ -292,12 +295,7 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 				if _, alreadyExpanded := m.expandedContainers[c.ID]; alreadyExpanded {
 					return m, nil
 				}
-				if cached, ok := m.cachedExpand[c.ID]; ok {
-					m.expandedContainers[c.ID] = cached
-					delete(m.cachedExpand, c.ID)
-				} else {
-					m.expandedContainers[c.ID] = nil
-				}
+				m.expandedContainers[c.ID] = nil
 				m = m.rebuildTable(c.ID)
 				if m.expandedContainers[c.ID] != nil {
 					return m, nil
@@ -324,24 +322,6 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m.viewportStart = cursor
 	} else if height > 0 && cursor >= m.viewportStart+height {
 		m.viewportStart = cursor - height + 1
-	}
-
-	isDown := msg.Code == tea.KeyDown || msg.Text == keyVimDown
-	isUp := msg.Code == tea.KeyUp || msg.Text == keyVimUp
-	if isDown || isUp {
-		filtered := m.filtered()
-		for cursor >= 0 && cursor < len(filtered) && filtered[cursor].State == "detail" {
-			if isDown {
-				cursor++
-			} else {
-				cursor--
-			}
-			if cursor < 0 || cursor >= len(filtered) {
-				break
-			}
-			m.table.SetCursor(cursor)
-			cursor = m.table.Cursor()
-		}
 	}
 
 	return m, cmd
