@@ -11,7 +11,6 @@ import (
 func buildTable(containers []docker.Container, width int) table.Model {
 	const (
 		idW         = 13
-		commandW    = 20
 		runningForW = 13
 		overhead    = 15
 	)
@@ -52,7 +51,7 @@ func buildTable(containers []docker.Container, width int) table.Model {
 		actualIDW = idW + 2
 	}
 
-	remaining := width - actualIDW - commandW - runningForW - overhead
+	remaining := width - actualIDW - runningForW - overhead
 
 	if hasPorts {
 		minR := 5 + 5 + 6 + 5
@@ -82,7 +81,6 @@ func buildTable(containers []docker.Container, width int) table.Model {
 		{Title: "ID", Width: actualIDW},
 		{Title: "Names", Width: nameW},
 		{Title: "Image", Width: imageW},
-		{Title: "Command", Width: commandW},
 		{Title: "Created", Width: runningForW},
 		{Title: "Status", Width: statusW},
 	}
@@ -117,7 +115,6 @@ func buildTable(containers []docker.Container, width int) table.Model {
 			id,
 			trunc(names[i], nameW),
 			trunc(c.Image, imageW),
-			trunc(c.Command, commandW),
 			trunc(c.RunningFor, runningForW),
 			trunc(c.Status, statusW),
 		}
