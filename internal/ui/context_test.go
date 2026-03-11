@@ -8,7 +8,7 @@ import (
 	"github.com/pivovarit/tdocker/internal/docker"
 )
 
-var testContexts = []docker.DockerContext{
+var testContexts = []docker.Context{
 	{Name: "default", Current: true, Description: "Current DOCKER_HOST based"},
 	{Name: "remote", Current: false, Description: "Remote server"},
 }
@@ -48,7 +48,7 @@ func TestContextPicker_ContextsMsg_OpensPicker(t *testing.T) {
 }
 
 func TestContextPicker_ContextsMsg_CursorOnCurrentContext(t *testing.T) {
-	contexts := []docker.DockerContext{
+	contexts := []docker.Context{
 		{Name: "other", Current: false},
 		{Name: "active", Current: true},
 	}

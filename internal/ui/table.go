@@ -20,6 +20,9 @@ func buildTable(containers []docker.Container, width int) table.Model {
 	hasPorts := false
 	for i, c := range containers {
 		names[i] = buildTableName(containers, i)
+		if c.State == "detail" {
+			continue
+		}
 		if w := len([]rune(names[i])); w > nameW {
 			nameW = w
 		}

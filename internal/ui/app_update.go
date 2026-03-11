@@ -336,8 +336,8 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.client.FetchStats(m.stats.containerID)
 
 	case docker.ContextsMsg:
-		m.ctxPicker.contexts = []docker.DockerContext(msg)
-		if i := slices.IndexFunc(m.ctxPicker.contexts, func(c docker.DockerContext) bool { return c.Current }); i >= 0 {
+		m.ctxPicker.contexts = []docker.Context(msg)
+		if i := slices.IndexFunc(m.ctxPicker.contexts, func(c docker.Context) bool { return c.Current }); i >= 0 {
 			m.ctxPicker.current = m.ctxPicker.contexts[i].Name
 			if m.ctxPicker.requested {
 				m.ctxPicker.cursor = i

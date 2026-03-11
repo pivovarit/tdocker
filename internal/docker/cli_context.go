@@ -20,12 +20,12 @@ func (CLI) FetchContexts() tea.Cmd {
 			}
 			return ErrMsg{cmdErr("context ls", out, err)}
 		}
-		var contexts []DockerContext
+		var contexts []Context
 		for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
 			if line == "" {
 				continue
 			}
-			var c DockerContext
+			var c Context
 			if err := json.Unmarshal([]byte(line), &c); err == nil {
 				contexts = append(contexts, c)
 			}
