@@ -146,7 +146,7 @@ func TestBuildTableName_ExpandedStandaloneContainer(t *testing.T) {
 		{State: "detail", Names: "└  Network  bridge (172.17.0.2)"},
 	}
 	got := buildTableName(containers, 0)
-	want := "⊟ solo"
+	want := "solo"
 	if got != want {
 		t.Errorf("want %q, got %q", want, got)
 	}
