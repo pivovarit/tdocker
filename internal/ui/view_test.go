@@ -43,8 +43,7 @@ func TestRenderStatsPanel_TitleContainsContainerName(t *testing.T) {
 
 func TestRenderStatsPanel_AllMetricLabelsPresent(t *testing.T) {
 	m := statsPanel()
-	e := statsEntry("1.00%", "1.00%", "1kB", "0B", "3")
-	m.stats.entry = &e
+	m.stats.entry = new(statsEntry("1.00%", "1.00%", "1kB", "0B", "3"))
 	out := m.renderStatsPanel()
 	for _, label := range []string{"CPU", "Memory", "Net I/O", "Block I/O", "PIDs"} {
 		if !strings.Contains(out, label) {
@@ -74,10 +73,8 @@ func TestRenderStatsPanel_MetricValuesPresent(t *testing.T) {
 
 func TestRenderStatsPanel_TrendUpWhenMetricsRise(t *testing.T) {
 	m := statsPanel()
-	prev := statsEntry("1.00%", "1.00%", "1kB", "1kB", "1")
-	curr := statsEntry("90.00%", "90.00%", "900MB", "900MB", "50")
-	m.stats.prevEntry = &prev
-	m.stats.entry = &curr
+	m.stats.prevEntry = new(statsEntry("1.00%", "1.00%", "1kB", "1kB", "1"))
+	m.stats.entry = new(statsEntry("90.00%", "90.00%", "900MB", "900MB", "50"))
 	out := m.renderStatsPanel()
 	if !strings.Contains(out, "↑") {
 		t.Errorf("want ↑ trend when all metrics rise significantly, got:\n%s", out)
@@ -86,10 +83,8 @@ func TestRenderStatsPanel_TrendUpWhenMetricsRise(t *testing.T) {
 
 func TestRenderStatsPanel_TrendDownWhenMetricsDrop(t *testing.T) {
 	m := statsPanel()
-	prev := statsEntry("90.00%", "90.00%", "900MB", "900MB", "50")
-	curr := statsEntry("1.00%", "1.00%", "1kB", "1kB", "1")
-	m.stats.prevEntry = &prev
-	m.stats.entry = &curr
+	m.stats.prevEntry = new(statsEntry("90.00%", "90.00%", "900MB", "900MB", "50"))
+	m.stats.entry = new(statsEntry("1.00%", "1.00%", "1kB", "1kB", "1"))
 	out := m.renderStatsPanel()
 	if !strings.Contains(out, "↓") {
 		t.Errorf("want ↓ trend when all metrics drop significantly, got:\n%s", out)
@@ -109,8 +104,7 @@ func TestRenderStatsPanel_TrendSteadyWhenUnchanged(t *testing.T) {
 
 func TestRenderStatsPanel_NoPrevEntryNoTrend(t *testing.T) {
 	m := statsPanel()
-	e := statsEntry("5.00%", "5.00%", "1kB", "1kB", "4")
-	m.stats.entry = &e
+	m.stats.entry = new(statsEntry("5.00%", "5.00%", "1kB", "1kB", "4"))
 	out := m.renderStatsPanel()
 	if strings.Contains(out, "↑") || strings.Contains(out, "↓") {
 		t.Errorf("want no trend arrows without prevEntry, got:\n%s", out)

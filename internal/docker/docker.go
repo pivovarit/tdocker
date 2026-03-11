@@ -93,7 +93,7 @@ type (
 		ID        string
 		Available bool
 	}
-	ContextsMsg       []DockerContext
+	ContextsMsg       []Context
 	ContextSwitchMsg  struct{ Err error }
 	PauseMsg          struct{ Err error }
 	UnpauseMsg        struct{ Err error }
@@ -119,7 +119,7 @@ func (m ComposeStopMsg) GetErr() error    { return m.Err }
 func (m ComposeStartMsg) GetErr() error   { return m.Err }
 func (m ComposeRestartMsg) GetErr() error { return m.Err }
 
-type DockerContext struct {
+type Context struct {
 	Name           string `json:"Name"`
 	Current        bool   `json:"Current"`
 	Description    string `json:"Description"`
@@ -144,8 +144,7 @@ func execErr(err error) error {
 	if err == nil {
 		return nil
 	}
-	var exitErr *exec.ExitError
-	if errors.As(err, &exitErr) {
+	if exitErr, ok := errors.AsType[*exec.ExitError](err); ok {
 		switch exitErr.ExitCode() {
 		case 126, 127:
 			return fmt.Errorf("shell not found in container (distroless/scratch image?) - press 'x' to use docker debug")

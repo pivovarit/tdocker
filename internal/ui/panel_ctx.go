@@ -11,7 +11,7 @@ import (
 type ctxPickerState struct {
 	visible       bool
 	requested     bool
-	contexts      []docker.DockerContext
+	contexts      []docker.Context
 	cursor        int
 	current       string
 	viewportStart int
