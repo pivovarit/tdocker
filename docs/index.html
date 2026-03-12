@@ -5,6 +5,51 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>tdocker - pragmatic everyday docker ps alternative</title>
   <meta name="description" content="A minimalistic terminal UI for everyday Docker operations. Tail logs, exec into a shell, restart a container, copy an ID - each a single keypress away." />
+
+  <!-- Canonical -->
+  <link rel="canonical" href="https://tdocker.pivovarit.com/" />
+
+  <!-- Open Graph -->
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="https://tdocker.pivovarit.com/" />
+  <meta property="og:site_name"   content="tdocker" />
+  <meta property="og:title"       content="tdocker - pragmatic everyday docker ps alternative" />
+  <meta property="og:description" content="A minimalistic terminal UI for everyday Docker operations. Tail logs, exec into a shell, restart a container, copy an ID - each a single keypress away." />
+  <meta property="og:image"       content="https://tdocker.pivovarit.com/social.png" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:url"         content="https://tdocker.pivovarit.com/" />
+  <meta name="twitter:title"       content="tdocker - pragmatic everyday docker ps alternative" />
+  <meta name="twitter:description" content="A minimalistic terminal UI for everyday Docker operations. Tail logs, exec into a shell, restart a container, copy an ID - each a single keypress away." />
+  <meta name="twitter:image"       content="https://tdocker.pivovarit.com/social.png" />
+
+  <!-- Schema.org structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "tdocker",
+    "url": "https://tdocker.pivovarit.com/",
+    "description": "A minimalistic terminal UI for everyday Docker operations. Tail logs, exec into a shell, restart a container, copy an ID - each a single keypress away.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "macOS, Linux, Windows",
+    "softwareVersion": "latest",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "codeRepository": "https://github.com/pivovarit/tdocker",
+    "license": "https://github.com/pivovarit/tdocker/blob/main/LICENSE",
+    "author": {
+      "@type": "Person",
+      "name": "pivovarit",
+      "url": "https://github.com/pivovarit"
+    }
+  }
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet" />
@@ -1067,6 +1112,10 @@
             <span class="kb-action">Navigate containers</span>
           </div>
           <div class="kb-row">
+            <div class="kb-keys"><span class="kb-key">→</span><span class="kb-key">←</span></div>
+            <span class="kb-action">Expand / collapse inline details</span>
+          </div>
+          <div class="kb-row">
             <div class="kb-keys"><span class="kb-key">j</span><span class="kb-key">k</span></div>
             <span class="kb-action">Vim-style navigation</span>
           </div>
@@ -1153,6 +1202,10 @@
             <div class="kb-keys"><span class="kb-key">D</span></div>
             <span class="kb-action">Delete container (stopped only)</span>
           </div>
+          <div class="kb-row">
+            <div class="kb-keys"><span class="kb-key">N</span></div>
+            <span class="kb-action">Rename container</span>
+          </div>
         </div>
       </div>
     </div>
@@ -1181,6 +1234,7 @@
         <div class="tip-line"><span class="tip-prompt">→</span> <span class="tip-content"><code>q</code> clears the active filter first, press again to quit</span></div>
         <hr class="tip-sep">
         <div class="tip-line"><span class="tip-prompt">#</span> <span class="tip-comment">logs &amp; inspect</span></div>
+        <div class="tip-line"><span class="tip-prompt">→</span> <span class="tip-content">press <code>→</code> on a container to expand port bindings and network info as navigable rows inline</span></div>
         <div class="tip-line"><span class="tip-prompt">→</span> <span class="tip-content">logs auto-scroll as new lines arrive, scroll up to pause, bottom to resume</span></div>
         <hr class="tip-sep">
         <div class="tip-line"><span class="tip-prompt">#</span> <span class="tip-comment">containers</span></div>
