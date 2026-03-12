@@ -59,6 +59,7 @@ Clipboard integration is supported on macOS (`pbcopy`), Windows (`clip`), Linux/
 |-----|--------|
 | `↑` / `↓` / `j` / `k` | Navigate |
 | `g` / `G` | Jump to top / bottom |
+| `→` / `←` | Expand inline details / collapse |
 | `/` | Filter containers |
 | `A` | Toggle all / running only |
 | `l` | View logs |
@@ -72,6 +73,7 @@ Clipboard integration is supported on macOS (`pbcopy`), Windows (`clip`), Linux/
 | `R` | Restart container |
 | `P` | Pause / Unpause |
 | `D` | Delete container (stopped only) |
+| `N` | Rename container |
 | `r` | Refresh |
 | `X` | Switch Docker context |
 | `?` | Show help |
@@ -81,6 +83,7 @@ Clipboard integration is supported on macOS (`pbcopy`), Windows (`clip`), Linux/
 
 - **Navigate while filtering** - press `↑`/`↓` while typing a filter to accept it and immediately navigate the list
 - **`q` clears filters first** - if a filter is active, `q` clears it instead of quitting; press again to exit
+- **Inline details** - press `→` on any container to expand port bindings and network info as navigable rows inline; `←` collapses them
 - **Auto-scroll in logs** - logs auto-scroll as new lines arrive; scroll up to pause, scroll back to the bottom to resume
 - **Smart actions** - `S` stops running containers and starts stopped ones; `R` restarts running containers and starts stopped ones
 - **Shell detection** - `e` auto-detects available shells; for distroless/scratch images, use `x` (docker debug) instead

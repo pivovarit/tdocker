@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#080d14"/>
+      <stop offset="100%" stop-color="#0c1828"/>
+    </linearGradient>
+    <radialGradient id="glow-tl" cx="0%" cy="0%" r="70%">
+      <stop offset="0%" stop-color="#0369A1" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#080d14" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow-br" cx="100%" cy="100%" r="60%">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#080d14" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow-tl)"/>
+  <rect width="1200" height="630" fill="url(#glow-br)"/>
+
+  <!-- Subtle grid lines -->
+  <g stroke="#1a2d45" stroke-width="0.5" opacity="0.4">
+    <line x1="0"    y1="105" x2="1200" y2="105"/>
+    <line x1="0"    y1="210" x2="1200" y2="210"/>
+    <line x1="0"    y1="315" x2="1200" y2="315"/>
+    <line x1="0"    y1="420" x2="1200" y2="420"/>
+    <line x1="0"    y1="525" x2="1200" y2="525"/>
+    <line x1="200"  y1="0"   x2="200"  y2="630"/>
+    <line x1="400"  y1="0"   x2="400"  y2="630"/>
+    <line x1="600"  y1="0"   x2="600"  y2="630"/>
+    <line x1="800"  y1="0"   x2="800"  y2="630"/>
+    <line x1="1000" y1="0"   x2="1000" y2="630"/>
+  </g>
+
+  <!-- Accent bar left -->
+  <rect x="80" y="195" width="4" height="240" rx="2" fill="#38BDF8" opacity="0.7"/>
+
+  <!-- Main title -->
+  <text x="112" y="308" font-family="monospace, 'Courier New', Courier" font-size="112" font-weight="700" fill="#e2e8f0" letter-spacing="-4">tdocker</text>
+
+  <!-- Tagline -->
+  <text x="114" y="368" font-family="monospace, 'Courier New', Courier" font-size="22" fill="#38BDF8" letter-spacing="1">pragmatic everyday docker ps alternative</text>
+
+  <!-- Bottom-right: URL -->
+  <text x="1120" y="590" font-family="monospace, 'Courier New', Courier" font-size="15" fill="#94a3b8" text-anchor="end" opacity="0.7">tdocker.pivovarit.com</text>
+
+</svg>
