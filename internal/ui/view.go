@@ -130,7 +130,7 @@ func (m App) View() tea.View {
 			b.WriteString(helpStyle.Render("  " + hint))
 			b.WriteString("\n")
 		}
-		b.WriteString(helpStyle.Render("  Press " + keyStyle.Render("r") + " to retry, " + keyStyle.Render("q") + " to quit."))
+		b.WriteString(helpStyle.Render("  Press " + keyStyle.Render("r") + " to retry, " + keyStyle.Render("q") + " to dismiss."))
 		v := tea.NewView(b.String())
 		v.AltScreen = true
 		return v
