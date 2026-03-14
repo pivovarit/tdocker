@@ -40,6 +40,17 @@ brews:
     homepage: "https://github.com/pivovarit/tdocker"
     license: "MIT"
 
+nfpms:
+  - maintainer: Grzegorz Piwowarek <gpiwowarek@gmail.com>
+    description: "Minimalistic TUI for Docker"
+    homepage: "https://github.com/pivovarit/tdocker"
+    license: "MIT"
+    formats:
+      - deb
+      - rpm
+      - apk
+      - archlinux
+
 changelog:
   sort: asc
   filters:
