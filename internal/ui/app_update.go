@@ -130,6 +130,9 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.filterQuery = ""
 				m = m.rebuildTable("")
 				return m, nil
+			case m.err != nil:
+				m.err = nil
+				return m, nil
 			default:
 				return m, tea.Quit
 			}
