@@ -24,18 +24,8 @@ func (m App) handleEventsKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch msg.Code {
 	case tea.KeyEsc, 'v':
 		m = m.closeEvents()
-	case tea.KeyUp, 'k':
-		m.events.scroll = m.events.scroll.up()
-	case tea.KeyDown, 'j':
-		m.events.scroll = m.events.scroll.down(len(m.events.events), m.eventsPanelHeight()-2)
-	case 'g', tea.KeyHome:
-		if msg.Text == keyScrollBottom {
-			m.events.scroll = m.events.scroll.bottom(len(m.events.events), m.eventsPanelHeight()-2)
-		} else {
-			m.events.scroll = m.events.scroll.top()
-		}
-	case tea.KeyEnd:
-		m.events.scroll = m.events.scroll.bottom(len(m.events.events), m.eventsPanelHeight()-2)
+	default:
+		m.events.scroll, _ = m.events.scroll.handleKey(msg, len(m.events.events), m.eventsPanelHeight()-2)
 	}
 	return m, nil
 }
