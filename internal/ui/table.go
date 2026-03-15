@@ -175,7 +175,8 @@ func composeTreeChar(containers []docker.Container, i int) string {
 		return ""
 	}
 	if c.State == docker.StateCollapsed {
-		return treeCharStyle.Render("▸")
+		tree := func(ch string) string { return "\x1b[38;2;100;116;139m" + ch + "\x1b[39m" }
+		return tree("▸")
 	}
 	if c.ComposeProject() == "" {
 		return ""
@@ -184,6 +185,7 @@ func composeTreeChar(containers []docker.Container, i int) string {
 		return ""
 	}
 	p := c.ComposeProject()
+	tree := func(ch string) string { return "\x1b[38;2;100;116;139m" + ch + "\x1b[39m" }
 
 	prevIdx := i - 1
 	for prevIdx >= 0 && containers[prevIdx].State == docker.StateDetail {
@@ -199,14 +201,14 @@ func composeTreeChar(containers []docker.Container, i int) string {
 
 	switch {
 	case !hasPrev:
-		return treeCharStyle.Render("┬")
+		return tree("┬")
 	case !hasNext:
 		if i+1 < len(containers) && containers[i+1].State == docker.StateDetail {
-			return treeCharStyle.Render("├")
+			return tree("├")
 		}
-		return treeCharStyle.Render("└")
+		return tree("└")
 	default:
-		return treeCharStyle.Render("├")
+		return tree("├")
 	}
 }
 
