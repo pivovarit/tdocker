@@ -95,16 +95,19 @@ type App struct {
 	events    eventsState
 	ctxPicker ctxPickerState
 
-	inlineStats     map[string]docker.StatsEntry
-	showInlineStats bool
-	copiedName      string
-	warnMsg         string
-	version         string
-	updateAvailable string
-	bgEventsGen     int
-	pendingRefresh  bool
-	helpVisible     bool
-	grepSupported   bool
+	inlineStats       map[string]docker.StatsEntry
+	showInlineStats   bool
+	bgStatsGen        int
+	statsDirty        bool
+	statsPendingFlush bool
+	copiedName        string
+	warnMsg           string
+	version           string
+	updateAvailable   string
+	bgEventsGen       int
+	pendingRefresh    bool
+	helpVisible       bool
+	grepSupported     bool
 }
 
 func New(version string) App {
@@ -119,6 +122,7 @@ func newWithClient(c docker.Client, version string) App {
 		collapsedProjects:  map[string]bool{},
 		expandedContainers: map[string]*docker.InspectData{},
 		inlineStats:        map[string]docker.StatsEntry{},
+		bgStatsGen:         1,
 		table:              buildTable(nil, 120, nil),
 		fetch: fetchState{
 			loading: true,
@@ -134,7 +138,7 @@ func newWithClient(c docker.Client, version string) App {
 func (m App) Init() tea.Cmd {
 	return tea.Batch(
 		m.client.FetchContainers(m.showAll),
-		m.client.FetchAllStats(),
+		m.client.StartAllStats(context.Background(), m.bgStatsGen),
 		m.client.FetchContexts(),
 		m.client.StartEvents(context.Background(), m.bgEventsGen),
 		m.client.SupportsGrep(),

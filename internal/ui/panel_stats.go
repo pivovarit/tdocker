@@ -15,7 +15,6 @@ type statsState struct {
 	containerID string
 	entry       *docker.StatsEntry
 	prevEntry   *docker.StatsEntry
-	fetching    bool
 }
 
 func (m App) closeStats() App {
@@ -28,18 +27,6 @@ func (m App) handleStatsKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch msg.Code {
 	case tea.KeyEsc, 't':
 		m = m.closeStats()
-	case 'r':
-		if m.stats.fetching {
-			return m, nil
-		}
-		m.fetch.loading = true
-		m.err = nil
-		if m.stats.entry != nil {
-			m.stats.prevEntry = m.stats.entry
-		}
-		m.stats.entry = nil
-		m.stats.fetching = true
-		return m, tea.Batch(m.client.FetchContainers(m.showAll), m.client.FetchStats(m.stats.containerID))
 	}
 	return m, nil
 }

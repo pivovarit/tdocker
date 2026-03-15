@@ -21,20 +21,6 @@ func isContainerLifecycleEvent(ev docker.Event) bool {
 	return false
 }
 
-func statsTickCmd() tea.Cmd {
-	return func() tea.Msg {
-		time.Sleep(2 * time.Second)
-		return statsTickMsg{}
-	}
-}
-
-func inlineStatsTickCmd() tea.Cmd {
-	return func() tea.Msg {
-		time.Sleep(3 * time.Second)
-		return inlineStatsTickMsg{}
-	}
-}
-
 func fetchTimerCmd() tea.Cmd {
 	return func() tea.Msg {
 		time.Sleep(100 * time.Millisecond)
@@ -322,29 +308,6 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m.startFetch()
 
-	case docker.StatsMsg:
-		m.stats.fetching = false
-		if !m.stats.visible {
-			return m, nil
-		}
-		if msg.Err != nil {
-			m.err = msg.Err
-			m = m.closeStats()
-			return m, nil
-		}
-		if m.stats.entry != nil {
-			m.stats.prevEntry = m.stats.entry
-		}
-		m.stats.entry = &msg.Entry
-		return m, statsTickCmd()
-
-	case statsTickMsg:
-		if !m.stats.visible || m.stats.fetching {
-			return m, nil
-		}
-		m.stats.fetching = true
-		return m, m.client.FetchStats(m.stats.containerID)
-
 	case docker.ContextsMsg:
 		m.ctxPicker.contexts = []docker.Context(msg)
 		if i := slices.IndexFunc(m.ctxPicker.contexts, func(c docker.Context) bool { return c.Current }); i >= 0 {
@@ -409,21 +372,53 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, m.client.StartEvents(context.Background(), m.bgEventsGen)
 
-	case docker.AllStatsMsg:
-		if msg.Err == nil {
-			stats := make(map[string]docker.StatsEntry, len(msg.Entries))
-			for _, e := range msg.Entries {
-				stats[e.ID] = e
-			}
-			m.inlineStats = stats
+	case docker.StatsLineMsg:
+		if msg.Gen != m.bgStatsGen {
+			return m, msg.Next
+		}
+		m.inlineStats[msg.Entry.ID] = msg.Entry
+		m.statsDirty = true
+		if !m.statsPendingFlush {
+			m.statsPendingFlush = true
+			return m, tea.Batch(msg.Next, tea.Tick(200*time.Millisecond, func(time.Time) tea.Msg {
+				return inlineStatsFlushMsg{}
+			}))
+		}
+		return m, msg.Next
+
+	case inlineStatsFlushMsg:
+		m.statsPendingFlush = false
+		if m.statsDirty {
+			m.statsDirty = false
 			if m.showInlineStats {
 				m = m.rebuildTable(m.currentSelectedID())
 			}
+			if m.stats.visible {
+				if e, ok := m.inlineStats[m.stats.containerID]; ok {
+					if m.stats.entry != nil {
+						m.stats.prevEntry = m.stats.entry
+					}
+					m.stats.entry = &e
+				}
+			}
 		}
-		return m, inlineStatsTickCmd()
+		return m, nil
 
-	case inlineStatsTickMsg:
-		return m, m.client.FetchAllStats()
+	case docker.StatsEndMsg:
+		if msg.Gen != m.bgStatsGen {
+			return m, nil
+		}
+		m.bgStatsGen++
+		newGen := m.bgStatsGen
+		return m, tea.Tick(2*time.Second, func(time.Time) tea.Msg {
+			return bgStatsRestartMsg{gen: newGen}
+		})
+
+	case bgStatsRestartMsg:
+		if msg.gen != m.bgStatsGen {
+			return m, nil
+		}
+		return m, m.client.StartAllStats(context.Background(), m.bgStatsGen)
 
 	case docker.GrepSupportMsg:
 		m.grepSupported = msg.Available

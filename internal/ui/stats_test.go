@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"errors"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
@@ -20,8 +19,25 @@ func TestUpdate_TKeyOnRunningOpensStatsPanel(t *testing.T) {
 	if got.stats.containerID != runningContainer.ID {
 		t.Errorf("want stats.containerID=%q, got %q", runningContainer.ID, got.stats.containerID)
 	}
+}
+
+func TestUpdate_TKeyOnRunningWithInlineStatsPopulatesEntry(t *testing.T) {
+	m := modelWithSorted([]docker.Container{runningContainer})
+	m.inlineStats[runningContainer.ID] = docker.StatsEntry{CPUPerc: "2.50%"}
+	got := update(m, runeKey("t"))
+	if got.stats.entry == nil {
+		t.Fatal("want stats.entry populated from inlineStats")
+	}
+	if got.stats.entry.CPUPerc != "2.50%" {
+		t.Errorf("want CPUPerc=%q, got %q", "2.50%", got.stats.entry.CPUPerc)
+	}
+}
+
+func TestUpdate_TKeyOnRunningWithoutInlineStatsNilEntry(t *testing.T) {
+	m := modelWithSorted([]docker.Container{runningContainer})
+	got := update(m, runeKey("t"))
 	if got.stats.entry != nil {
-		t.Error("want stats.entry=nil (loading) on open")
+		t.Error("want stats.entry=nil when no inline stats available")
 	}
 }
 
@@ -74,7 +90,7 @@ func TestUpdate_StatsCloseResetsState(t *testing.T) {
 }
 
 func TestUpdate_StatsOtherKeysIgnored(t *testing.T) {
-	for _, key := range []tea.Msg{runeKey("r"), runeKey("a"), runeKey("s")} {
+	for _, key := range []tea.Msg{runeKey("a"), runeKey("s")} {
 		m := statsPanel()
 		got := update(m, key)
 		if !got.stats.visible {
@@ -83,36 +99,9 @@ func TestUpdate_StatsOtherKeysIgnored(t *testing.T) {
 	}
 }
 
-func TestUpdate_RKeyWithStatsPanelOpenResetsEntry(t *testing.T) {
-	m := modelWithSorted([]docker.Container{runningContainer})
-	m.stats.visible = true
-	m.stats.containerID = runningContainer.ID
-	entry := docker.StatsEntry{CPUPerc: "5.00%"}
-	m.stats.entry = &entry
-
-	got, cmd := m.Update(runeKey("r"))
-	if cmd == nil {
-		t.Fatal("want non-nil batch cmd")
-	}
-	if !got.(App).fetch.loading {
-		t.Error("want loading=true after r")
-	}
-	if got.(App).stats.entry != nil {
-		t.Error("want stats.entry=nil (cleared for reload)")
-	}
-}
-
-func TestUpdate_RKeyWithoutStatsPanelFetchesContainersOnly(t *testing.T) {
-	m := modelWithSorted([]docker.Container{runningContainer})
-	_, cmd := m.Update(runeKey("r"))
-	if cmd == nil {
-		t.Fatal("want non-nil cmd")
-	}
-}
-
-func TestUpdate_StatsMsgPopulatesEntry(t *testing.T) {
+func TestUpdate_FlushUpdatesStatsPanelEntry(t *testing.T) {
 	m := statsPanel()
-	entry := docker.StatsEntry{
+	m.inlineStats[runningContainer.ID] = docker.StatsEntry{
 		CPUPerc:  "0.42%",
 		MemUsage: "3.4MiB / 1.9GiB",
 		MemPerc:  "1.2%",
@@ -120,9 +109,10 @@ func TestUpdate_StatsMsgPopulatesEntry(t *testing.T) {
 		BlockIO:  "0B / 0B",
 		PIDs:     "4",
 	}
-	got := update(m, docker.StatsMsg{Entry: entry})
+	m.statsDirty = true
+	got := update(m, inlineStatsFlushMsg{})
 	if got.stats.entry == nil {
-		t.Fatal("want stats.entry set")
+		t.Fatal("want stats.entry set after flush")
 	}
 	if got.stats.entry.CPUPerc != "0.42%" {
 		t.Errorf("want CPUPerc=%q, got %q", "0.42%", got.stats.entry.CPUPerc)
@@ -135,71 +125,28 @@ func TestUpdate_StatsMsgPopulatesEntry(t *testing.T) {
 	}
 }
 
-func TestUpdate_StatsMsgWhenPanelClosedIsNoop(t *testing.T) {
+func TestUpdate_FlushSetsPrevEntry(t *testing.T) {
+	m := statsPanel()
+	oldEntry := docker.StatsEntry{CPUPerc: "1.00%"}
+	m.stats.entry = &oldEntry
+	m.inlineStats[runningContainer.ID] = docker.StatsEntry{CPUPerc: "2.00%"}
+	m.statsDirty = true
+	got := update(m, inlineStatsFlushMsg{})
+	if got.stats.prevEntry == nil {
+		t.Fatal("want prevEntry set")
+	}
+	if got.stats.prevEntry.CPUPerc != "1.00%" {
+		t.Errorf("want prevEntry.CPUPerc=%q, got %q", "1.00%", got.stats.prevEntry.CPUPerc)
+	}
+}
+
+func TestUpdate_FlushNoopWhenPanelClosed(t *testing.T) {
 	m := modelWithSorted([]docker.Container{runningContainer})
-	entry := docker.StatsEntry{CPUPerc: "1.00%"}
-	got := update(m, docker.StatsMsg{Entry: entry})
+	m.inlineStats[runningContainer.ID] = docker.StatsEntry{CPUPerc: "1.00%"}
+	m.statsDirty = true
+	got := update(m, inlineStatsFlushMsg{})
 	if got.stats.entry != nil {
 		t.Error("want stats.entry=nil when panel not open")
-	}
-}
-
-func TestUpdate_StatsMsgErrorClosesPanelAndSetsErr(t *testing.T) {
-	m := statsPanel()
-	got := update(m, docker.StatsMsg{Err: errors.New("container not running")})
-	if got.stats.visible {
-		t.Error("want stats.visible=false on error")
-	}
-	if got.err == nil {
-		t.Error("want err set")
-	}
-}
-
-func TestUpdate_StatsMsgErrorDoesNotSetEntry(t *testing.T) {
-	m := statsPanel()
-	got := update(m, docker.StatsMsg{Err: errors.New("failed")})
-	if got.stats.entry != nil {
-		t.Error("want stats.entry=nil on error")
-	}
-}
-
-func TestUpdate_StatsMsgSchedulesNextTick(t *testing.T) {
-	m := statsPanel()
-	entry := docker.StatsEntry{CPUPerc: "1.00%"}
-	_, cmd := m.Update(docker.StatsMsg{Entry: entry})
-	if cmd == nil {
-		t.Error("want non-nil cmd (tick) after successful StatsMsg")
-	}
-}
-
-func TestUpdate_StatsTickFetchesStats(t *testing.T) {
-	mc := newStubClient()
-	var gotID string
-	mc.fetchStats = func(id string) tea.Cmd {
-		gotID = id
-		return func() tea.Msg { return nil }
-	}
-	m := modelWithMock(mc, []docker.Container{runningContainer})
-	m.stats.visible = true
-	m.stats.containerID = runningContainer.ID
-	update(m, statsTickMsg{})
-	if gotID != runningContainer.ID {
-		t.Errorf("want FetchStats(%q) on tick, got %q", runningContainer.ID, gotID)
-	}
-}
-
-func TestUpdate_StatsTickNoopWhenPanelClosed(t *testing.T) {
-	mc := newStubClient()
-	fetched := false
-	mc.fetchStats = func(_ string) tea.Cmd {
-		fetched = true
-		return func() tea.Msg { return nil }
-	}
-	m := modelWithMock(mc, []docker.Container{runningContainer})
-	m.stats.visible = false
-	update(m, statsTickMsg{})
-	if fetched {
-		t.Error("want no FetchStats call when panel is closed")
 	}
 }
 

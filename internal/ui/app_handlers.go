@@ -220,11 +220,14 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		if c, ok := m.selectedContainer(); ok && c.ID != "" && c.State == docker.StateRunning {
 			m.stats.visible = true
 			m.stats.entry = nil
+			m.stats.prevEntry = nil
 			m.stats.container = c.Names
 			m.stats.containerID = c.ID
-			m.stats.fetching = true
+			if e, ok := m.inlineStats[c.ID]; ok {
+				m.stats.entry = &e
+			}
 			m.table.SetHeight(m.tableHeight())
-			return m, m.client.FetchStats(c.ID)
+			return m, nil
 		}
 	case keyEvents:
 		if m.events.visible {

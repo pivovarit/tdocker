@@ -339,8 +339,7 @@ func helpBarInspect() string {
 
 func helpBarStats() string {
 	return helpStyle.Render(
-		"  " + keyStyle.Render("r") + " refresh · " +
-			keyStyle.Render("esc") + "/" + keyStyle.Render("t") + " close · " +
+		"  " + keyStyle.Render("esc") + "/" + keyStyle.Render("t") + " close · " +
 			keyStyle.Render("q") + " close",
 	)
 }

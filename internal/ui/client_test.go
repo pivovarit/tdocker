@@ -94,17 +94,16 @@ func TestClient_ConfirmDelete_CallsDeleteContainerWithID(t *testing.T) {
 	}
 }
 
-func TestClient_TKey_CallsFetchStatsWithID(t *testing.T) {
+func TestClient_TKey_OpensStatsPanelFromInlineStats(t *testing.T) {
 	mc := newStubClient()
-	var gotID string
-	mc.fetchStats = func(id string) tea.Cmd {
-		gotID = id
-		return func() tea.Msg { return nil }
-	}
 	m := modelWithMock(mc, []docker.Container{runningContainer})
-	update(m, runeKey("t"))
-	if gotID != runningContainer.ID {
-		t.Errorf("want FetchStats(%q), got %q", runningContainer.ID, gotID)
+	m.inlineStats[runningContainer.ID] = docker.StatsEntry{CPUPerc: "3.00%"}
+	got := update(m, runeKey("t"))
+	if !got.stats.visible {
+		t.Fatal("want stats.visible=true")
+	}
+	if got.stats.entry == nil || got.stats.entry.CPUPerc != "3.00%" {
+		t.Error("want stats.entry populated from inlineStats")
 	}
 }
 
