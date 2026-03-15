@@ -145,7 +145,7 @@ func TestIntegration_App_ComposeGroupingVisible(t *testing.T) {
 		t.Errorf("compose containers should be adjacent, got indices %d and %d", idx1, idx2)
 	}
 
-	rows := buildTable(filtered, 160).Rows()
+	rows := buildTable(filtered, 160, nil).Rows()
 	id1Col := rows[idx1][0]
 	id2Col := rows[idx2][0]
 	hasTree := func(s string) bool {
