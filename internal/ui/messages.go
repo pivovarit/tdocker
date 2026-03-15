@@ -1,6 +1,7 @@
 package ui
 
 type statsTickMsg struct{}
+type inlineStatsTickMsg struct{}
 type autoRefreshMsg struct{}
 type bgEventsRestartMsg struct{ gen int }
 type fetchTimerTickMsg struct{}

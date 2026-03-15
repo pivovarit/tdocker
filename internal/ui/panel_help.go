@@ -41,6 +41,7 @@ func (m App) renderHelpOverlay() string {
 		{"App", []entry{
 			{"r", "refresh"},
 			{"A", "toggle all / running"},
+			{"T", "toggle cpu/mem columns"},
 			{"/", "filter"},
 			{"X", "switch context"},
 			{"?", "close this help"},

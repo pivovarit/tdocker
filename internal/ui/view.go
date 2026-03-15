@@ -449,6 +449,7 @@ func helpBarDefault(warnMsg, copiedName, filterQuery string, canCollapse bool) s
 			keyStyle.Render("N") + " rename · " +
 			keyStyle.Render("D") + " delete · " +
 			keyStyle.Render("t") + " stats · " +
+			keyStyle.Render("T") + " cpu/mem · " +
 			keyStyle.Render("v") + " events · " +
 			keyStyle.Render("c") + " copy id · " +
 			keyStyle.Render("x") + " debug",

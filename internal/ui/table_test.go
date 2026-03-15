@@ -33,7 +33,7 @@ func TestTrunc(t *testing.T) {
 }
 
 func TestBuildTableEmpty(t *testing.T) {
-	tbl := buildTable(nil, 120)
+	tbl := buildTable(nil, 120, nil)
 	if len(tbl.Rows()) != 0 {
 		t.Errorf("expected 0 rows, got %d", len(tbl.Rows()))
 	}
@@ -180,7 +180,7 @@ func TestBuildTableRows(t *testing.T) {
 		{ID: "abc123", Names: "my-app", Image: "nginx:alpine", State: docker.StateRunning, Status: "Up 2 hours", RunningFor: "2 hours ago", Ports: "80/tcp"},
 		{ID: "def456", Names: "/other", Image: "postgres:16", State: "exited", Status: "Exited (0)", RunningFor: "1 day ago", Ports: ""},
 	}
-	tbl := buildTable(containers, 180)
+	tbl := buildTable(containers, 180, nil)
 	if len(tbl.Rows()) != 2 {
 		t.Errorf("expected 2 rows, got %d", len(tbl.Rows()))
 	}

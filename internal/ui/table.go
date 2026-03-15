@@ -8,12 +8,16 @@ import (
 	"github.com/pivovarit/tdocker/internal/docker"
 )
 
-func buildTable(containers []docker.Container, width int) table.Model {
+func buildTable(containers []docker.Container, width int, stats map[string]docker.StatsEntry) table.Model {
 	const (
 		idW         = 13
 		runningForW = 13
+		cpuW        = 7
+		memW        = 7
 		overhead    = 15
 	)
+
+	hasStats := len(stats) > 0
 
 	names := make([]string, len(containers))
 	nameW, imageW, statusW, portsW := 5, 5, 6, 0
@@ -54,7 +58,11 @@ func buildTable(containers []docker.Container, width int) table.Model {
 		actualIDW = idW + 2
 	}
 
-	remaining := width - actualIDW - runningForW - overhead
+	fixedW := actualIDW + runningForW + overhead
+	if hasStats {
+		fixedW += cpuW + memW + 6
+	}
+	remaining := width - fixedW
 
 	if hasPorts {
 		minR := 5 + 5 + 6 + 5
@@ -86,6 +94,10 @@ func buildTable(containers []docker.Container, width int) table.Model {
 		{Title: "Image", Width: imageW},
 		{Title: "Created", Width: runningForW},
 		{Title: "Status", Width: statusW},
+	}
+	if hasStats {
+		cols = append(cols, table.Column{Title: "CPU%", Width: cpuW})
+		cols = append(cols, table.Column{Title: "MEM%", Width: memW})
 	}
 	if hasPorts {
 		cols = append(cols, table.Column{Title: "Ports", Width: portsW})
@@ -120,6 +132,21 @@ func buildTable(containers []docker.Container, width int) table.Model {
 			trunc(c.Image, imageW),
 			trunc(c.RunningFor, runningForW),
 			trunc(c.Status, statusW),
+		}
+		if hasStats {
+			cpuVal := "—"
+			memVal := "—"
+			if c.State == docker.StateRunning || c.State == docker.StatePaused {
+				if e, ok := stats[c.ID]; ok {
+					cpuVal = e.CPUPerc
+					memVal = e.MemPerc
+				}
+			}
+			if c.State == docker.StateDetail || c.State == docker.StateCollapsed {
+				cpuVal = ""
+				memVal = ""
+			}
+			row = append(row, cpuVal, memVal)
 		}
 		if hasPorts {
 			row = append(row, trunc(formatPorts(c.Ports), portsW))

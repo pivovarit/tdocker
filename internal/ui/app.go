@@ -95,6 +95,8 @@ type App struct {
 	events    eventsState
 	ctxPicker ctxPickerState
 
+	inlineStats     map[string]docker.StatsEntry
+	showInlineStats bool
 	copiedName      string
 	warnMsg         string
 	version         string
@@ -116,7 +118,8 @@ func newWithClient(c docker.Client, version string) App {
 		showAll:            true,
 		collapsedProjects:  map[string]bool{},
 		expandedContainers: map[string]*docker.InspectData{},
-		table:              buildTable(nil, 120),
+		inlineStats:        map[string]docker.StatsEntry{},
+		table:              buildTable(nil, 120, nil),
 		fetch: fetchState{
 			loading: true,
 			start:   time.Now(),
@@ -131,6 +134,7 @@ func newWithClient(c docker.Client, version string) App {
 func (m App) Init() tea.Cmd {
 	return tea.Batch(
 		m.client.FetchContainers(m.showAll),
+		m.client.FetchAllStats(),
 		m.client.FetchContexts(),
 		m.client.StartEvents(context.Background(), m.bgEventsGen),
 		m.client.SupportsGrep(),
@@ -258,7 +262,11 @@ func (m App) ensureCursorVisible() App {
 func (m App) rebuildTable(selectedID string) App {
 	filtered := m.filtered()
 
-	m.table = buildTable(filtered, m.width-2)
+	var statsForTable map[string]docker.StatsEntry
+	if m.showInlineStats {
+		statsForTable = m.inlineStats
+	}
+	m.table = buildTable(filtered, m.width-2, statsForTable)
 	m.table.SetHeight(m.tableHeight())
 	m.viewportStart = 0
 

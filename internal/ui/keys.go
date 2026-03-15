@@ -22,5 +22,6 @@ const (
 	keyVimUp        = "k"
 	keyScrollBottom = "G"
 	keyRename       = "N"
+	keyInlineStats  = "T"
 	keyHelp         = "?"
 )

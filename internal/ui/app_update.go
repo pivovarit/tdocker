@@ -28,6 +28,13 @@ func statsTickCmd() tea.Cmd {
 	}
 }
 
+func inlineStatsTickCmd() tea.Cmd {
+	return func() tea.Msg {
+		time.Sleep(3 * time.Second)
+		return inlineStatsTickMsg{}
+	}
+}
+
 func fetchTimerCmd() tea.Cmd {
 	return func() tea.Msg {
 		time.Sleep(100 * time.Millisecond)
@@ -401,6 +408,22 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		return m, m.client.StartEvents(context.Background(), m.bgEventsGen)
+
+	case docker.AllStatsMsg:
+		if msg.Err == nil {
+			stats := make(map[string]docker.StatsEntry, len(msg.Entries))
+			for _, e := range msg.Entries {
+				stats[e.ID] = e
+			}
+			m.inlineStats = stats
+			if m.showInlineStats {
+				m = m.rebuildTable(m.currentSelectedID())
+			}
+		}
+		return m, inlineStatsTickCmd()
+
+	case inlineStatsTickMsg:
+		return m, m.client.FetchAllStats()
 
 	case docker.GrepSupportMsg:
 		m.grepSupported = msg.Available

@@ -235,6 +235,10 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			m.events.scroll = scrollState{autoScroll: true}
 			m.table.SetHeight(m.tableHeight())
 		}
+	case keyInlineStats:
+		m.showInlineStats = !m.showInlineStats
+		m = m.rebuildTable(m.currentSelectedID())
+		return m, nil
 	case keyHelp:
 		m.helpVisible = true
 		return m, nil
