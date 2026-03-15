@@ -49,6 +49,13 @@ func (l *Labels) UnmarshalJSON(data []byte) error {
 	}
 }
 
+const (
+	StateRunning   = "running"
+	StatePaused    = "paused"
+	StateCollapsed = "collapsed"
+	StateDetail    = "detail"
+)
+
 type Container struct {
 	ID         string `json:"ID"`
 	Names      string `json:"Names"`
@@ -156,7 +163,7 @@ func execErr(err error) error {
 func Sort(containers []Container) []Container {
 	groupHasRunning := map[string]bool{}
 	for _, c := range containers {
-		if p := c.ComposeProject(); p != "" && c.State == "running" {
+		if p := c.ComposeProject(); p != "" && c.State == StateRunning {
 			groupHasRunning[p] = true
 		}
 	}
@@ -166,11 +173,11 @@ func Sort(containers []Container) []Container {
 	slices.SortStableFunc(sorted, func(a, b Container) int {
 		pa, pb := a.ComposeProject(), b.ComposeProject()
 
-		ra := a.State == "running"
+		ra := a.State == StateRunning
 		if pa != "" {
 			ra = groupHasRunning[pa]
 		}
-		rb := b.State == "running"
+		rb := b.State == StateRunning
 		if pb != "" {
 			rb = groupHasRunning[pb]
 		}
@@ -192,7 +199,7 @@ func Sort(containers []Container) []Container {
 		}
 
 		if pa != "" {
-			ra2, rb2 := a.State == "running", b.State == "running"
+			ra2, rb2 := a.State == StateRunning, b.State == StateRunning
 			if ra2 != rb2 {
 				if ra2 {
 					return -1

@@ -224,7 +224,7 @@ func (m App) selectedContainer() (docker.Container, bool) {
 
 func (m App) projectHasRunning(project string) bool {
 	for _, c := range m.containers {
-		if c.ComposeProject() == project && c.State == "running" {
+		if c.ComposeProject() == project && c.State == docker.StateRunning {
 			return true
 		}
 	}
@@ -267,7 +267,7 @@ func (m App) rebuildTable(selectedID string) App {
 			if i := slices.IndexFunc(filtered, func(c docker.Container) bool { return c.ID == selectedID }); i >= 0 {
 				m.table.SetCursor(i)
 				lastRow := i
-				for j := i + 1; j < len(filtered) && filtered[j].State == "detail"; j++ {
+				for j := i + 1; j < len(filtered) && filtered[j].State == docker.StateDetail; j++ {
 					lastRow = j
 				}
 				if h := m.tableHeight(); h > 0 && lastRow >= h {

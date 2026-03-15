@@ -26,11 +26,11 @@ func TestCollapseSummary(t *testing.T) {
 			name:    "single state - all running",
 			project: "myapp",
 			containers: []docker.Container{
-				{ID: "a1", Names: "web", State: "running", Labels: composeLabels("myapp")},
-				{ID: "a2", Names: "db", State: "running", Labels: composeLabels("myapp")},
+				{ID: "a1", Names: "web", State: docker.StateRunning, Labels: composeLabels("myapp")},
+				{ID: "a2", Names: "db", State: docker.StateRunning, Labels: composeLabels("myapp")},
 			},
 			wantNames:      "myapp (2 running)",
-			wantState:      "collapsed",
+			wantState:      docker.StateCollapsed,
 			wantID:         "",
 			wantHasProject: true,
 		},
@@ -38,12 +38,12 @@ func TestCollapseSummary(t *testing.T) {
 			name:    "mixed states - running and exited",
 			project: "myapp",
 			containers: []docker.Container{
-				{ID: "a1", Names: "web", State: "running", Labels: composeLabels("myapp")},
-				{ID: "a2", Names: "worker", State: "running", Labels: composeLabels("myapp")},
+				{ID: "a1", Names: "web", State: docker.StateRunning, Labels: composeLabels("myapp")},
+				{ID: "a2", Names: "worker", State: docker.StateRunning, Labels: composeLabels("myapp")},
 				{ID: "a3", Names: "db", State: "exited", Labels: composeLabels("myapp")},
 			},
 			wantNames:      "myapp (2 running, 1 exited)",
-			wantState:      "collapsed",
+			wantState:      docker.StateCollapsed,
 			wantID:         "",
 			wantHasProject: true,
 		},
@@ -52,13 +52,13 @@ func TestCollapseSummary(t *testing.T) {
 			project: "stack",
 			containers: []docker.Container{
 				{ID: "a1", State: "exited", Labels: composeLabels("stack")},
-				{ID: "a2", State: "paused", Labels: composeLabels("stack")},
-				{ID: "a3", State: "running", Labels: composeLabels("stack")},
+				{ID: "a2", State: docker.StatePaused, Labels: composeLabels("stack")},
+				{ID: "a3", State: docker.StateRunning, Labels: composeLabels("stack")},
 				{ID: "a4", State: "dead", Labels: composeLabels("stack")},
-				{ID: "a5", State: "running", Labels: composeLabels("stack")},
+				{ID: "a5", State: docker.StateRunning, Labels: composeLabels("stack")},
 			},
 			wantNames:      "stack (2 running, 1 paused, 1 dead, 1 exited)",
-			wantState:      "collapsed",
+			wantState:      docker.StateCollapsed,
 			wantID:         "",
 			wantHasProject: true,
 		},
@@ -66,10 +66,10 @@ func TestCollapseSummary(t *testing.T) {
 			name:    "single container",
 			project: "solo",
 			containers: []docker.Container{
-				{ID: "s1", Names: "app", State: "running", Labels: composeLabels("solo")},
+				{ID: "s1", Names: "app", State: docker.StateRunning, Labels: composeLabels("solo")},
 			},
 			wantNames:      "solo (1 running)",
-			wantState:      "collapsed",
+			wantState:      docker.StateCollapsed,
 			wantID:         "",
 			wantHasProject: true,
 		},
@@ -82,7 +82,7 @@ func TestCollapseSummary(t *testing.T) {
 				{ID: "x3", State: "exited", Labels: composeLabels("stopped")},
 			},
 			wantNames:      "stopped (3 exited)",
-			wantState:      "collapsed",
+			wantState:      docker.StateCollapsed,
 			wantID:         "",
 			wantHasProject: true,
 		},
@@ -90,10 +90,10 @@ func TestCollapseSummary(t *testing.T) {
 			name:    "other fields are empty",
 			project: "app",
 			containers: []docker.Container{
-				{ID: "c1", Names: "web", Image: "nginx", State: "running", Status: "Up 5m", Ports: "80/tcp", Labels: composeLabels("app")},
+				{ID: "c1", Names: "web", Image: "nginx", State: docker.StateRunning, Status: "Up 5m", Ports: "80/tcp", Labels: composeLabels("app")},
 			},
 			wantNames:      "app (1 running)",
-			wantState:      "collapsed",
+			wantState:      docker.StateCollapsed,
 			wantID:         "",
 			wantHasProject: true,
 		},
@@ -145,9 +145,9 @@ func composeServiceLabels(project, service string) docker.Labels {
 
 func TestFiltered_CollapsedGroupEmitsSummary(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "a1", Names: "web", Image: "nginx", State: "running", Labels: composeServiceLabels("myapp", "web")},
-		{ID: "a2", Names: "db", Image: "postgres", State: "running", Labels: composeServiceLabels("myapp", "db")},
-		{ID: "s1", Names: "standalone", Image: "alpine", State: "running"},
+		{ID: "a1", Names: "web", Image: "nginx", State: docker.StateRunning, Labels: composeServiceLabels("myapp", "web")},
+		{ID: "a2", Names: "db", Image: "postgres", State: docker.StateRunning, Labels: composeServiceLabels("myapp", "db")},
+		{ID: "s1", Names: "standalone", Image: "alpine", State: docker.StateRunning},
 	}
 	m := modelWithSorted(containers)
 	m.collapsedProjects["myapp"] = true
@@ -156,8 +156,8 @@ func TestFiltered_CollapsedGroupEmitsSummary(t *testing.T) {
 	if len(got) != 2 {
 		t.Fatalf("want 2 rows (1 summary + 1 standalone), got %d", len(got))
 	}
-	if got[0].State != "collapsed" {
-		t.Errorf("first row state = %q, want %q", got[0].State, "collapsed")
+	if got[0].State != docker.StateCollapsed {
+		t.Errorf("first row state = %q, want %q", got[0].State, docker.StateCollapsed)
 	}
 	if got[0].ComposeProject() != "myapp" {
 		t.Errorf("summary project = %q, want %q", got[0].ComposeProject(), "myapp")
@@ -169,9 +169,9 @@ func TestFiltered_CollapsedGroupEmitsSummary(t *testing.T) {
 
 func TestFiltered_ExpandedGroupPassesThrough(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "a1", Names: "web", State: "running", Labels: composeLabels("myapp")},
-		{ID: "a2", Names: "db", State: "running", Labels: composeLabels("myapp")},
-		{ID: "s1", Names: "standalone", State: "running"},
+		{ID: "a1", Names: "web", State: docker.StateRunning, Labels: composeLabels("myapp")},
+		{ID: "a2", Names: "db", State: docker.StateRunning, Labels: composeLabels("myapp")},
+		{ID: "s1", Names: "standalone", State: docker.StateRunning},
 	}
 	m := modelWithSorted(containers)
 
@@ -183,9 +183,9 @@ func TestFiltered_ExpandedGroupPassesThrough(t *testing.T) {
 
 func TestFiltered_FilterAutoExpandsMatchingGroups(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "a1", Names: "web", Image: "nginx", State: "running", Labels: composeServiceLabels("myapp", "web")},
-		{ID: "a2", Names: "db", Image: "postgres", State: "running", Labels: composeServiceLabels("myapp", "db")},
-		{ID: "s1", Names: "standalone", Image: "alpine", State: "running"},
+		{ID: "a1", Names: "web", Image: "nginx", State: docker.StateRunning, Labels: composeServiceLabels("myapp", "web")},
+		{ID: "a2", Names: "db", Image: "postgres", State: docker.StateRunning, Labels: composeServiceLabels("myapp", "db")},
+		{ID: "s1", Names: "standalone", Image: "alpine", State: docker.StateRunning},
 	}
 	m := modelWithSorted(containers)
 	m.collapsedProjects["myapp"] = true
@@ -202,8 +202,8 @@ func TestFiltered_FilterAutoExpandsMatchingGroups(t *testing.T) {
 
 func TestFiltered_FilterNoMatchesHidesCollapsedGroup(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "a1", Names: "web", State: "running", Labels: composeLabels("myapp")},
-		{ID: "a2", Names: "db", State: "running", Labels: composeLabels("myapp")},
+		{ID: "a1", Names: "web", State: docker.StateRunning, Labels: composeLabels("myapp")},
+		{ID: "a2", Names: "db", State: docker.StateRunning, Labels: composeLabels("myapp")},
 	}
 	m := modelWithSorted(containers)
 	m.collapsedProjects["myapp"] = true
@@ -217,10 +217,10 @@ func TestFiltered_FilterNoMatchesHidesCollapsedGroup(t *testing.T) {
 
 func TestFiltered_MultipleCollapsedGroups(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "a1", Names: "web", State: "running", Labels: composeLabels("app1")},
-		{ID: "a2", Names: "db", State: "running", Labels: composeLabels("app1")},
+		{ID: "a1", Names: "web", State: docker.StateRunning, Labels: composeLabels("app1")},
+		{ID: "a2", Names: "db", State: docker.StateRunning, Labels: composeLabels("app1")},
 		{ID: "b1", Names: "api", State: "exited", Labels: composeLabels("app2")},
-		{ID: "b2", Names: "worker", State: "running", Labels: composeLabels("app2")},
+		{ID: "b2", Names: "worker", State: docker.StateRunning, Labels: composeLabels("app2")},
 	}
 	m := modelWithSorted(containers)
 	m.collapsedProjects["app1"] = true
@@ -230,7 +230,7 @@ func TestFiltered_MultipleCollapsedGroups(t *testing.T) {
 	if len(got) != 2 {
 		t.Fatalf("want 2 summaries, got %d", len(got))
 	}
-	if got[0].State != "collapsed" || got[1].State != "collapsed" {
+	if got[0].State != docker.StateCollapsed || got[1].State != docker.StateCollapsed {
 		t.Errorf("both rows should be collapsed summaries, got states %q and %q", got[0].State, got[1].State)
 	}
 	projects := map[string]bool{got[0].ComposeProject(): true, got[1].ComposeProject(): true}
@@ -241,9 +241,9 @@ func TestFiltered_MultipleCollapsedGroups(t *testing.T) {
 
 func TestLeftArrow_CollapsesComposeGroup(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "a1", Names: "web", State: "running", Labels: composeLabels("myapp")},
-		{ID: "a2", Names: "db", State: "running", Labels: composeLabels("myapp")},
-		{ID: "s1", Names: "standalone", State: "running"},
+		{ID: "a1", Names: "web", State: docker.StateRunning, Labels: composeLabels("myapp")},
+		{ID: "a2", Names: "db", State: docker.StateRunning, Labels: composeLabels("myapp")},
+		{ID: "s1", Names: "standalone", State: docker.StateRunning},
 	}
 	m := modelWithSorted(containers)
 	got := update(m, tea.KeyPressMsg{Code: tea.KeyLeft})
@@ -254,16 +254,16 @@ func TestLeftArrow_CollapsesComposeGroup(t *testing.T) {
 	if len(filtered) != 2 {
 		t.Fatalf("want 2 rows (summary + standalone), got %d", len(filtered))
 	}
-	if filtered[0].State != "collapsed" {
+	if filtered[0].State != docker.StateCollapsed {
 		t.Errorf("first row state = %q, want collapsed", filtered[0].State)
 	}
 }
 
 func TestRightArrow_ExpandsCollapsedGroup(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "a1", Names: "web", State: "running", Labels: composeLabels("myapp")},
-		{ID: "a2", Names: "db", State: "running", Labels: composeLabels("myapp")},
-		{ID: "s1", Names: "standalone", State: "running"},
+		{ID: "a1", Names: "web", State: docker.StateRunning, Labels: composeLabels("myapp")},
+		{ID: "a2", Names: "db", State: docker.StateRunning, Labels: composeLabels("myapp")},
+		{ID: "s1", Names: "standalone", State: docker.StateRunning},
 	}
 	m := modelWithSorted(containers)
 	m.collapsedProjects["myapp"] = true
@@ -280,7 +280,7 @@ func TestRightArrow_ExpandsCollapsedGroup(t *testing.T) {
 
 func TestLeftArrow_NoopOnNonComposeContainer(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "s1", Names: "standalone", State: "running"},
+		{ID: "s1", Names: "standalone", State: docker.StateRunning},
 	}
 	m := modelWithSorted(containers)
 	got := update(m, tea.KeyPressMsg{Code: tea.KeyLeft})
@@ -291,8 +291,8 @@ func TestLeftArrow_NoopOnNonComposeContainer(t *testing.T) {
 
 func TestLeftArrow_NoopOnAlreadyCollapsedRow(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "a1", Names: "web", State: "running", Labels: composeLabels("myapp")},
-		{ID: "a2", Names: "db", State: "running", Labels: composeLabels("myapp")},
+		{ID: "a1", Names: "web", State: docker.StateRunning, Labels: composeLabels("myapp")},
+		{ID: "a2", Names: "db", State: docker.StateRunning, Labels: composeLabels("myapp")},
 	}
 	m := modelWithSorted(containers)
 	m.collapsedProjects["myapp"] = true
@@ -305,7 +305,7 @@ func TestLeftArrow_NoopOnAlreadyCollapsedRow(t *testing.T) {
 
 func TestRightArrow_NoopOnRegularContainer(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "s1", Names: "standalone", State: "running"},
+		{ID: "s1", Names: "standalone", State: docker.StateRunning},
 	}
 	m := modelWithSorted(containers)
 	got := update(m, tea.KeyPressMsg{Code: tea.KeyRight})
@@ -316,9 +316,9 @@ func TestRightArrow_NoopOnRegularContainer(t *testing.T) {
 
 func TestCollapse_CursorLandsOnSummaryRow(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "a1", Names: "web", State: "running", Labels: composeLabels("myapp")},
-		{ID: "a2", Names: "db", State: "running", Labels: composeLabels("myapp")},
-		{ID: "s1", Names: "standalone", State: "running"},
+		{ID: "a1", Names: "web", State: docker.StateRunning, Labels: composeLabels("myapp")},
+		{ID: "a2", Names: "db", State: docker.StateRunning, Labels: composeLabels("myapp")},
+		{ID: "s1", Names: "standalone", State: docker.StateRunning},
 	}
 	m := modelWithSorted(containers)
 	m.table.SetCursor(0)
@@ -328,15 +328,15 @@ func TestCollapse_CursorLandsOnSummaryRow(t *testing.T) {
 	if cursor < 0 || cursor >= len(filtered) {
 		t.Fatalf("cursor %d out of range [0, %d)", cursor, len(filtered))
 	}
-	if filtered[cursor].State != "collapsed" {
+	if filtered[cursor].State != docker.StateCollapsed {
 		t.Errorf("cursor should be on summary row, got state=%q", filtered[cursor].State)
 	}
 }
 
 func TestOperations_NoopOnCollapsedRow(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "a1", Names: "web", State: "running", Labels: composeLabels("myapp")},
-		{ID: "a2", Names: "db", State: "running", Labels: composeLabels("myapp")},
+		{ID: "a1", Names: "web", State: docker.StateRunning, Labels: composeLabels("myapp")},
+		{ID: "a2", Names: "db", State: docker.StateRunning, Labels: composeLabels("myapp")},
 	}
 	m := modelWithSorted(containers)
 	m.collapsedProjects["myapp"] = true
@@ -362,8 +362,8 @@ func TestOperations_NoopOnCollapsedRow(t *testing.T) {
 
 func TestComposeStop_OnCollapsedRow(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "a1", Names: "web", State: "running", Labels: composeLabels("myapp")},
-		{ID: "a2", Names: "db", State: "running", Labels: composeLabels("myapp")},
+		{ID: "a1", Names: "web", State: docker.StateRunning, Labels: composeLabels("myapp")},
+		{ID: "a2", Names: "db", State: docker.StateRunning, Labels: composeLabels("myapp")},
 	}
 	m := modelWithSorted(containers)
 	m.collapsedProjects["myapp"] = true
@@ -383,8 +383,8 @@ func TestComposeStop_OnCollapsedRow(t *testing.T) {
 
 func TestComposeRestart_OnCollapsedRow(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "a1", Names: "web", State: "running", Labels: composeLabels("myapp")},
-		{ID: "a2", Names: "db", State: "running", Labels: composeLabels("myapp")},
+		{ID: "a1", Names: "web", State: docker.StateRunning, Labels: composeLabels("myapp")},
+		{ID: "a2", Names: "db", State: docker.StateRunning, Labels: composeLabels("myapp")},
 	}
 	m := modelWithSorted(containers)
 	m.collapsedProjects["myapp"] = true
@@ -433,7 +433,7 @@ func TestComposeStop_ConfirmCallsClient(t *testing.T) {
 		return func() tea.Msg { return nil }
 	}
 	containers := []docker.Container{
-		{ID: "a1", Names: "web", State: "running", Labels: composeLabels("myapp")},
+		{ID: "a1", Names: "web", State: docker.StateRunning, Labels: composeLabels("myapp")},
 	}
 	m := modelWithMock(mc, containers)
 	m.op = operationState{kind: OpConfirming, id: "myapp", action: "compose-stop", name: "myapp (1 running)"}
@@ -445,9 +445,9 @@ func TestComposeStop_ConfirmCallsClient(t *testing.T) {
 
 func TestExpand_CursorLandsOnFirstContainerInGroup(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "a1", Names: "web", State: "running", Labels: composeLabels("myapp")},
-		{ID: "a2", Names: "db", State: "running", Labels: composeLabels("myapp")},
-		{ID: "s1", Names: "standalone", State: "running"},
+		{ID: "a1", Names: "web", State: docker.StateRunning, Labels: composeLabels("myapp")},
+		{ID: "a2", Names: "db", State: docker.StateRunning, Labels: composeLabels("myapp")},
+		{ID: "s1", Names: "standalone", State: docker.StateRunning},
 	}
 	m := modelWithSorted(containers)
 	m.collapsedProjects["myapp"] = true
@@ -467,7 +467,7 @@ func TestExpand_CursorLandsOnFirstContainerInGroup(t *testing.T) {
 
 func TestBuildTableName_CollapsedRow(t *testing.T) {
 	containers := []docker.Container{
-		{Names: "myapp (2 running)", State: "collapsed", Labels: composeLabels("myapp")},
+		{Names: "myapp (2 running)", State: docker.StateCollapsed, Labels: composeLabels("myapp")},
 	}
 	got := buildTableName(containers, 0)
 	want := "myapp (2 running)"
@@ -478,8 +478,8 @@ func TestBuildTableName_CollapsedRow(t *testing.T) {
 
 func TestHelpBar_CollapsedRowShowsExpandHint(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "a1", Names: "web", State: "running", Labels: composeLabels("myapp")},
-		{ID: "a2", Names: "db", State: "running", Labels: composeLabels("myapp")},
+		{ID: "a1", Names: "web", State: docker.StateRunning, Labels: composeLabels("myapp")},
+		{ID: "a2", Names: "db", State: docker.StateRunning, Labels: composeLabels("myapp")},
 	}
 	m := modelWithSorted(containers)
 	m.collapsedProjects["myapp"] = true
@@ -493,8 +493,8 @@ func TestHelpBar_CollapsedRowShowsExpandHint(t *testing.T) {
 
 func TestCollapseExpand_FullCycle(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "s1", Names: "solo", State: "running"},
-		{ID: "a1", Names: "web", State: "running", Labels: composeLabels("myapp")},
+		{ID: "s1", Names: "solo", State: docker.StateRunning},
+		{ID: "a1", Names: "web", State: docker.StateRunning, Labels: composeLabels("myapp")},
 		{ID: "a2", Names: "db", State: "exited", Labels: composeLabels("myapp")},
 	}
 	m := modelWithSorted(containers)
@@ -505,7 +505,7 @@ func TestCollapseExpand_FullCycle(t *testing.T) {
 	if len(filtered) != 2 {
 		t.Fatalf("after collapse: want 2 rows, got %d", len(filtered))
 	}
-	if filtered[1].State != "collapsed" {
+	if filtered[1].State != docker.StateCollapsed {
 		t.Error("want second row to be collapsed summary")
 	}
 
@@ -536,8 +536,8 @@ func TestCollapseExpand_FullCycle(t *testing.T) {
 
 func TestCollapse_PersistsAcrossRefresh(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "a1", Names: "web", State: "running", Labels: composeLabels("myapp")},
-		{ID: "a2", Names: "db", State: "running", Labels: composeLabels("myapp")},
+		{ID: "a1", Names: "web", State: docker.StateRunning, Labels: composeLabels("myapp")},
+		{ID: "a2", Names: "db", State: docker.StateRunning, Labels: composeLabels("myapp")},
 	}
 	m := modelWithSorted(containers)
 	m.collapsedProjects["myapp"] = true
@@ -547,7 +547,7 @@ func TestCollapse_PersistsAcrossRefresh(t *testing.T) {
 		t.Error("want collapsed state preserved after refresh")
 	}
 	filtered := m.filtered()
-	if len(filtered) != 1 || filtered[0].State != "collapsed" {
+	if len(filtered) != 1 || filtered[0].State != docker.StateCollapsed {
 		t.Error("want collapsed summary after refresh")
 	}
 }

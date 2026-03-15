@@ -9,8 +9,8 @@ import (
 )
 
 var filterContainers = []docker.Container{
-	{ID: "abc123def456", Names: "web-app", Image: "nginx:alpine", State: "running"},
-	{ID: "111222333444", Names: "database", Image: "postgres:16", State: "running"},
+	{ID: "abc123def456", Names: "web-app", Image: "nginx:alpine", State: docker.StateRunning},
+	{ID: "111222333444", Names: "database", Image: "postgres:16", State: docker.StateRunning},
 	{ID: "deadbeef0000", Names: "cache", Image: "redis:7", State: "exited"},
 }
 

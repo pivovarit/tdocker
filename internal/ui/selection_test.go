@@ -7,9 +7,9 @@ import (
 )
 
 var (
-	cA = docker.Container{ID: "aaa", Names: "alpha", State: "running"}
-	cB = docker.Container{ID: "bbb", Names: "beta", State: "running"}
-	cC = docker.Container{ID: "ccc", Names: "gamma", State: "running"}
+	cA = docker.Container{ID: "aaa", Names: "alpha", State: docker.StateRunning}
+	cB = docker.Container{ID: "bbb", Names: "beta", State: docker.StateRunning}
+	cC = docker.Container{ID: "ccc", Names: "gamma", State: docker.StateRunning}
 )
 
 func TestSelection_PreservedOnContainersMsg(t *testing.T) {

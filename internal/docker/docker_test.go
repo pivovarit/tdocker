@@ -59,10 +59,10 @@ func TestLabels_UnmarshalJSON_NullLabels(t *testing.T) {
 
 func TestSort_ComposeGroupedWithinStateBucket(t *testing.T) {
 	containers := []Container{
-		{ID: "1", Names: "standalone", State: "running"},
-		{ID: "2", Names: "web", State: "running", Labels: Labels{"com.docker.compose.project": "app", "com.docker.compose.service": "web"}},
-		{ID: "3", Names: "db", State: "running", Labels: Labels{"com.docker.compose.project": "app", "com.docker.compose.service": "db"}},
-		{ID: "4", Names: "cache", State: "running", Labels: Labels{"com.docker.compose.project": "infra", "com.docker.compose.service": "cache"}},
+		{ID: "1", Names: "standalone", State: StateRunning},
+		{ID: "2", Names: "web", State: StateRunning, Labels: Labels{"com.docker.compose.project": "app", "com.docker.compose.service": "web"}},
+		{ID: "3", Names: "db", State: StateRunning, Labels: Labels{"com.docker.compose.project": "app", "com.docker.compose.service": "db"}},
+		{ID: "4", Names: "cache", State: StateRunning, Labels: Labels{"com.docker.compose.project": "infra", "com.docker.compose.service": "cache"}},
 	}
 	sorted := Sort(containers)
 
@@ -83,18 +83,18 @@ func TestSort_ComposeGroupedWithinStateBucket(t *testing.T) {
 func TestSort_RunningBeforeStopped(t *testing.T) {
 	containers := []Container{
 		{ID: "1", Names: "stopped", State: "exited"},
-		{ID: "2", Names: "running", State: "running"},
+		{ID: "2", Names: "running", State: StateRunning},
 	}
 	sorted := Sort(containers)
-	if sorted[0].State != "running" {
+	if sorted[0].State != StateRunning {
 		t.Errorf("want running first, got %s", sorted[0].State)
 	}
 }
 
 func TestSort_ComposeSameProjectSortedByService(t *testing.T) {
 	containers := []Container{
-		{ID: "1", Names: "z-svc", State: "running", Labels: Labels{"com.docker.compose.project": "proj", "com.docker.compose.service": "z-svc"}},
-		{ID: "2", Names: "a-svc", State: "running", Labels: Labels{"com.docker.compose.project": "proj", "com.docker.compose.service": "a-svc"}},
+		{ID: "1", Names: "z-svc", State: StateRunning, Labels: Labels{"com.docker.compose.project": "proj", "com.docker.compose.service": "z-svc"}},
+		{ID: "2", Names: "a-svc", State: StateRunning, Labels: Labels{"com.docker.compose.project": "proj", "com.docker.compose.service": "a-svc"}},
 	}
 	sorted := Sort(containers)
 	if sorted[0].Names != "a-svc" {

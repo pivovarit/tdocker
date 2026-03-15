@@ -22,9 +22,9 @@ func collapseSummary(project string, containers []docker.Container) docker.Conta
 	slices.SortFunc(states, func(a, b string) int {
 		rank := func(s string) int {
 			switch s {
-			case "running":
+			case docker.StateRunning:
 				return 0
-			case "paused":
+			case docker.StatePaused:
 				return 1
 			default:
 				return 2
@@ -44,7 +44,7 @@ func collapseSummary(project string, containers []docker.Container) docker.Conta
 
 	return docker.Container{
 		Names:  fmt.Sprintf("%s (%s)", project, strings.Join(parts, ", ")),
-		State:  "collapsed",
+		State:  docker.StateCollapsed,
 		Labels: docker.Labels{"com.docker.compose.project": project},
 	}
 }

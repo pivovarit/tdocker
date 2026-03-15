@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	runningContainer = docker.Container{ID: "run111", Names: "web", Image: "nginx", State: "running"}
+	runningContainer = docker.Container{ID: "run111", Names: "web", Image: "nginx", State: docker.StateRunning}
 	stoppedContainer = docker.Container{ID: "stop222", Names: "db", Image: "postgres", State: "exited"}
 )
 

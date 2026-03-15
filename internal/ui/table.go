@@ -20,7 +20,7 @@ func buildTable(containers []docker.Container, width int) table.Model {
 	hasPorts := false
 	for i, c := range containers {
 		names[i] = buildTableName(containers, i)
-		if c.State == "detail" {
+		if c.State == docker.StateDetail {
 			continue
 		}
 		if w := len([]rune(names[i])); w > nameW {
@@ -96,7 +96,7 @@ func buildTable(containers []docker.Container, width int) table.Model {
 		id := trunc(c.ID, actualIDW)
 		if ch := treeChars[i]; ch != "" {
 			var short string
-			if c.State == "collapsed" {
+			if c.State == docker.StateCollapsed {
 				const placeholder = "—"
 				pad := idW - len([]rune(placeholder))
 				left := pad / 2
@@ -109,7 +109,7 @@ func buildTable(containers []docker.Container, width int) table.Model {
 				}
 			}
 			id = short + " " + ch
-		} else if hasTree && c.State == "detail" {
+		} else if hasTree && c.State == docker.StateDetail {
 			if ch := detailTreeChar(containers, i); ch != "" {
 				id = strings.Repeat(" ", idW) + " " + ch
 			}
@@ -152,10 +152,10 @@ func buildTable(containers []docker.Container, width int) table.Model {
 
 func buildTableName(containers []docker.Container, i int) string {
 	c := containers[i]
-	if c.State == "detail" {
+	if c.State == docker.StateDetail {
 		return c.Names
 	}
-	if c.State == "collapsed" {
+	if c.State == docker.StateCollapsed {
 		return c.Names
 	}
 	p := c.ComposeProject()
@@ -171,10 +171,10 @@ func buildTableName(containers []docker.Container, i int) string {
 
 func composeTreeChar(containers []docker.Container, i int) string {
 	c := containers[i]
-	if c.State == "detail" {
+	if c.State == docker.StateDetail {
 		return ""
 	}
-	if c.State == "collapsed" {
+	if c.State == docker.StateCollapsed {
 		tree := func(ch string) string { return "\x1b[38;2;100;116;139m" + ch + "\x1b[39m" }
 		return tree("▸")
 	}
@@ -188,13 +188,13 @@ func composeTreeChar(containers []docker.Container, i int) string {
 	tree := func(ch string) string { return "\x1b[38;2;100;116;139m" + ch + "\x1b[39m" }
 
 	prevIdx := i - 1
-	for prevIdx >= 0 && containers[prevIdx].State == "detail" {
+	for prevIdx >= 0 && containers[prevIdx].State == docker.StateDetail {
 		prevIdx--
 	}
 	hasPrev := prevIdx >= 0 && containers[prevIdx].ComposeProject() == p
 
 	nextIdx := i + 1
-	for nextIdx < len(containers) && containers[nextIdx].State == "detail" {
+	for nextIdx < len(containers) && containers[nextIdx].State == docker.StateDetail {
 		nextIdx++
 	}
 	hasNext := nextIdx < len(containers) && containers[nextIdx].ComposeProject() == p
@@ -203,7 +203,7 @@ func composeTreeChar(containers []docker.Container, i int) string {
 	case !hasPrev:
 		return tree("┬")
 	case !hasNext:
-		if i+1 < len(containers) && containers[i+1].State == "detail" {
+		if i+1 < len(containers) && containers[i+1].State == docker.StateDetail {
 			return tree("├")
 		}
 		return tree("└")
@@ -214,7 +214,7 @@ func composeTreeChar(containers []docker.Container, i int) string {
 
 func detailTreeChar(containers []docker.Container, i int) string {
 	parentIdx := i - 1
-	for parentIdx >= 0 && containers[parentIdx].State == "detail" {
+	for parentIdx >= 0 && containers[parentIdx].State == docker.StateDetail {
 		parentIdx--
 	}
 	if parentIdx < 0 || containers[parentIdx].ComposeProject() == "" {
@@ -225,13 +225,13 @@ func detailTreeChar(containers []docker.Container, i int) string {
 	}
 	proj := containers[parentIdx].ComposeProject()
 	nextIdx := i + 1
-	for nextIdx < len(containers) && containers[nextIdx].State == "detail" {
+	for nextIdx < len(containers) && containers[nextIdx].State == docker.StateDetail {
 		nextIdx++
 	}
 	if nextIdx < len(containers) && containers[nextIdx].ComposeProject() == proj {
 		return "│"
 	}
-	isLastDetail := i+1 >= len(containers) || containers[i+1].State != "detail"
+	isLastDetail := i+1 >= len(containers) || containers[i+1].State != docker.StateDetail
 	if isLastDetail {
 		return "└"
 	}
@@ -244,14 +244,14 @@ func inComposeGroup(containers []docker.Container, i int) bool {
 		return false
 	}
 	prevIdx := i - 1
-	for prevIdx >= 0 && containers[prevIdx].State == "detail" {
+	for prevIdx >= 0 && containers[prevIdx].State == docker.StateDetail {
 		prevIdx--
 	}
 	if prevIdx >= 0 && containers[prevIdx].ComposeProject() == p {
 		return true
 	}
 	nextIdx := i + 1
-	for nextIdx < len(containers) && containers[nextIdx].State == "detail" {
+	for nextIdx < len(containers) && containers[nextIdx].State == docker.StateDetail {
 		nextIdx++
 	}
 	return nextIdx < len(containers) && containers[nextIdx].ComposeProject() == p

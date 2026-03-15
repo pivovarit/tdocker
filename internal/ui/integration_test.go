@@ -72,7 +72,7 @@ func TestIntegration_App_ShowsRunningContainer(t *testing.T) {
 	if !found {
 		t.Fatalf("container %q not found in app", sharedAlpineID[:12])
 	}
-	if c.State != "running" {
+	if c.State != docker.StateRunning {
 		t.Errorf("want State=running, got %q", c.State)
 	}
 }
@@ -106,7 +106,7 @@ func TestIntegration_App_StopUpdatesState(t *testing.T) {
 	if !found {
 		t.Fatalf("container not found after stop (with showAll=true)")
 	}
-	if c.State == "running" {
+	if c.State == docker.StateRunning {
 		t.Errorf("want container stopped, still running")
 	}
 }

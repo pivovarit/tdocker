@@ -122,7 +122,7 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 	case keyStop:
 		if c, ok := m.selectedContainer(); ok {
-			if c.State == "collapsed" {
+			if c.State == docker.StateCollapsed {
 				proj := c.ComposeProject()
 				action := "compose-start"
 				if m.projectHasRunning(proj) {
@@ -133,7 +133,7 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			}
 			if c.ID != "" {
 				action := "start"
-				if c.State == "running" {
+				if c.State == docker.StateRunning {
 					action = "stop"
 				}
 				m.op = operationState{kind: OpConfirming, id: c.ID, name: c.Names, action: action}
@@ -142,7 +142,7 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 	case keyRestart:
 		if c, ok := m.selectedContainer(); ok {
-			if c.State == "collapsed" {
+			if c.State == docker.StateCollapsed {
 				proj := c.ComposeProject()
 				action := "compose-start"
 				if m.projectHasRunning(proj) {
@@ -153,7 +153,7 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			}
 			if c.ID != "" {
 				action := "start"
-				if c.State == "running" {
+				if c.State == docker.StateRunning {
 					action = "restart"
 				}
 				m.op = operationState{kind: OpConfirming, id: c.ID, name: c.Names, action: action}
@@ -162,7 +162,7 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 	case keyDelete:
 		if c, ok := m.selectedContainer(); ok && c.ID != "" {
-			if c.State == "running" {
+			if c.State == docker.StateRunning {
 				m.warnMsg = "stop the container before deleting"
 				return m, nil
 			}
@@ -173,10 +173,10 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		if c, ok := m.selectedContainer(); ok && c.ID != "" {
 			m.op.gen++
 			gen := m.op.gen
-			if c.State == "running" {
+			if c.State == docker.StateRunning {
 				m.op.kind = OpPausing
 				return m, tea.Batch(m.client.PauseContainer(c.ID), opDisplayCmd(gen), opSlowCmd(gen))
-			} else if c.State == "paused" {
+			} else if c.State == docker.StatePaused {
 				m.op.kind = OpUnpausing
 				return m, tea.Batch(m.client.UnpauseContainer(c.ID), opDisplayCmd(gen), opSlowCmd(gen))
 			}
@@ -187,7 +187,7 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 	case keyExec:
-		if c, ok := m.selectedContainer(); ok && c.ID != "" && c.State == "running" {
+		if c, ok := m.selectedContainer(); ok && c.ID != "" && c.State == docker.StateRunning {
 			return m, m.client.CheckShellAvailable(c.ID)
 		}
 	case keyDebug:
@@ -208,7 +208,7 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 	case keyCopy:
 		if c, ok := m.selectedContainer(); ok {
-			if c.State == "detail" {
+			if c.State == docker.StateDetail {
 				content := detailRowContent(c.Names)
 				return m, copyToClipboard(content, content)
 			}
@@ -217,7 +217,7 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			}
 		}
 	case keyStats:
-		if c, ok := m.selectedContainer(); ok && c.ID != "" && c.State == "running" {
+		if c, ok := m.selectedContainer(); ok && c.ID != "" && c.State == docker.StateRunning {
 			m.stats.visible = true
 			m.stats.entry = nil
 			m.stats.container = c.Names
@@ -258,12 +258,12 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 					return m, nil
 				}
 			}
-			if proj != "" && c.State != "collapsed" {
+			if proj != "" && c.State != docker.StateCollapsed {
 				m.collapsedProjects[proj] = true
 				m = m.rebuildTable("")
 				filtered := m.filtered()
 				for i, fc := range filtered {
-					if fc.State == "collapsed" && fc.ComposeProject() == proj {
+					if fc.State == docker.StateCollapsed && fc.ComposeProject() == proj {
 						m.table.SetCursor(i)
 						break
 					}
@@ -276,7 +276,7 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case tea.KeyRight:
 		if c, ok := m.selectedContainer(); ok {
 			proj := c.ComposeProject()
-			if c.State == "collapsed" && proj != "" {
+			if c.State == docker.StateCollapsed && proj != "" {
 				delete(m.collapsedProjects, proj)
 				m = m.rebuildTable("")
 				filtered := m.filtered()

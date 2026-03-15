@@ -14,7 +14,7 @@ func TestDetailRows_NilData_ReturnsLoadingRow(t *testing.T) {
 	if len(rows) != 1 {
 		t.Fatalf("want 1 loading row, got %d", len(rows))
 	}
-	if rows[0].State != "detail" {
+	if rows[0].State != docker.StateDetail {
 		t.Errorf("want state=detail, got %q", rows[0].State)
 	}
 	if !strings.Contains(rows[0].Names, "loading") {
@@ -54,7 +54,7 @@ func TestDetailRows_AllStateIsDetail(t *testing.T) {
 		Networks: []docker.NetworkInfo{{Name: "bridge", IPAddress: "172.17.0.2"}},
 	}
 	for _, r := range detailRows(data) {
-		if r.State != "detail" {
+		if r.State != docker.StateDetail {
 			t.Errorf("want state=detail, got %q", r.State)
 		}
 		if r.ID != "" || r.Image != "" || r.Command != "" {
@@ -109,7 +109,7 @@ func TestDetailRows_EmptyData_ReturnsNoRows(t *testing.T) {
 
 func TestFiltered_ExpandedContainerInjectsDetailRows(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "s1", Names: "solo", State: "running"},
+		{ID: "s1", Names: "solo", State: docker.StateRunning},
 	}
 	m := modelWithSorted(containers)
 	m.expandedContainers["s1"] = &docker.InspectData{
@@ -123,14 +123,14 @@ func TestFiltered_ExpandedContainerInjectsDetailRows(t *testing.T) {
 	if got[0].ID != "s1" {
 		t.Errorf("first row should be the container, got %q", got[0].ID)
 	}
-	if got[1].State != "detail" {
+	if got[1].State != docker.StateDetail {
 		t.Errorf("second row should be detail, got state=%q", got[1].State)
 	}
 }
 
 func TestFiltered_ExpandedContainerNilData_ShowsLoadingRow(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "s1", Names: "solo", State: "running"},
+		{ID: "s1", Names: "solo", State: docker.StateRunning},
 	}
 	m := modelWithSorted(containers)
 	m.expandedContainers["s1"] = nil
@@ -139,7 +139,7 @@ func TestFiltered_ExpandedContainerNilData_ShowsLoadingRow(t *testing.T) {
 	if len(got) != 2 {
 		t.Fatalf("want 2 rows, got %d", len(got))
 	}
-	if got[1].State != "detail" {
+	if got[1].State != docker.StateDetail {
 		t.Errorf("second row should be detail, got %q", got[1].State)
 	}
 	if !strings.Contains(got[1].Names, "loading") {
@@ -149,7 +149,7 @@ func TestFiltered_ExpandedContainerNilData_ShowsLoadingRow(t *testing.T) {
 
 func TestFiltered_ExpandedContainerNotShownDuringFilter(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "s1", Names: "solo", State: "running"},
+		{ID: "s1", Names: "solo", State: docker.StateRunning},
 	}
 	m := modelWithSorted(containers)
 	m.expandedContainers["s1"] = &docker.InspectData{
@@ -171,7 +171,7 @@ func TestRightArrow_ExpandsStandaloneContainer(t *testing.T) {
 		return func() tea.Msg { return nil }
 	}
 	containers := []docker.Container{
-		{ID: "s1", Names: "solo", State: "running"},
+		{ID: "s1", Names: "solo", State: docker.StateRunning},
 	}
 	m := modelWithMock(mc, containers)
 	got := update(m, tea.KeyPressMsg{Code: tea.KeyRight})
@@ -192,7 +192,7 @@ func TestRightArrow_NoopOnAlreadyExpandedContainer(t *testing.T) {
 		return func() tea.Msg { return nil }
 	}
 	containers := []docker.Container{
-		{ID: "s1", Names: "solo", State: "running"},
+		{ID: "s1", Names: "solo", State: docker.StateRunning},
 	}
 	m := modelWithMock(mc, containers)
 	m.expandedContainers["s1"] = nil
@@ -205,7 +205,7 @@ func TestRightArrow_NoopOnAlreadyExpandedContainer(t *testing.T) {
 
 func TestLeftArrow_CollapsesExpandedStandaloneContainer(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "s1", Names: "solo", State: "running"},
+		{ID: "s1", Names: "solo", State: docker.StateRunning},
 	}
 	m := modelWithSorted(containers)
 	m.expandedContainers["s1"] = &docker.InspectData{
@@ -223,7 +223,7 @@ func TestLeftArrow_CollapsesExpandedStandaloneContainer(t *testing.T) {
 
 func TestLeftArrow_NoopOnNonExpandedStandaloneContainer(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "s1", Names: "solo", State: "running"},
+		{ID: "s1", Names: "solo", State: docker.StateRunning},
 	}
 	m := modelWithSorted(containers)
 	got := update(m, tea.KeyPressMsg{Code: tea.KeyLeft})
@@ -234,7 +234,7 @@ func TestLeftArrow_NoopOnNonExpandedStandaloneContainer(t *testing.T) {
 
 func TestExpandInspectMsg_UpdatesExpandedContainers(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "s1", Names: "solo", State: "running"},
+		{ID: "s1", Names: "solo", State: docker.StateRunning},
 	}
 	m := modelWithSorted(containers)
 	m.expandedContainers["s1"] = nil
@@ -251,14 +251,14 @@ func TestExpandInspectMsg_UpdatesExpandedContainers(t *testing.T) {
 	if len(filtered) != 2 {
 		t.Fatalf("want 2 rows after data arrives, got %d", len(filtered))
 	}
-	if filtered[1].State != "detail" {
+	if filtered[1].State != docker.StateDetail {
 		t.Errorf("want detail row, got state=%q", filtered[1].State)
 	}
 }
 
 func TestExpandInspectMsg_ErrorClearsExpansion(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "s1", Names: "solo", State: "running"},
+		{ID: "s1", Names: "solo", State: docker.StateRunning},
 	}
 	m := modelWithSorted(containers)
 	m.expandedContainers["s1"] = nil
@@ -271,8 +271,8 @@ func TestExpandInspectMsg_ErrorClearsExpansion(t *testing.T) {
 
 func TestNavigation_DownArrow_LandsOnDetailRows(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "s1", Names: "solo", State: "running"},
-		{ID: "s2", Names: "other", State: "running"},
+		{ID: "s1", Names: "solo", State: docker.StateRunning},
+		{ID: "s2", Names: "other", State: docker.StateRunning},
 	}
 	m := modelWithSorted(containers)
 	m.expandedContainers["s1"] = &docker.InspectData{
@@ -284,15 +284,15 @@ func TestNavigation_DownArrow_LandsOnDetailRows(t *testing.T) {
 	got := update(m, tea.KeyPressMsg{Code: tea.KeyDown})
 	cursor := got.table.Cursor()
 	filtered := got.filtered()
-	if filtered[cursor].State != "detail" {
+	if filtered[cursor].State != docker.StateDetail {
 		t.Errorf("want cursor on detail row, got state=%q", filtered[cursor].State)
 	}
 }
 
 func TestNavigation_UpArrow_LandsOnDetailRows(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "s1", Names: "solo", State: "running"},
-		{ID: "s2", Names: "other", State: "running"},
+		{ID: "s1", Names: "solo", State: docker.StateRunning},
+		{ID: "s2", Names: "other", State: docker.StateRunning},
 	}
 	m := modelWithSorted(containers)
 	m.expandedContainers["s1"] = &docker.InspectData{
@@ -304,7 +304,7 @@ func TestNavigation_UpArrow_LandsOnDetailRows(t *testing.T) {
 	got := update(m, tea.KeyPressMsg{Code: tea.KeyUp})
 	cursor := got.table.Cursor()
 	filtered := got.filtered()
-	if filtered[cursor].State != "detail" {
+	if filtered[cursor].State != docker.StateDetail {
 		t.Errorf("want cursor on detail row, got state=%q", filtered[cursor].State)
 	}
 }

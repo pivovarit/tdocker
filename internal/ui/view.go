@@ -186,15 +186,15 @@ func (m App) View() tea.View {
 				}
 				if containerIdx != cursor {
 					switch filtered[containerIdx].State {
-					case "collapsed":
+					case docker.StateCollapsed:
 						if proj := filtered[containerIdx].ComposeProject(); proj != "" && !m.projectHasRunning(proj) {
 							lines[i] = stoppedRowStyle.Render(strings.ReplaceAll(line, "\x1b[39m", "\x1b[38;2;82;82;91m"))
 						} else {
 							lines[i] = collapsedRowStyle.Render(strings.ReplaceAll(line, "\x1b[39m", "\x1b[38;2;100;116;139m"))
 						}
-					case "paused":
+					case docker.StatePaused:
 						lines[i] = pausedRowStyle.Render(strings.ReplaceAll(line, "\x1b[39m", "\x1b[38;2;146;64;14m"))
-					case "running":
+					case docker.StateRunning:
 					default:
 						lines[i] = stoppedRowStyle.Render(strings.ReplaceAll(line, "\x1b[39m", "\x1b[38;2;82;82;91m"))
 					}
@@ -383,12 +383,12 @@ func helpBarFilter(query string) string {
 
 func (m App) isCollapsedSelected() bool {
 	c, ok := m.selectedContainer()
-	return ok && c.State == "collapsed"
+	return ok && c.State == docker.StateCollapsed
 }
 
 func (m App) isDetailSelected() bool {
 	c, ok := m.selectedContainer()
-	return ok && c.State == "detail"
+	return ok && c.State == docker.StateDetail
 }
 
 func helpBarDetail(copiedName string) string {

@@ -142,8 +142,8 @@ func TestComposeTreeChar_AdjacentProjects(t *testing.T) {
 
 func TestBuildTableName_ExpandedStandaloneContainer(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "s1", Names: "solo", State: "running"},
-		{State: "detail", Names: "└  Network  bridge (172.17.0.2)"},
+		{ID: "s1", Names: "solo", State: docker.StateRunning},
+		{State: docker.StateDetail, Names: "└  Network  bridge (172.17.0.2)"},
 	}
 	got := buildTableName(containers, 0)
 	want := "solo"
@@ -154,7 +154,7 @@ func TestBuildTableName_ExpandedStandaloneContainer(t *testing.T) {
 
 func TestBuildTableName_DetailRowPassesThrough(t *testing.T) {
 	containers := []docker.Container{
-		{State: "detail", Names: "│  Ports    80/tcp → 0.0.0.0:80"},
+		{State: docker.StateDetail, Names: "│  Ports    80/tcp → 0.0.0.0:80"},
 	}
 	got := buildTableName(containers, 0)
 	want := "│  Ports    80/tcp → 0.0.0.0:80"
@@ -165,8 +165,8 @@ func TestBuildTableName_DetailRowPassesThrough(t *testing.T) {
 
 func TestBuildTableName_NotExpandedStandaloneNoPrefix(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "s1", Names: "solo", State: "running"},
-		{ID: "s2", Names: "other", State: "running"},
+		{ID: "s1", Names: "solo", State: docker.StateRunning},
+		{ID: "s2", Names: "other", State: docker.StateRunning},
 	}
 	got := buildTableName(containers, 0)
 	want := "solo"
@@ -177,7 +177,7 @@ func TestBuildTableName_NotExpandedStandaloneNoPrefix(t *testing.T) {
 
 func TestBuildTableRows(t *testing.T) {
 	containers := []docker.Container{
-		{ID: "abc123", Names: "my-app", Image: "nginx:alpine", State: "running", Status: "Up 2 hours", RunningFor: "2 hours ago", Ports: "80/tcp"},
+		{ID: "abc123", Names: "my-app", Image: "nginx:alpine", State: docker.StateRunning, Status: "Up 2 hours", RunningFor: "2 hours ago", Ports: "80/tcp"},
 		{ID: "def456", Names: "/other", Image: "postgres:16", State: "exited", Status: "Exited (0)", RunningFor: "1 day ago", Ports: ""},
 	}
 	tbl := buildTable(containers, 180)

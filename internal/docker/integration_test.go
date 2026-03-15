@@ -102,7 +102,7 @@ func TestIntegration_FetchContainers_RunningContainerAppears(t *testing.T) {
 	if !found {
 		t.Fatalf("container %q not found", sharedAlpineID[:12])
 	}
-	if c.State != "running" {
+	if c.State != StateRunning {
 		t.Errorf("want State=running, got %q", c.State)
 	}
 }
@@ -194,7 +194,7 @@ func TestIntegration_StopContainer(t *testing.T) {
 		t.Fatalf("container %q not found after stop", id[:12])
 	}
 	_ = ctx
-	if c.State == "running" {
+	if c.State == StateRunning {
 		t.Errorf("want container stopped, got State=%q", c.State)
 	}
 }
@@ -221,7 +221,7 @@ func TestIntegration_StartContainer(t *testing.T) {
 	if !found {
 		t.Fatalf("container %q not found after start", id[:12])
 	}
-	if c.State != "running" {
+	if c.State != StateRunning {
 		t.Errorf("want State=running, got %q", c.State)
 	}
 }

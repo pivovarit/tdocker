@@ -19,7 +19,7 @@ func detailRowContent(names string) string {
 func detailRows(data *docker.InspectData) []docker.Container {
 	if data == nil {
 		return []docker.Container{
-			{State: "detail", Names: "└  loading…"},
+			{State: docker.StateDetail, Names: "└  loading…"},
 		}
 	}
 
@@ -59,7 +59,7 @@ func detailRows(data *docker.InspectData) []docker.Container {
 		if i == len(lines)-1 {
 			prefix = "└  "
 		}
-		rows[i] = docker.Container{State: "detail", Names: prefix + l}
+		rows[i] = docker.Container{State: docker.StateDetail, Names: prefix + l}
 	}
 	return rows
 }
