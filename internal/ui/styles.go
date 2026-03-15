@@ -114,4 +114,7 @@ var (
 	detailRowSelectedStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#F0F9FF")).
 				Background(lipgloss.Color("#0369A1"))
+
+	treeCharStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#64748B"))
 )
