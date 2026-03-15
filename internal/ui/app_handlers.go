@@ -268,14 +268,13 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			if proj != "" && c.State != docker.StateCollapsed {
 				m.collapsedProjects[proj] = true
 				m = m.rebuildTable("")
-				filtered := m.filtered()
-				for i, fc := range filtered {
+				for i, fc := range m.filtered() {
 					if fc.State == docker.StateCollapsed && fc.ComposeProject() == proj {
 						m.table.SetCursor(i)
+						m = m.ensureCursorVisible()
 						break
 					}
 				}
-				m = m.rebuildTable(m.currentSelectedID())
 				return m, nil
 			}
 		}
