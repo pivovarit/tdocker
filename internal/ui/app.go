@@ -244,6 +244,17 @@ func indexContainers(cs []docker.Container) map[string]docker.Container {
 	return idx
 }
 
+func (m App) ensureCursorVisible() App {
+	cursor := m.table.Cursor()
+	height := m.tableHeight()
+	if cursor < m.viewportStart {
+		m.viewportStart = cursor
+	} else if height > 0 && cursor >= m.viewportStart+height {
+		m.viewportStart = cursor - height + 1
+	}
+	return m
+}
+
 func (m App) rebuildTable(selectedID string) App {
 	filtered := m.filtered()
 

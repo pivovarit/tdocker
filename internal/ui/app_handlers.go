@@ -314,13 +314,6 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 	var cmd tea.Cmd
 	m.table, cmd = m.table.Update(tableMsg)
-	cursor := m.table.Cursor()
-	height := m.tableHeight()
-	if cursor < m.viewportStart {
-		m.viewportStart = cursor
-	} else if height > 0 && cursor >= m.viewportStart+height {
-		m.viewportStart = cursor - height + 1
-	}
-
+	m = m.ensureCursorVisible()
 	return m, cmd
 }
