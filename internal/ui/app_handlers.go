@@ -48,8 +48,7 @@ func (m App) handleFilterKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case tea.KeyBackspace, tea.KeyDelete:
 		if len(m.filterQuery) > 0 {
 			selectedID := m.currentSelectedID()
-			runes := []rune(m.filterQuery)
-			m.filterQuery = string(runes[:len(runes)-1])
+			m.filterQuery = trimLastRune(m.filterQuery)
 			m = m.rebuildTable(selectedID)
 		}
 	default:
@@ -79,8 +78,7 @@ func (m App) handleRenameKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(m.client.RenameContainer(id, newName), opDisplayCmd(m.op.gen), opSlowCmd(m.op.gen))
 	case tea.KeyBackspace, tea.KeyDelete:
 		if len(m.rename.input) > 0 {
-			runes := []rune(m.rename.input)
-			m.rename.input = string(runes[:len(runes)-1])
+			m.rename.input = trimLastRune(m.rename.input)
 		}
 	default:
 		if len(msg.Text) > 0 {

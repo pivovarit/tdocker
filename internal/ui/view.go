@@ -59,9 +59,9 @@ func (m App) View() tea.View {
 	if ctxName != "" && m.width > 0 {
 		updateW := 0
 		if updatePlain != "" {
-			updateW = len([]rune(updatePlain)) + 5
+			updateW = len(updatePlain) + 5
 		}
-		maxNameW := m.width - len([]rune(leftPlain)) - len([]rune(ctxPrefix)) - len([]rune(ctxSuffix)) - updateW - minPad
+		maxNameW := m.width - len(leftPlain) - len(ctxPrefix) - len(ctxSuffix) - updateW - minPad
 		if maxNameW < 1 {
 			maxNameW = 1
 		}
@@ -80,7 +80,7 @@ func (m App) View() tea.View {
 
 	pad := minPad
 	if rightPlain != "" && m.width > 0 {
-		if p := m.width - len([]rune(leftPlain)) - len([]rune(rightPlain)); p > pad {
+		if p := m.width - len(leftPlain) - len(rightPlain); p > pad {
 			pad = p
 		}
 	}
@@ -215,7 +215,7 @@ func (m App) View() tea.View {
 	}
 
 	b.WriteString("\n")
-	b.WriteString(m.helpBar())
+	b.WriteString(m.helpBar(filtered))
 
 	content := b.String()
 
@@ -241,7 +241,7 @@ var confirmVerbs = map[string]string{
 	"compose-stop": "Stop", "compose-start": "Start", "compose-restart": "Restart",
 }
 
-func (m App) helpBar() string {
+func (m App) helpBar(filtered []docker.Container) string {
 	switch {
 	case m.helpVisible:
 		return helpBarHelp()
@@ -267,16 +267,15 @@ func (m App) helpBar() string {
 		return helpBarRename(m.rename.input)
 	case m.filtering:
 		return helpBarFilter(m.filterQuery)
-	case m.isDetailSelected():
-		return helpBarDetail(m.copiedName)
-	case m.isCollapsedSelected():
-		c, _ := m.selectedContainer()
-		return helpBarCollapsed(m.projectHasRunning(c.ComposeProject()))
 	default:
-		canCollapse := false
-		if c, ok := m.selectedContainer(); ok {
-			canCollapse = c.ComposeProject() != ""
+		c, ok := m.selectedContainerFrom(filtered)
+		if ok && c.State == docker.StateDetail {
+			return helpBarDetail(m.copiedName)
 		}
+		if ok && c.State == docker.StateCollapsed {
+			return helpBarCollapsed(m.projectHasRunning(c.ComposeProject()))
+		}
+		canCollapse := ok && c.ComposeProject() != ""
 		return helpBarDefault(m.warnMsg, m.copiedName, m.filterQuery, canCollapse)
 	}
 	return ""
@@ -378,16 +377,6 @@ func helpBarFilter(query string) string {
 	return helpStyle.Render(
 		"  / " + keyStyle.Render(query+"▌") + " · esc/enter exit",
 	)
-}
-
-func (m App) isCollapsedSelected() bool {
-	c, ok := m.selectedContainer()
-	return ok && c.State == docker.StateCollapsed
-}
-
-func (m App) isDetailSelected() bool {
-	c, ok := m.selectedContainer()
-	return ok && c.State == docker.StateDetail
 }
 
 func helpBarDetail(copiedName string) string {

@@ -485,7 +485,7 @@ func TestHelpBar_CollapsedRowShowsExpandHint(t *testing.T) {
 	m.collapsedProjects["myapp"] = true
 	m = m.rebuildTable("")
 
-	bar := m.helpBar()
+	bar := m.helpBar(m.filtered())
 	if !strings.Contains(bar, "expand") {
 		t.Errorf("want help bar to mention expand, got %q", bar)
 	}
