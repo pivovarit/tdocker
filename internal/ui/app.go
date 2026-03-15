@@ -165,7 +165,7 @@ func matchesFilter(c docker.Container, q string) bool {
 func (m App) filtered() []docker.Container {
 	if m.filterQuery != "" {
 		q := strings.ToLower(m.filterQuery)
-		var out []docker.Container
+		out := make([]docker.Container, 0, len(m.sorted))
 		for _, c := range m.sorted {
 			if matchesFilter(c, q) {
 				out = append(out, c)
@@ -178,7 +178,7 @@ func (m App) filtered() []docker.Container {
 		return m.sorted
 	}
 	if len(m.collapsedProjects) == 0 {
-		var out []docker.Container
+		out := make([]docker.Container, 0, len(m.sorted)+len(m.expandedContainers)*4)
 		for _, c := range m.sorted {
 			out = append(out, c)
 			if data, expanded := m.expandedContainers[c.ID]; expanded {
@@ -188,7 +188,7 @@ func (m App) filtered() []docker.Container {
 		return out
 	}
 
-	var out []docker.Container
+	out := make([]docker.Container, 0, len(m.sorted))
 	var pendingProj string
 	var pendingGroup []docker.Container
 

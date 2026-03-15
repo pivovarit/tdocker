@@ -56,7 +56,7 @@ func (m App) logsFiltered() []string {
 		return m.logs.lines
 	}
 	q := strings.ToLower(m.logs.searchQuery)
-	var out []string
+	out := make([]string, 0, len(m.logs.lines))
 	for _, line := range m.logs.lines {
 		if strings.Contains(strings.ToLower(line), q) {
 			out = append(out, line)
