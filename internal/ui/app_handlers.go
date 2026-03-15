@@ -93,14 +93,12 @@ func (m App) handleRenameKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch msg.Text {
 	case keyRefresh:
-		m.fetch.loading = true
 		m.err = nil
-		return m, m.client.FetchContainers(m.showAll)
+		return m.startFetch()
 	case keyToggleAll:
 		m.showAll = !m.showAll
-		m.fetch.loading = true
 		m.err = nil
-		return m, m.client.FetchContainers(m.showAll)
+		return m.startFetch()
 	case keyFilter:
 		m.filtering = true
 		return m, nil

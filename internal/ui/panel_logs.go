@@ -36,7 +36,6 @@ func (m App) restartLogs() (tea.Model, tea.Cmd) {
 		m.logs.cancel()
 	}
 	m.logs.lines = nil
-	m.logs.searchQuery = ""
 	m.logs.scroll = scrollState{autoScroll: true}
 	m.logs.gen++
 	ctx, cancel := context.WithCancel(context.Background())
@@ -136,7 +135,8 @@ func (m App) handleLogsSearchKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m = m.confirmLogsSearch()
 	case tea.KeyBackspace:
 		if len(m.logs.searchQuery) > 0 {
-			m.logs.searchQuery = m.logs.searchQuery[:len(m.logs.searchQuery)-1]
+			runes := []rune(m.logs.searchQuery)
+			m.logs.searchQuery = string(runes[:len(runes)-1])
 		}
 		m.logs.scroll = scrollState{}
 	case tea.KeyUp, tea.KeyDown, tea.KeyHome, tea.KeyEnd:
