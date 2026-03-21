@@ -140,6 +140,29 @@ func (m App) handleLogsSearchKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+func highlightMatches(s, query string) string {
+	if query == "" {
+		return logsLineStyle.Render(s)
+	}
+	lower := strings.ToLower(s)
+	q := strings.ToLower(query)
+	var b strings.Builder
+	pos := 0
+	for {
+		idx := strings.Index(lower[pos:], q)
+		if idx < 0 {
+			b.WriteString(logsLineStyle.Render(s[pos:]))
+			return b.String()
+		}
+		abs := pos + idx
+		if abs > pos {
+			b.WriteString(logsLineStyle.Render(s[pos:abs]))
+		}
+		b.WriteString(logsHighlightStyle.Render(s[abs : abs+len(q)]))
+		pos = abs + len(q)
+	}
+}
+
 func (m App) renderLogsPanel() string {
 	logsModeLabel := " (last 200)"
 	if m.logs.allMode {
@@ -161,6 +184,7 @@ func (m App) renderLogsPanel() string {
 		searchLabel += "]"
 	}
 	lines := m.logsFiltered()
+	query := m.logs.searchQuery
 	return m.renderPanel(" Logs: "+m.logs.container+logsModeLabel+searchLabel, func(b *strings.Builder) {
 		maxLines := m.logsPanelHeight() - 2
 		start := m.logs.scroll.offset
@@ -171,12 +195,12 @@ func (m App) renderLogsPanel() string {
 		for _, line := range lines[start:end] {
 			if m.logs.timestamps {
 				if ts, rest, ok := strings.Cut(line, " "); ok {
-					b.WriteString(logsTimestampStyle.Render("  "+ts) + " " + logsLineStyle.Render(rest))
+					b.WriteString(logsTimestampStyle.Render("  "+ts) + " " + highlightMatches(rest, query))
 				} else {
-					b.WriteString(logsLineStyle.Render("  " + line))
+					b.WriteString(highlightMatches("  "+line, query))
 				}
 			} else {
-				b.WriteString(logsLineStyle.Render("  " + line))
+				b.WriteString(highlightMatches("  "+line, query))
 			}
 			b.WriteString("\n")
 		}

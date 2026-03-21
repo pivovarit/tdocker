@@ -58,6 +58,11 @@ var (
 	logsTimestampStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#64748B"))
 
+	logsHighlightStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#1C1917")).
+				Background(lipgloss.Color("#FDE047")).
+				Bold(true)
+
 	inspectSectionStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#A78BFA")).
 				Bold(true)
