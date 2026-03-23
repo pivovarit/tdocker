@@ -58,8 +58,26 @@ func (m App) renderContextPicker() string {
 		start := m.ctxPicker.viewportStart
 		end := min(start+maxRows, len(m.ctxPicker.contexts))
 
-		labels := make([]string, end-start)
 		maxWidth := 0
+		for i := range m.ctxPicker.contexts {
+			c := m.ctxPicker.contexts[i]
+			label := "  " + c.Name
+			if c.Description != "" {
+				label += "  " + c.Description
+			}
+			if c.Current {
+				label = "* " + c.Name
+				if c.Description != "" {
+					label += "  " + c.Description
+				}
+				label += "  ✓"
+			}
+			if w := len([]rune(label)); w > maxWidth {
+				maxWidth = w
+			}
+		}
+
+		labels := make([]string, end-start)
 		for i := start; i < end; i++ {
 			c := m.ctxPicker.contexts[i]
 			label := "  " + c.Name
@@ -76,9 +94,6 @@ func (m App) renderContextPicker() string {
 				}
 			}
 			labels[i-start] = label
-			if w := len([]rune(label)); w > maxWidth {
-				maxWidth = w
-			}
 		}
 
 		for i := start; i < end; i++ {
