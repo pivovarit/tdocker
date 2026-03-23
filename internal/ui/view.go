@@ -131,7 +131,11 @@ func (m App) View() tea.View {
 			b.WriteString("\n")
 		}
 		b.WriteString(helpStyle.Render("  Press " + keyStyle.Render("r") + " to retry, " + keyStyle.Render("q") + " to dismiss."))
-		v := tea.NewView(b.String())
+		content := b.String()
+		if m.ctxPicker.visible {
+			content = placeOverlay(content, m.renderContextPicker(), m.width, m.height)
+		}
+		v := tea.NewView(content)
 		v.AltScreen = true
 		return v
 
@@ -146,7 +150,11 @@ func (m App) View() tea.View {
 			keyStyle.Render("A") + " to toggle all containers, " +
 			keyStyle.Render("r") + " to refresh, " +
 			keyStyle.Render("q") + " to quit."))
-		v := tea.NewView(b.String())
+		content := b.String()
+		if m.ctxPicker.visible {
+			content = placeOverlay(content, m.renderContextPicker(), m.width, m.height)
+		}
+		v := tea.NewView(content)
 		v.AltScreen = true
 		return v
 
