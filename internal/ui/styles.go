@@ -89,6 +89,9 @@ var (
 	trendSteadyStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#475569"))
 
+	sparklineStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#475569"))
+
 	eventStartStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#4ADE80")).Bold(true)
 

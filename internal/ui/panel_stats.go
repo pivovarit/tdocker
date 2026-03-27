@@ -15,6 +15,11 @@ type statsState struct {
 	containerID string
 	entry       *docker.StatsEntry
 	prevEntry   *docker.StatsEntry
+
+	cpuHistory [sparklineMaxSamples]float64
+	memHistory [sparklineMaxSamples]float64
+	historyPos int
+	historyLen int
 }
 
 func (m App) closeStats() App {
@@ -52,13 +57,20 @@ func (m App) renderStatsPanel() string {
 			pidTrend = statsTrend(p.PIDs, e.PIDs, parseNumber)
 		}
 
+		cpuSpark := ""
+		memSpark := ""
+		if m.stats.historyLen > 0 {
+			cpuSpark = "  " + sparklineStyle.Render(sparkline(m.stats.cpuHistory, m.stats.historyPos, m.stats.historyLen))
+			memSpark = "  " + sparklineStyle.Render(sparkline(m.stats.memHistory, m.stats.historyPos, m.stats.historyLen))
+		}
+
 		row := func(label, value, trend string) {
 			b.WriteString("  " + inspectSectionStyle.Render(fmt.Sprintf("%-10s", label)) + "  " + inspectValueStyle.Render(value) + trend + "\n")
 		}
 
 		b.WriteString("\n")
-		row("CPU", e.CPUPerc, cpuTrend)
-		row("Memory", e.MemUsage+"  ("+e.MemPerc+")", memTrend)
+		row("CPU", e.CPUPerc, cpuTrend+cpuSpark)
+		row("Memory", e.MemUsage+"  ("+e.MemPerc+")", memTrend+memSpark)
 		row("Net I/O", e.NetIO, netTrend)
 		row("Block I/O", e.BlockIO, blkTrend)
 		row("PIDs", e.PIDs, pidTrend)
@@ -122,9 +134,39 @@ func parseNumber(s string) (float64, bool) {
 }
 
 const (
-	trendRelThreshold = 0.01
-	trendAbsMinimum   = 0.001
+	trendRelThreshold   = 0.01
+	trendAbsMinimum     = 0.001
+	sparklineMaxSamples = 20
 )
+
+var sparklineBlocks = []rune("▁▂▃▄▅▆▇█")
+
+func sparkline(history [sparklineMaxSamples]float64, pos, n int) string {
+	if n == 0 {
+		return ""
+	}
+	start := (pos - n + sparklineMaxSamples) % sparklineMaxSamples
+	mn, mx := history[start], history[start]
+	for i := 1; i < n; i++ {
+		v := history[(start+i)%sparklineMaxSamples]
+		if v < mn {
+			mn = v
+		}
+		if v > mx {
+			mx = v
+		}
+	}
+	var b strings.Builder
+	for i := 0; i < n; i++ {
+		v := history[(start+i)%sparklineMaxSamples]
+		idx := 0
+		if mx > mn {
+			idx = int((v - mn) / (mx - mn) * 7)
+		}
+		b.WriteRune(sparklineBlocks[idx])
+	}
+	return b.String()
+}
 
 func statsTrend(prev, curr string, parse func(string) (float64, bool)) string {
 	p, ok1 := parse(prev)

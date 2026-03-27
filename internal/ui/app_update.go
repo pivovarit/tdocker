@@ -399,6 +399,16 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						m.stats.prevEntry = m.stats.entry
 					}
 					m.stats.entry = &e
+					if cpu, ok := parsePercent(e.CPUPerc); ok {
+						m.stats.cpuHistory[m.stats.historyPos] = cpu
+					}
+					if mem, ok := parsePercent(e.MemPerc); ok {
+						m.stats.memHistory[m.stats.historyPos] = mem
+					}
+					m.stats.historyPos = (m.stats.historyPos + 1) % sparklineMaxSamples
+					if m.stats.historyLen < sparklineMaxSamples {
+						m.stats.historyLen++
+					}
 				}
 			}
 		}

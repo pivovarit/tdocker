@@ -157,3 +157,99 @@ func statsPanel() App {
 	m.stats.containerID = runningContainer.ID
 	return m
 }
+
+func TestFlushPopulatesHistoryBuffers(t *testing.T) {
+	m := statsPanel()
+	m.inlineStats[runningContainer.ID] = docker.StatsEntry{
+		CPUPerc: "10.00%",
+		MemPerc: "20.00%",
+	}
+	m.statsDirty = true
+	got := update(m, inlineStatsFlushMsg{})
+	if got.stats.historyLen != 1 {
+		t.Errorf("want historyLen=1, got %d", got.stats.historyLen)
+	}
+	if got.stats.cpuHistory[0] != 10.0 {
+		t.Errorf("want cpuHistory[0]=10.0, got %f", got.stats.cpuHistory[0])
+	}
+	if got.stats.memHistory[0] != 20.0 {
+		t.Errorf("want memHistory[0]=20.0, got %f", got.stats.memHistory[0])
+	}
+	if got.stats.historyPos != 1 {
+		t.Errorf("want historyPos=1, got %d", got.stats.historyPos)
+	}
+}
+
+func TestFlushWrapsHistoryAt20(t *testing.T) {
+	m := statsPanel()
+	m.stats.historyLen = 20
+	m.stats.historyPos = 0
+	m.stats.cpuHistory[0] = 1.0
+	m.inlineStats[runningContainer.ID] = docker.StatsEntry{
+		CPUPerc: "50.00%",
+		MemPerc: "30.00%",
+	}
+	m.statsDirty = true
+	got := update(m, inlineStatsFlushMsg{})
+	if got.stats.historyLen != 20 {
+		t.Errorf("want historyLen=20 (capped), got %d", got.stats.historyLen)
+	}
+	if got.stats.cpuHistory[0] != 50.0 {
+		t.Errorf("want cpuHistory[0]=50.0 (overwritten), got %f", got.stats.cpuHistory[0])
+	}
+	if got.stats.historyPos != 1 {
+		t.Errorf("want historyPos=1, got %d", got.stats.historyPos)
+	}
+}
+
+func TestSparklineEmpty(t *testing.T) {
+	var h [20]float64
+	if got := sparkline(h, 0, 0); got != "" {
+		t.Errorf("want empty string for n=0, got %q", got)
+	}
+}
+
+func TestSparklineAllSameValues(t *testing.T) {
+	var h [20]float64
+	h[0] = 50.0
+	h[1] = 50.0
+	h[2] = 50.0
+	got := sparkline(h, 3, 3)
+	want := "▁▁▁"
+	if got != want {
+		t.Errorf("want %q for equal values, got %q", want, got)
+	}
+}
+
+func TestSparklineMinMaxBars(t *testing.T) {
+	var h [20]float64
+	h[0] = 0.0
+	h[1] = 100.0
+	got := sparkline(h, 2, 2)
+	want := "▁█"
+	if got != want {
+		t.Errorf("want %q, got %q", want, got)
+	}
+}
+
+func TestSparklineSingleSample(t *testing.T) {
+	var h [20]float64
+	h[5] = 99.0
+	got := sparkline(h, 6, 1)
+	want := "▁"
+	if got != want {
+		t.Errorf("want %q for single sample, got %q", want, got)
+	}
+}
+
+func TestSparklineRingWrap(t *testing.T) {
+	var h [20]float64
+	h[18] = 0.0
+	h[19] = 50.0
+	h[0] = 100.0
+	got := sparkline(h, 1, 3)
+	want := "▁▄█"
+	if got != want {
+		t.Errorf("want %q, got %q", want, got)
+	}
+}
