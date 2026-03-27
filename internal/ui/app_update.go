@@ -28,6 +28,12 @@ func fetchTimerCmd() tea.Cmd {
 	}
 }
 
+func periodicRefreshCmd() tea.Cmd {
+	return tea.Tick(10*time.Second, func(time.Time) tea.Msg {
+		return periodicRefreshMsg{}
+	})
+}
+
 func fetchSlowCmd(gen int) tea.Cmd {
 	return func() tea.Msg {
 		time.Sleep(30 * time.Second)
@@ -355,6 +361,13 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.startFetch()
 		}
 		return m, nil
+
+	case periodicRefreshMsg:
+		var fetchCmd tea.Cmd
+		if !m.fetch.loading {
+			m, fetchCmd = m.startFetch()
+		}
+		return m, tea.Batch(fetchCmd, periodicRefreshCmd())
 
 	case docker.EventEndMsg:
 		if msg.Gen != m.bgEventsGen {
