@@ -147,3 +147,40 @@ func TestLogs_GKey_OnFewLines_StaysAtZero(t *testing.T) {
 		t.Errorf("want logs.scroll.offset=0 when few lines, got %d", got.logs.scroll.offset)
 	}
 }
+
+func composeLogsOpen(mc *stubClient, project string) App {
+	m := modelWithMock(mc, nil)
+	m.logs.visible = true
+	m.logs.isCompose = true
+	m.logs.composeProject = project
+	m.logs.container = project
+	return m
+}
+
+func TestComposeLogs_FToggle_CallsStartComposeLogs(t *testing.T) {
+	mc := newStubClient()
+	var gotProject string
+	mc.startComposeLogs = func(_ context.Context, project string, _ string, _ bool, _ int) tea.Cmd {
+		gotProject = project
+		return func() tea.Msg { return nil }
+	}
+	m := composeLogsOpen(mc, "myapp")
+	update(m, runeKey("f"))
+	if gotProject != "myapp" {
+		t.Errorf("want StartComposeLogs(%q) on f-toggle, got %q", "myapp", gotProject)
+	}
+}
+
+func TestComposeLogs_FToggle_DoesNotCallStartLogs(t *testing.T) {
+	mc := newStubClient()
+	startLogsCalled := false
+	mc.startLogs = func(_ context.Context, _ string, _ string, _ bool, _ string, _ int) tea.Cmd {
+		startLogsCalled = true
+		return func() tea.Msg { return nil }
+	}
+	m := composeLogsOpen(mc, "myapp")
+	update(m, runeKey("f"))
+	if startLogsCalled {
+		t.Error("want StartLogs not called in compose mode")
+	}
+}

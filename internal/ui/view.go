@@ -402,15 +402,13 @@ func helpBarDetail(copiedName string) string {
 
 func helpBarCollapsed(hasRunning bool) string {
 	stopLabel := " start/stop · "
-	restartLabel := " restart · "
 	if !hasRunning {
 		stopLabel = " start · "
-		restartLabel = " start · "
 	}
 	return helpStyle.Render(
 		"  " + keyStyle.Render("→") + " expand · " +
 			keyStyle.Render("S") + stopLabel +
-			keyStyle.Render("R") + restartLabel +
+			keyStyle.Render("R") + " restart · " +
 			keyStyle.Render("?") + " help · " +
 			keyStyle.Render("q") + " quit",
 	)

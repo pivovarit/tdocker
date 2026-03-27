@@ -147,6 +147,16 @@ func TestRenderLogsPanel_LinesAppearInOutput(t *testing.T) {
 	}
 }
 
+func TestRenderLogsPanel_ComposeTitleShowsCompose(t *testing.T) {
+	m := logsOpenWithLines(nil)
+	m.logs.isCompose = true
+	m.logs.composeProject = "myapp"
+	out := m.renderLogsPanel()
+	if !strings.Contains(out, "(compose)") {
+		t.Errorf("want '(compose)' in logs panel title, got:\n%s", out)
+	}
+}
+
 func TestRenderInspectPanel_LoadingShowsMessage(t *testing.T) {
 	m := viewApp()
 	m.inspect.visible = true
@@ -428,6 +438,18 @@ func TestView_HelpBarContainsKeyBindings(t *testing.T) {
 		if !strings.Contains(out, key) {
 			t.Errorf("want key %q in help bar, got:\n%s", key, out)
 		}
+	}
+}
+
+func TestView_ComposeLogs_TitleShowsCompose(t *testing.T) {
+	m := modelWithSorted([]docker.Container{runningContainer})
+	m.logs.visible = true
+	m.logs.isCompose = true
+	m.logs.composeProject = "myapp"
+	m.logs.container = "myapp"
+	rendered := m.View()
+	if !strings.Contains(rendered.Content, "(compose)") {
+		t.Errorf("want '(compose)' in logs panel title, got:\n%s", rendered.Content)
 	}
 }
 

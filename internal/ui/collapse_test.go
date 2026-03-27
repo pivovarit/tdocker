@@ -342,7 +342,7 @@ func TestOperations_NoopOnCollapsedRow(t *testing.T) {
 	m.collapsedProjects["myapp"] = true
 	m = m.rebuildTable("")
 
-	keys := []string{"D", "P", "N", "e", "x", "l", "i", "c", "t"}
+	keys := []string{"D", "P", "N", "e", "x", "i", "c", "t"}
 	for _, k := range keys {
 		got := update(m, runeKey(k))
 		if got.op.kind != OpNone {

@@ -101,22 +101,45 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m.filtering = true
 		return m, nil
 	case keyLogs:
-		if c, ok := m.selectedContainer(); ok && c.ID != "" {
-			if m.logs.cancel != nil {
-				m.logs.cancel()
+		if c, ok := m.selectedContainer(); ok {
+			if c.State == docker.StateCollapsed {
+				proj := c.ComposeProject()
+				if m.logs.cancel != nil {
+					m.logs.cancel()
+				}
+				m.logs.container = proj
+				m.logs.containerID = ""
+				m.logs.isCompose = true
+				m.logs.composeProject = proj
+				m.logs.lines = nil
+				m.logs.scroll = scrollState{autoScroll: true}
+				m.logs.allMode = false
+				m.logs.visible = true
+				m.logs.gen++
+				ctx, cancel := context.WithCancel(context.Background())
+				m.logs.cancel = cancel
+				firstLine := m.client.StartComposeLogs(ctx, proj, logsTailDefault, false, m.logs.gen)
+				m.table.SetHeight(m.tableHeight())
+				return m, firstLine
+			} else if c.ID != "" {
+				if m.logs.cancel != nil {
+					m.logs.cancel()
+				}
+				m.logs.container = c.Names
+				m.logs.containerID = c.ID
+				m.logs.isCompose = false
+				m.logs.composeProject = ""
+				m.logs.lines = nil
+				m.logs.scroll = scrollState{autoScroll: true}
+				m.logs.allMode = false
+				m.logs.visible = true
+				m.logs.gen++
+				ctx, cancel := context.WithCancel(context.Background())
+				m.logs.cancel = cancel
+				firstLine := m.client.StartLogs(ctx, c.ID, logsTailDefault, false, "", m.logs.gen)
+				m.table.SetHeight(m.tableHeight())
+				return m, firstLine
 			}
-			m.logs.container = c.Names
-			m.logs.containerID = c.ID
-			m.logs.lines = nil
-			m.logs.scroll = scrollState{autoScroll: true}
-			m.logs.allMode = false
-			m.logs.visible = true
-			m.logs.gen++
-			ctx, cancel := context.WithCancel(context.Background())
-			m.logs.cancel = cancel
-			firstLine := m.client.StartLogs(ctx, c.ID, logsTailDefault, false, "", m.logs.gen)
-			m.table.SetHeight(m.tableHeight())
-			return m, firstLine
 		}
 	case keyStop:
 		if c, ok := m.selectedContainer(); ok {

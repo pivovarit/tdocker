@@ -8,18 +8,20 @@ import (
 )
 
 type logsState struct {
-	visible     bool
-	lines       []string
-	container   string
-	containerID string
-	scroll      scrollState
-	allMode     bool
-	gen         int
-	cancel      context.CancelFunc
-	searching   bool
-	searchQuery string
-	timestamps  bool
-	grepMode    bool
+	visible        bool
+	lines          []string
+	container      string
+	containerID    string
+	scroll         scrollState
+	allMode        bool
+	gen            int
+	cancel         context.CancelFunc
+	searching      bool
+	searchQuery    string
+	timestamps     bool
+	grepMode       bool
+	isCompose      bool
+	composeProject string
 }
 
 func (m App) closeLogs() App {
@@ -43,6 +45,9 @@ func (m App) restartLogs() (tea.Model, tea.Cmd) {
 	tail := logsTailDefault
 	if m.logs.allMode {
 		tail = "all"
+	}
+	if m.logs.isCompose {
+		return m, m.client.StartComposeLogs(ctx, m.logs.composeProject, tail, m.logs.timestamps, m.logs.gen)
 	}
 	grep := ""
 	if m.logs.grepMode {
@@ -69,7 +74,7 @@ func (m App) handleLogsKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	if m.logs.searching {
 		return m.handleLogsSearchKey(msg)
 	}
-	if msg.String() == "ctrl+g" && m.grepSupported && m.logs.searchQuery != "" {
+	if msg.String() == "ctrl+g" && m.grepSupported && m.logs.searchQuery != "" && !m.logs.isCompose {
 		m.logs.grepMode = !m.logs.grepMode
 		return m.restartLogs()
 	}
@@ -171,6 +176,10 @@ func (m App) renderLogsPanel() string {
 	if m.logs.timestamps {
 		logsModeLabel += " (timestamps)"
 	}
+	composeLabel := ""
+	if m.logs.isCompose {
+		composeLabel = " (compose)"
+	}
 	searchLabel := ""
 	if m.logs.searchQuery != "" || m.logs.searching {
 		prefix := " [/"
@@ -185,7 +194,7 @@ func (m App) renderLogsPanel() string {
 	}
 	lines := m.logsFiltered()
 	query := m.logs.searchQuery
-	return m.renderPanel(" Logs: "+m.logs.container+logsModeLabel+searchLabel, func(b *strings.Builder) {
+	return m.renderPanel(" Logs: "+m.logs.container+composeLabel+logsModeLabel+searchLabel, func(b *strings.Builder) {
 		maxLines := m.logsPanelHeight() - 2
 		start := m.logs.scroll.offset
 		end := start + maxLines

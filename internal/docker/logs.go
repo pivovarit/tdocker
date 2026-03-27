@@ -79,3 +79,44 @@ func (CLI) StartLogs(ctx context.Context, id string, tail string, timestamps boo
 
 	return readNext
 }
+
+func (CLI) StartComposeLogs(ctx context.Context, project string, tail string, timestamps bool, gen int) tea.Cmd {
+	args := []string{"compose", "-p", project, "logs", "--follow", "--tail", tail}
+	if timestamps {
+		args = append(args, "--timestamps")
+	}
+	cmd := exec.CommandContext(ctx, "docker", args...)
+	pr, pw := io.Pipe()
+	cmd.Stdout = pw
+	cmd.Stderr = pw
+
+	if err := cmd.Start(); err != nil {
+		return func() tea.Msg { return LogsEndMsg{Err: err, Gen: gen} }
+	}
+
+	go func() {
+		err := cmd.Wait()
+		contextCancelled := ctx.Err() != nil
+		if err != nil && !contextCancelled {
+			if cerr := pw.CloseWithError(err); cerr != nil {
+				log.Printf("pipe close: %v", cerr)
+			}
+		} else {
+			if cerr := pw.Close(); cerr != nil {
+				log.Printf("pipe close: %v", cerr)
+			}
+		}
+	}()
+
+	scanner := bufio.NewScanner(pr)
+
+	var readNext tea.Cmd
+	readNext = func() tea.Msg {
+		if scanner.Scan() {
+			return LogsLineMsg{Line: scanner.Text(), Next: readNext, Gen: gen}
+		}
+		return LogsEndMsg{Err: scanner.Err(), Gen: gen}
+	}
+
+	return readNext
+}

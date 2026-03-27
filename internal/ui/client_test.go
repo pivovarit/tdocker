@@ -219,3 +219,22 @@ func TestClient_ShellUnavailableMsg_SetsError(t *testing.T) {
 		t.Error("want err set when shell not available")
 	}
 }
+
+func TestClient_LKey_OnCollapsedCompose_CallsStartComposeLogs(t *testing.T) {
+	mc := newStubClient()
+	var gotProject string
+	mc.startComposeLogs = func(_ context.Context, project string, _ string, _ bool, _ int) tea.Cmd {
+		gotProject = project
+		return func() tea.Msg { return nil }
+	}
+	collapsed := docker.Container{
+		State:  docker.StateCollapsed,
+		Names:  "myapp (2 running)",
+		Labels: docker.Labels{"com.docker.compose.project": "myapp"},
+	}
+	m := modelWithMock(mc, []docker.Container{collapsed})
+	update(m, runeKey("l"))
+	if gotProject != "myapp" {
+		t.Errorf("want StartComposeLogs(%q), got %q", "myapp", gotProject)
+	}
+}
