@@ -151,6 +151,7 @@ func (m App) Init() tea.Cmd {
 		fetchTimerCmd(),
 		fetchSlowCmd(m.fetch.gen),
 		checkUpdateCmd(m.version),
+		periodicRefreshCmd(),
 	)
 }
 

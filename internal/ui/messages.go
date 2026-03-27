@@ -3,6 +3,7 @@ package ui
 type bgStatsRestartMsg struct{ gen int }
 type inlineStatsFlushMsg struct{}
 type autoRefreshMsg struct{}
+type periodicRefreshMsg struct{}
 type bgEventsRestartMsg struct{ gen int }
 type fetchTimerTickMsg struct{}
 type fetchSlowMsg struct{ gen int }
