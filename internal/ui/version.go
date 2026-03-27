@@ -19,14 +19,14 @@ func checkUpdateCmd(current string) tea.Cmd {
 		client := &http.Client{Timeout: 5 * time.Second}
 		resp, err := client.Get("https://api.github.com/repos/pivovarit/tdocker/releases/latest")
 		if err != nil {
-			return nil
+			return nil // version check is non-critical; network errors are silently ignored
 		}
 		defer resp.Body.Close()
 		var release struct {
 			TagName string `json:"tag_name"`
 		}
 		if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
-			return nil
+			return nil // malformed or unexpected response; skip silently
 		}
 		if isNewerVersion(release.TagName, current) {
 			return updateAvailableMsg{version: release.TagName}
