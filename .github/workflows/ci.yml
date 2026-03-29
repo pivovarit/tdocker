@@ -15,17 +15,7 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Format
-        run: |
-          unformatted=$(gofmt -l .)
-          if [ -n "$unformatted" ]; then
-            echo "The following files are not formatted:"
-            echo "$unformatted"
-            echo ""
-            ESC=$(printf '\033')
-            gofmt -d . | sed "s/^+.*/${ESC}[32m&${ESC}[0m/;s/^-.*/${ESC}[31m&${ESC}[0m/;s/^@@.*/${ESC}[36m&${ESC}[0m/"
-            exit 1
-          fi
+      - uses: pivovarit/gofmt-action@main
 
       - name: Vet
         run: go vet ./...
