@@ -1111,7 +1111,7 @@
       <div class="feature-card reveal reveal-delay-2">
         <div class="feature-icon">📋</div>
         <h3 class="feature-title">Live Logs</h3>
-        <p class="feature-desc"><code>l</code> streams live logs full-screen. Press <code>f</code> to toggle between the last 200 lines and full history. Auto-scrolls as new lines arrive.</p>
+        <p class="feature-desc"><code>l</code> streams live logs full-screen. <code>f</code> toggles between the last 200 lines and full history. <code>T</code> toggles timestamps. Auto-scrolls as new lines arrive, scroll up to pause.</p>
       </div>
 
       <div class="feature-card reveal reveal-delay-3">
@@ -1182,6 +1182,10 @@
           <div class="kb-row">
             <div class="kb-keys"><span class="kb-key">A</span></div>
             <span class="kb-action">Toggle all / running only</span>
+          </div>
+          <div class="kb-row">
+            <div class="kb-keys"><span class="kb-key">T</span></div>
+            <span class="kb-action">Toggle inline CPU / mem columns</span>
           </div>
           <div class="kb-row">
             <div class="kb-keys"><span class="kb-key">r</span></div>
@@ -1256,6 +1260,33 @@
           </div>
         </div>
       </div>
+
+      <!-- Logs Panel -->
+      <div class="kb-group reveal reveal-delay-1" style="grid-column: 1 / -1;">
+        <div class="kb-group-header">Logs Panel (open with <span style="color:var(--text2);font-weight:400">l</span>)</div>
+        <div class="kb-rows" style="display:grid;grid-template-columns:1fr 1fr;">
+          <div class="kb-row">
+            <div class="kb-keys"><span class="kb-key">f</span></div>
+            <span class="kb-action">Toggle last 200 lines / full history</span>
+          </div>
+          <div class="kb-row">
+            <div class="kb-keys"><span class="kb-key">T</span></div>
+            <span class="kb-action">Toggle timestamps</span>
+          </div>
+          <div class="kb-row">
+            <div class="kb-keys"><span class="kb-key">/</span></div>
+            <span class="kb-action">Search within logs</span>
+          </div>
+          <div class="kb-row">
+            <div class="kb-keys"><span class="kb-key">ctrl+g</span></div>
+            <span class="kb-action">Switch to server-side grep (faster for large logs)</span>
+          </div>
+          <div class="kb-row">
+            <div class="kb-keys"><span class="kb-key">Esc</span><span class="kb-key">l</span></div>
+            <span class="kb-action">Close logs panel</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -1289,6 +1320,10 @@
         <div class="tip-line"><span class="tip-prompt">#</span> <span class="tip-comment">containers</span></div>
         <div class="tip-line"><span class="tip-prompt">→</span> <span class="tip-content"><code>S</code> stops running containers and starts stopped ones, <code>R</code> does the same for restart</span></div>
         <div class="tip-line"><span class="tip-prompt">→</span> <span class="tip-content"><code>e</code> auto-detects shells, for distroless/scratch images, use <code>x</code> (docker debug)</span></div>
+        <hr class="tip-sep">
+        <div class="tip-line"><span class="tip-prompt">#</span> <span class="tip-comment">logs panel</span></div>
+        <div class="tip-line"><span class="tip-prompt">→</span> <span class="tip-content"><code>f</code> switches between tail-200 and full history; <code>T</code> toggles timestamps</span></div>
+        <div class="tip-line"><span class="tip-prompt">→</span> <span class="tip-content"><code>ctrl+g</code> switches active search to server-side grep — much faster for large log volumes</span></div>
       </div>
     </div>
   </div>
