@@ -92,6 +92,12 @@ var (
 	sparklineStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#475569"))
 
+	diagnosisWarnStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#FCD34D")).Bold(true)
+
+	diagnosisErrorStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#F87171")).Bold(true)
+
 	eventStartStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#4ADE80")).Bold(true)
 

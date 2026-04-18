@@ -35,6 +35,7 @@ func (m App) renderHelpOverlay() string {
 			{"l", "logs"},
 			{"/", "search logs"},
 			{"i", "inspect"},
+			{"I", "diagnose (state + events + logs + diagnosis)"},
 			{"t", "stats"},
 			{"v", "events"},
 		}},

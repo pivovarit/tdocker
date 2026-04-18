@@ -176,6 +176,28 @@ func TestRenderInspectPanel_TitleContainsContainerName(t *testing.T) {
 	}
 }
 
+func TestRenderDiagnosticPanel_LoadingShowsMessage(t *testing.T) {
+	m := viewApp()
+	m.diagnostic.visible = true
+	m.diagnostic.container = runningContainer.Names
+	m.diagnostic.loading = true
+	out := m.renderDiagnosticPanel()
+	if !strings.Contains(out, "Loading") {
+		t.Errorf("want 'Loading' when diagnostic loading, got:\n%s", out)
+	}
+}
+
+func TestRenderDiagnosticPanel_TitleContainsContainerName(t *testing.T) {
+	m := viewApp()
+	m.diagnostic.visible = true
+	m.diagnostic.container = "my-service"
+	m.diagnostic.loading = true
+	out := m.renderDiagnosticPanel()
+	if !strings.Contains(out, "my-service") {
+		t.Errorf("want container name in diagnostic title, got:\n%s", out)
+	}
+}
+
 func TestRenderEventsPanel_EmptyShowsWaiting(t *testing.T) {
 	m := viewApp()
 	m.events.visible = true

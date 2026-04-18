@@ -31,12 +31,52 @@ type NetworkInfo struct {
 	IPAddress string
 }
 
+type ContainerState struct {
+	Status     string
+	ExitCode   int
+	Error      string
+	OOMKilled  bool
+	StartedAt  time.Time
+	FinishedAt time.Time
+	Health     *Health
+}
+
+type Health struct {
+	Status        string
+	FailingStreak int
+	Log           []HealthLogEntry
+}
+
+type HealthLogEntry struct {
+	Start    time.Time
+	End      time.Time
+	ExitCode int
+	Output   string
+}
+
+type RestartPolicy struct {
+	Name              string
+	MaximumRetryCount int
+}
+
+type Healthcheck struct {
+	Test        []string
+	Interval    time.Duration
+	Timeout     time.Duration
+	Retries     int
+	StartPeriod time.Duration
+}
+
 type InspectData struct {
-	ImageDigest string
-	Ports       map[string][]PortBinding
-	Env         []string
-	Mounts      []Mount
-	Networks    []NetworkInfo
+	ImageDigest   string
+	Ports         map[string][]PortBinding
+	Env           []string
+	Mounts        []Mount
+	Networks      []NetworkInfo
+	State         ContainerState
+	RestartCount  int
+	RestartPolicy RestartPolicy
+	Healthcheck   *Healthcheck
 }
 
 type InspectMsg struct {
@@ -148,10 +188,42 @@ func (d *InspectData) Lines(width int) []InspectLine {
 }
 
 type inspectRaw struct {
-	Image  string `json:"Image"`
-	Config struct {
-		Env []string `json:"Env"`
+	Image string `json:"Image"`
+	State struct {
+		Status     string `json:"Status"`
+		ExitCode   int    `json:"ExitCode"`
+		Error      string `json:"Error"`
+		OOMKilled  bool   `json:"OOMKilled"`
+		StartedAt  string `json:"StartedAt"`
+		FinishedAt string `json:"FinishedAt"`
+		Health     *struct {
+			Status        string `json:"Status"`
+			FailingStreak int    `json:"FailingStreak"`
+			Log           []struct {
+				Start    string `json:"Start"`
+				End      string `json:"End"`
+				ExitCode int    `json:"ExitCode"`
+				Output   string `json:"Output"`
+			} `json:"Log"`
+		} `json:"Health"`
+	} `json:"State"`
+	RestartCount int `json:"RestartCount"`
+	Config       struct {
+		Env         []string `json:"Env"`
+		Healthcheck *struct {
+			Test        []string `json:"Test"`
+			Interval    int64    `json:"Interval"`
+			Timeout     int64    `json:"Timeout"`
+			Retries     int      `json:"Retries"`
+			StartPeriod int64    `json:"StartPeriod"`
+		} `json:"Healthcheck"`
 	} `json:"Config"`
+	HostConfig struct {
+		RestartPolicy struct {
+			Name              string `json:"Name"`
+			MaximumRetryCount int    `json:"MaximumRetryCount"`
+		} `json:"RestartPolicy"`
+	} `json:"HostConfig"`
 	Mounts          []Mount `json:"Mounts"`
 	NetworkSettings struct {
 		Ports    map[string][]PortBinding `json:"Ports"`
@@ -159,6 +231,20 @@ type inspectRaw struct {
 			IPAddress string `json:"IPAddress"`
 		} `json:"Networks"`
 	} `json:"NetworkSettings"`
+}
+
+func parseDockerTime(s string) time.Time {
+	if s == "" {
+		return time.Time{}
+	}
+	t, err := time.Parse(time.RFC3339Nano, s)
+	if err != nil {
+		return time.Time{}
+	}
+	if t.Year() == 1 {
+		return time.Time{}
+	}
+	return t
 }
 
 func parseInspectData(out []byte) (*InspectData, error) {
@@ -175,12 +261,52 @@ func parseInspectData(out []byte) (*InspectData, error) {
 		nets = append(nets, NetworkInfo{Name: name, IPAddress: n.IPAddress})
 	}
 	slices.SortFunc(nets, func(a, b NetworkInfo) int { return strings.Compare(a.Name, b.Name) })
+
+	state := ContainerState{
+		Status:     r.State.Status,
+		ExitCode:   r.State.ExitCode,
+		Error:      r.State.Error,
+		OOMKilled:  r.State.OOMKilled,
+		StartedAt:  parseDockerTime(r.State.StartedAt),
+		FinishedAt: parseDockerTime(r.State.FinishedAt),
+	}
+	if r.State.Health != nil {
+		h := &Health{
+			Status:        r.State.Health.Status,
+			FailingStreak: r.State.Health.FailingStreak,
+		}
+		for _, le := range r.State.Health.Log {
+			h.Log = append(h.Log, HealthLogEntry{
+				Start:    parseDockerTime(le.Start),
+				End:      parseDockerTime(le.End),
+				ExitCode: le.ExitCode,
+				Output:   le.Output,
+			})
+		}
+		state.Health = h
+	}
+
+	var hc *Healthcheck
+	if r.Config.Healthcheck != nil {
+		hc = &Healthcheck{
+			Test:        r.Config.Healthcheck.Test,
+			Interval:    time.Duration(r.Config.Healthcheck.Interval),
+			Timeout:     time.Duration(r.Config.Healthcheck.Timeout),
+			Retries:     r.Config.Healthcheck.Retries,
+			StartPeriod: time.Duration(r.Config.Healthcheck.StartPeriod),
+		}
+	}
+
 	return &InspectData{
-		ImageDigest: r.Image,
-		Ports:       r.NetworkSettings.Ports,
-		Env:         r.Config.Env,
-		Mounts:      r.Mounts,
-		Networks:    nets,
+		ImageDigest:   r.Image,
+		Ports:         r.NetworkSettings.Ports,
+		Env:           r.Config.Env,
+		Mounts:        r.Mounts,
+		Networks:      nets,
+		State:         state,
+		RestartCount:  r.RestartCount,
+		RestartPolicy: RestartPolicy{Name: r.HostConfig.RestartPolicy.Name, MaximumRetryCount: r.HostConfig.RestartPolicy.MaximumRetryCount},
+		Healthcheck:   hc,
 	}, nil
 }
 

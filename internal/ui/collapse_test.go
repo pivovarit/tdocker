@@ -351,8 +351,8 @@ func TestOperations_NoopOnCollapsedRow(t *testing.T) {
 		if got.logs.visible {
 			t.Errorf("key %q: want logs not opened on collapsed row", k)
 		}
-		if got.inspect.visible {
-			t.Errorf("key %q: want inspect not opened on collapsed row", k)
+		if got.diagnostic.visible {
+			t.Errorf("key %q: want diagnostic not opened on collapsed row", k)
 		}
 		if got.stats.visible {
 			t.Errorf("key %q: want stats not opened on collapsed row", k)

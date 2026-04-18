@@ -166,6 +166,8 @@ func (m App) View() tea.View {
 			b.WriteString(m.renderLogsPanel())
 		} else if m.inspect.visible {
 			b.WriteString(m.renderInspectPanel())
+		} else if m.diagnostic.visible {
+			b.WriteString(m.renderDiagnosticPanel())
 		} else {
 			const headerLines = 2
 
@@ -265,6 +267,8 @@ func (m App) helpBar(filtered []docker.Container) string {
 		return helpBarLogs(m.logs.searchQuery, m.logs.grepMode, m.grepSupported)
 	case m.inspect.visible:
 		return helpBarInspect()
+	case m.diagnostic.visible:
+		return helpBarDiagnostic()
 	case m.stats.visible:
 		return helpBarStats()
 	case m.op.kind == OpConfirming:
@@ -340,6 +344,16 @@ func helpBarInspect() string {
 			keyStyle.Render("g") + " top · " +
 			keyStyle.Render("G") + " bottom · " +
 			keyStyle.Render("esc") + "/" + keyStyle.Render("i") + " close · " +
+			keyStyle.Render("q") + " close",
+	)
+}
+
+func helpBarDiagnostic() string {
+	return helpStyle.Render(
+		"  ↑/↓ scroll · " +
+			keyStyle.Render("g") + " top · " +
+			keyStyle.Render("G") + " bottom · " +
+			keyStyle.Render("esc") + "/" + keyStyle.Render("I") + " close · " +
 			keyStyle.Render("q") + " close",
 	)
 }
@@ -436,6 +450,7 @@ func helpBarDefault(warnMsg, copiedName, filterQuery string, canCollapse bool) s
 			collapseHint +
 			keyStyle.Render("l") + " logs · " +
 			keyStyle.Render("i") + " inspect · " +
+			keyStyle.Render("I") + " diagnose · " +
 			keyStyle.Render("e") + " exec · " +
 			keyStyle.Render("S") + " start/stop · " +
 			keyStyle.Render("R") + " restart · " +

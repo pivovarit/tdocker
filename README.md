@@ -65,7 +65,8 @@ Clipboard integration is supported on macOS (`pbcopy`), Windows (`clip`), Linux/
 | `l` | View logs |
 | `e` | Exec into container (`sh`) |
 | `x` | Open debug shell (`docker debug`) |
-| `i` | Inspect container |
+| `i` | Inspect container (image, env, ports, mounts, networks) |
+| `I` | Diagnose container (state, events, logs, health, config) |
 | `t` | Show stats |
 | `v` | Stream Docker events |
 | `c` | Copy container ID to clipboard |
@@ -88,3 +89,4 @@ Clipboard integration is supported on macOS (`pbcopy`), Windows (`clip`), Linux/
 - **Auto-scroll in logs** - logs auto-scroll as new lines arrive; scroll up to pause, scroll back to the bottom to resume
 - **Smart actions** - `S` stops running containers and starts stopped ones; `R` restarts running containers and starts stopped ones
 - **Shell detection** - `e` auto-detects available shells; for distroless/scratch images, use `x` (docker debug) instead
+- **`i` vs `I`** - `i` shows the classic inspect summary (image, env, ports, mounts); `I` opens the diagnostic panel with container state, recent events, log tail, and healthcheck results

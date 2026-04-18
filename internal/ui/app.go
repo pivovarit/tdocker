@@ -95,11 +95,12 @@ type App struct {
 	fetch  fetchState
 	rename renameState
 
-	logs      logsState
-	inspect   inspectState
-	stats     statsState
-	events    eventsState
-	ctxPicker ctxPickerState
+	logs       logsState
+	inspect    inspectState
+	diagnostic diagnosticState
+	stats      statsState
+	events     eventsState
+	ctxPicker  ctxPickerState
 
 	inlineStats       map[string]docker.StatsEntry
 	showInlineStats   bool
@@ -222,9 +223,10 @@ func (m App) filtered() []docker.Container {
 	return out
 }
 
-func (m App) logsPanelHeight() int    { return max(5, m.height-tableChrome) }
-func (m App) inspectPanelHeight() int { return max(5, m.height-tableChrome) }
-func (m App) eventsPanelHeight() int  { return max(5, min(12, m.height/3)) }
+func (m App) logsPanelHeight() int       { return max(5, m.height-tableChrome) }
+func (m App) inspectPanelHeight() int    { return max(5, m.height-tableChrome) }
+func (m App) diagnosticPanelHeight() int { return max(5, m.height-tableChrome) }
+func (m App) eventsPanelHeight() int     { return max(5, min(12, m.height/3)) }
 
 func (m App) currentSelectedID() string {
 	if c, ok := m.selectedContainer(); ok {

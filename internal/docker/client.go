@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 )
@@ -23,6 +24,7 @@ type Client interface {
 	StartComposeLogs(ctx context.Context, project string, tail string, timestamps bool, gen int) tea.Cmd
 	SupportsGrep() tea.Cmd
 	StartEvents(ctx context.Context, gen int) tea.Cmd
+	FetchContainerEvents(id string, since time.Duration) tea.Cmd
 	FetchContexts() tea.Cmd
 	SwitchContext(name string) tea.Cmd
 	PauseContainer(id string) tea.Cmd

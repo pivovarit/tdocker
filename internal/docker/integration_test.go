@@ -9,8 +9,10 @@ import (
 	"os/exec"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 var (
@@ -249,5 +251,61 @@ func TestIntegration_DeleteContainer(t *testing.T) {
 	containers := fetchAll(t)
 	if _, found := findByID(containers, id); found {
 		t.Errorf("container %q should be deleted but still appears", id[:12])
+	}
+}
+
+func TestIntegration_DiagnosticSources_ExitedContainer(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	req := testcontainers.ContainerRequest{
+		Image:      "alpine:3",
+		Cmd:        []string{"sh", "-c", "exit 1"},
+		WaitingFor: wait.ForExit(),
+	}
+	c, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: req,
+		Started:          true,
+	})
+	if err != nil {
+		t.Fatalf("start container: %v", err)
+	}
+	defer func() { _ = c.Terminate(ctx) }()
+
+	id := c.GetContainerID()
+
+	time.Sleep(1 * time.Second)
+
+	insp := CLI{}.InspectContainer(id)()
+	inspMsg, ok := insp.(InspectMsg)
+	if !ok {
+		t.Fatalf("InspectContainer returned %T", insp)
+	}
+	if inspMsg.Err != nil {
+		t.Fatalf("InspectContainer err: %v", inspMsg.Err)
+	}
+	if inspMsg.Data.State.ExitCode != 1 {
+		t.Errorf("ExitCode = %d, want 1", inspMsg.Data.State.ExitCode)
+	}
+	if inspMsg.Data.State.Status != "exited" {
+		t.Errorf("Status = %q, want exited", inspMsg.Data.State.Status)
+	}
+
+	evts := CLI{}.FetchContainerEvents(id, time.Hour)()
+	evMsg, ok := evts.(ContainerEventsMsg)
+	if !ok {
+		t.Fatalf("FetchContainerEvents returned %T", evts)
+	}
+	if evMsg.Err != nil {
+		t.Fatalf("FetchContainerEvents err: %v", evMsg.Err)
+	}
+	foundDie := false
+	for _, ev := range evMsg.Events {
+		if ev.Action == "die" {
+			foundDie = true
+			break
+		}
+	}
+	if !foundDie {
+		t.Errorf("expected a 'die' event in %v", evMsg.Events)
 	}
 }

@@ -14,6 +14,7 @@ const (
 	keyDebug        = "x"
 	keyContext      = "X"
 	keyInspect      = "i"
+	keyDiagnose     = "I"
 	keyCopy         = "c"
 	keyStats        = "t"
 	keyEvents       = "v"

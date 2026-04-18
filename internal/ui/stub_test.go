@@ -2,8 +2,10 @@ package ui
 
 import (
 	"context"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/pivovarit/tdocker/internal/docker"
 )
 
 type stubClient struct {
@@ -23,6 +25,7 @@ type stubClient struct {
 	startComposeLogs       func(context.Context, string, string, bool, int) tea.Cmd
 	supportsGrep           func() tea.Cmd
 	startEvents            func(context.Context, int) tea.Cmd
+	fetchContainerEvents   func(string, time.Duration) tea.Cmd
 	fetchContexts          func() tea.Cmd
 	switchContext          func(string) tea.Cmd
 	pauseContainer         func(string) tea.Cmd
@@ -31,6 +34,15 @@ type stubClient struct {
 	stopCompose            func(string) tea.Cmd
 	startCompose           func(string) tea.Cmd
 	restartCompose         func(string) tea.Cmd
+
+	lastInspectContainerID     string
+	lastFetchContainerEventsID string
+	lastStartLogsID            string
+
+	// Configurable responses for end-to-end tests.
+	inspectData *docker.InspectData
+	inspectErr  error
+	events      []docker.Event
 }
 
 func newStubClient() *stubClient {
@@ -53,6 +65,7 @@ func newStubClient() *stubClient {
 		startComposeLogs:       func(_ context.Context, _ string, _ string, _ bool, _ int) tea.Cmd { return noop },
 		supportsGrep:           func() tea.Cmd { return noop },
 		startEvents:            func(_ context.Context, _ int) tea.Cmd { return noop },
+		fetchContainerEvents:   func(_ string, _ time.Duration) tea.Cmd { return noop },
 		fetchContexts:          func() tea.Cmd { return noop },
 		switchContext:          noopStr,
 		pauseContainer:         noopStr,
@@ -64,21 +77,29 @@ func newStubClient() *stubClient {
 	}
 }
 
-func (c *stubClient) FetchContainers(all bool) tea.Cmd         { return c.fetchContainers(all) }
-func (c *stubClient) StopContainer(id string) tea.Cmd          { return c.stopContainer(id) }
-func (c *stubClient) StartContainer(id string) tea.Cmd         { return c.startContainer(id) }
-func (c *stubClient) RestartContainer(id string) tea.Cmd       { return c.restartContainer(id) }
-func (c *stubClient) DeleteContainer(id string) tea.Cmd        { return c.deleteContainer(id) }
-func (c *stubClient) CheckShellAvailable(id string) tea.Cmd    { return c.checkShellAvail(id) }
-func (c *stubClient) ExecContainer(id, shell string) tea.Cmd   { return c.execContainer(id, shell) }
-func (c *stubClient) CheckDebugAvailable(id string) tea.Cmd    { return c.checkDebugAvail(id) }
-func (c *stubClient) DebugContainer(id string) tea.Cmd         { return c.debugContainer(id) }
-func (c *stubClient) InspectContainer(id string) tea.Cmd       { return c.inspectContainer(id) }
+func (c *stubClient) FetchContainers(all bool) tea.Cmd       { return c.fetchContainers(all) }
+func (c *stubClient) StopContainer(id string) tea.Cmd        { return c.stopContainer(id) }
+func (c *stubClient) StartContainer(id string) tea.Cmd       { return c.startContainer(id) }
+func (c *stubClient) RestartContainer(id string) tea.Cmd     { return c.restartContainer(id) }
+func (c *stubClient) DeleteContainer(id string) tea.Cmd      { return c.deleteContainer(id) }
+func (c *stubClient) CheckShellAvailable(id string) tea.Cmd  { return c.checkShellAvail(id) }
+func (c *stubClient) ExecContainer(id, shell string) tea.Cmd { return c.execContainer(id, shell) }
+func (c *stubClient) CheckDebugAvailable(id string) tea.Cmd  { return c.checkDebugAvail(id) }
+func (c *stubClient) DebugContainer(id string) tea.Cmd       { return c.debugContainer(id) }
+func (c *stubClient) InspectContainer(id string) tea.Cmd {
+	c.lastInspectContainerID = id
+	if c.inspectData != nil || c.inspectErr != nil {
+		data, err := c.inspectData, c.inspectErr
+		return func() tea.Msg { return docker.InspectMsg{Data: data, Err: err} }
+	}
+	return c.inspectContainer(id)
+}
 func (c *stubClient) InspectContainerExpand(id string) tea.Cmd { return c.inspectContainerExpand(id) }
 func (c *stubClient) StartAllStats(ctx context.Context, gen int) tea.Cmd {
 	return c.startAllStats(ctx, gen)
 }
 func (c *stubClient) StartLogs(ctx context.Context, id string, tail string, timestamps bool, grep string, gen int) tea.Cmd {
+	c.lastStartLogsID = id
 	return c.startLogs(ctx, id, tail, timestamps, grep, gen)
 }
 func (c *stubClient) StartComposeLogs(ctx context.Context, project string, tail string, timestamps bool, gen int) tea.Cmd {
@@ -87,6 +108,14 @@ func (c *stubClient) StartComposeLogs(ctx context.Context, project string, tail 
 func (c *stubClient) SupportsGrep() tea.Cmd { return c.supportsGrep() }
 func (c *stubClient) StartEvents(ctx context.Context, gen int) tea.Cmd {
 	return c.startEvents(ctx, gen)
+}
+func (c *stubClient) FetchContainerEvents(id string, since time.Duration) tea.Cmd {
+	c.lastFetchContainerEventsID = id
+	if c.events != nil {
+		evs := c.events
+		return func() tea.Msg { return docker.ContainerEventsMsg{ContainerID: id, Events: evs} }
+	}
+	return c.fetchContainerEvents(id, since)
 }
 func (c *stubClient) FetchContexts() tea.Cmd             { return c.fetchContexts() }
 func (c *stubClient) SwitchContext(name string) tea.Cmd  { return c.switchContext(name) }

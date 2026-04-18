@@ -3,6 +3,7 @@ package ui
 import (
 	"context"
 	"strings"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/pivovarit/tdocker/internal/docker"
@@ -226,6 +227,23 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			m.inspect.container = c.Names
 			m.table.SetHeight(m.tableHeight())
 			return m, m.client.InspectContainer(c.ID)
+		}
+	case keyDiagnose:
+		if c, ok := m.selectedContainer(); ok && c.ID != "" && c.State != docker.StateCollapsed && c.State != docker.StateDetail {
+			m.diagnostic.visible = true
+			m.diagnostic.loading = true
+			m.diagnostic.container = c.Names
+			m.diagnostic.containerID = c.ID
+			m.diagnostic.scroll = scrollState{}
+			m.diagnostic.logsGen++
+			ctx, cancel := context.WithCancel(context.Background())
+			m.diagnostic.logsCancel = cancel
+			m.table.SetHeight(m.tableHeight())
+			return m, tea.Batch(
+				m.client.InspectContainer(c.ID),
+				m.client.FetchContainerEvents(c.ID, time.Hour),
+				m.client.StartLogs(ctx, c.ID, "50", false, "", m.diagnostic.logsGen),
+			)
 		}
 	case keyCopy:
 		if c, ok := m.selectedContainer(); ok {

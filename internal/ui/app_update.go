@@ -10,6 +10,8 @@ import (
 	"github.com/pivovarit/tdocker/internal/docker"
 )
 
+const diagnosticEventsMax = 200
+
 func isContainerLifecycleEvent(ev docker.Event) bool {
 	if ev.Type != "container" {
 		return false
@@ -116,6 +118,9 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case m.inspect.visible:
 				m = m.closeInspect()
 				return m, nil
+			case m.diagnostic.visible:
+				m = m.closeDiagnostic()
+				return m, nil
 			case m.stats.visible:
 				m = m.closeStats()
 				return m, nil
@@ -147,6 +152,9 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if m.inspect.visible {
 			return m.handleInspectKey(msg)
+		}
+		if m.diagnostic.visible {
+			return m.handleDiagnosticKey(msg)
 		}
 		if m.stats.visible {
 			return m.handleStatsKey(msg)
@@ -230,6 +238,11 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.err = msg.Err
 			return m, nil
 		}
+		if msg.Err == nil && m.diagnostic.visible && msg.ID == m.diagnostic.containerID {
+			name := m.diagnostic.container
+			m = m.closeDiagnostic()
+			m.warnMsg = "container " + name + " removed"
+		}
 		selectedID := m.currentSelectedID()
 		kept := m.containers[:0]
 		for _, c := range m.containers {
@@ -252,6 +265,14 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case docker.LogsLineMsg:
+		if m.diagnostic.visible && msg.Gen == m.diagnostic.logsGen {
+			m.diagnostic.logs = append(m.diagnostic.logs, msg.Line)
+			if len(m.diagnostic.logs) > 50 {
+				m.diagnostic.logs = m.diagnostic.logs[len(m.diagnostic.logs)-50:]
+			}
+			m = m.rebuildDiagnosticLines()
+			return m, msg.Next
+		}
 		if !m.logs.visible || msg.Gen != m.logs.gen {
 			return m, nil
 		}
@@ -263,6 +284,13 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, msg.Next
 
 	case docker.LogsEndMsg:
+		if m.diagnostic.visible && msg.Gen == m.diagnostic.logsGen {
+			if msg.Err != nil {
+				m.diagnostic.logs = append(m.diagnostic.logs, "(logs ended: "+firstLine(msg.Err.Error())+")")
+				m = m.rebuildDiagnosticLines()
+			}
+			return m, nil
+		}
 		if !m.logs.visible || msg.Gen != m.logs.gen {
 			return m, nil
 		}
@@ -273,15 +301,45 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case docker.InspectMsg:
-		if !m.inspect.visible {
+		if m.diagnostic.visible {
+			if msg.Err != nil {
+				m.diagnostic.err = msg.Err
+				m.diagnostic.loading = false
+				return m, nil
+			}
+			m.diagnostic.data = msg.Data
+			m.diagnostic.loading = false
+			m = m.rebuildDiagnosticLines()
+			return m, nil
+		}
+		if m.inspect.visible {
+			if msg.Err != nil {
+				m.err = msg.Err
+				m = m.closeInspect()
+				return m, nil
+			}
+			m.inspect.lines = buildInspectLines(msg.Data, m.width)
+			return m, nil
+		}
+		return m, nil
+
+	case docker.ContainerEventsMsg:
+		if !m.diagnostic.visible || msg.ContainerID != m.diagnostic.containerID {
 			return m, nil
 		}
 		if msg.Err != nil {
-			m.err = msg.Err
-			m = m.closeInspect()
+			// Events unavailable — render in section, don't close panel.
+			m.diagnostic.events = nil
+			m.diagnostic.eventsErr = msg.Err
+			m = m.rebuildDiagnosticLines()
 			return m, nil
 		}
-		m.inspect.lines = buildInspectLines(msg.Data, m.width)
+		m.diagnostic.events = msg.Events
+		m.diagnostic.eventsErr = nil
+		if len(m.diagnostic.events) > diagnosticEventsMax {
+			m.diagnostic.events = m.diagnostic.events[len(m.diagnostic.events)-diagnosticEventsMax:]
+		}
+		m = m.rebuildDiagnosticLines()
 		return m, nil
 
 	case docker.ExpandInspectMsg:
@@ -334,6 +392,21 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case docker.EventLineMsg:
 		if msg.Gen != m.bgEventsGen {
 			return m, msg.Next
+		}
+		if m.diagnostic.visible && msg.Event.Actor.ID == m.diagnostic.containerID {
+			m.diagnostic.events = append(m.diagnostic.events, msg.Event)
+			if len(m.diagnostic.events) > diagnosticEventsMax {
+				m.diagnostic.events = m.diagnostic.events[len(m.diagnostic.events)-diagnosticEventsMax:]
+			}
+			m = m.rebuildDiagnosticLines()
+			var refresh tea.Cmd
+			switch msg.Event.Action {
+			case "start", "die", "restart", "oom", "health_status":
+				refresh = m.client.InspectContainer(m.diagnostic.containerID)
+			}
+			if refresh != nil {
+				return m, tea.Batch(msg.Next, refresh)
+			}
 		}
 		var debounceCmd tea.Cmd
 		opIdle := m.op.kind == OpNone || m.op.kind == OpConfirming
@@ -448,6 +521,9 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case docker.ContextSwitchMsg:
+		if m.diagnostic.visible {
+			m = m.closeDiagnostic()
+		}
 		m.ctxPicker.visible = false
 		m.ctxPicker.contexts = nil
 		m.ctxPicker.cursor = 0
