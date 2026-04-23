@@ -23,8 +23,14 @@ func buildDiagnosticLines(
 	var lines []string
 	section := func(title string) { lines = append(lines, inspectSectionStyle.Render(title)) }
 	blank := func() { lines = append(lines, "") }
-	val := func(s string) { lines = append(lines, "  "+inspectValueStyle.Render(s)) }
-	kv := func(k, v string) { lines = append(lines, "  "+keyStyle.Render(k)+inspectValueStyle.Render(v)) }
+	val := func(s string) { lines = append(lines, "  "+inspectValueStyle.Render(truncateForWidth(s, width-4))) }
+	kv := func(k, v string) {
+		maxV := width - 4 - utf8.RuneCountInString(k)
+		if maxV < 1 {
+			maxV = 1
+		}
+		lines = append(lines, "  "+keyStyle.Render(k)+inspectValueStyle.Render(truncateForWidth(v, maxV)))
+	}
 
 	section(statusLine(c, data, now))
 	lines = append(lines, inspectSectionStyle.Render(restartsLine(data)))
@@ -86,8 +92,16 @@ func buildDiagnosticLines(
 		inEnv := false
 
 		envSection := func(title string) { envLines = append(envLines, inspectSectionStyle.Render(title)) }
-		envKV := func(k, v string) { envLines = append(envLines, "  "+keyStyle.Render(k)+inspectValueStyle.Render(v)) }
-		envVal := func(s string) { envLines = append(envLines, "  "+inspectValueStyle.Render(s)) }
+		envKV := func(k, v string) {
+			maxV := width - 4 - utf8.RuneCountInString(k)
+			if maxV < 1 {
+				maxV = 1
+			}
+			envLines = append(envLines, "  "+keyStyle.Render(k)+inspectValueStyle.Render(truncateForWidth(v, maxV)))
+		}
+		envVal := func(s string) {
+			envLines = append(envLines, "  "+inspectValueStyle.Render(truncateForWidth(s, width-4)))
+		}
 
 		for _, l := range data.Lines(width) {
 			if l.Kind == docker.InspectLineSection {
@@ -200,6 +214,7 @@ func formatEventLine(ev docker.Event) string {
 }
 
 func truncateForWidth(s string, max int) string {
+	s = strings.ReplaceAll(s, "\n", " ")
 	if max <= 0 || utf8.RuneCountInString(s) <= max {
 		return s
 	}
