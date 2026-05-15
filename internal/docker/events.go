@@ -1,11 +1,8 @@
 package docker
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
-	"io"
-	"log"
 	"os/exec"
 	"time"
 
@@ -51,42 +48,14 @@ type (
 )
 
 func (CLI) StartEvents(ctx context.Context, gen int) tea.Cmd {
-	cmd := exec.CommandContext(ctx, "docker", "events", "--format", "{{json .}}")
-	pr, pw := io.Pipe()
-	cmd.Stdout = pw
-	cmd.Stderr = pw
-
-	if err := cmd.Start(); err != nil {
-		return func() tea.Msg { return EventEndMsg{Err: err, Gen: gen} }
-	}
-
-	go func() {
-		err := cmd.Wait()
-		contextCancelled := ctx.Err() != nil
-		if err != nil && !contextCancelled {
-			if cerr := pw.CloseWithError(err); cerr != nil {
-				log.Printf("pipe close: %v", cerr)
-			}
-		} else {
-			if cerr := pw.Close(); cerr != nil {
-				log.Printf("pipe close: %v", cerr)
-			}
-		}
-	}()
-
-	scanner := bufio.NewScanner(pr)
-
-	var readNext tea.Cmd
-	readNext = func() tea.Msg {
-		if scanner.Scan() {
+	return streamCmd(ctx, exec.CommandContext(ctx, "docker", "events", "--format", "{{json .}}"),
+		func(line string, next tea.Cmd) tea.Msg {
 			var ev Event
-			if err := json.Unmarshal([]byte(scanner.Text()), &ev); err != nil {
-				return readNext()
+			if err := json.Unmarshal([]byte(line), &ev); err != nil {
+				return nil
 			}
-			return EventLineMsg{Event: ev, Next: readNext, Gen: gen}
-		}
-		return EventEndMsg{Err: scanner.Err(), Gen: gen}
-	}
-
-	return readNext
+			return EventLineMsg{Event: ev, Next: next, Gen: gen}
+		},
+		func(err error) tea.Msg { return EventEndMsg{Err: err, Gen: gen} },
+	)
 }

@@ -1,10 +1,7 @@
 package docker
 
 import (
-	"bufio"
 	"context"
-	"io"
-	"log"
 	"os/exec"
 	"strings"
 
@@ -44,40 +41,12 @@ func (CLI) StartLogs(ctx context.Context, id string, tail string, timestamps boo
 		args = append(args, "--grep", grep)
 	}
 	args = append(args, id)
-	cmd := exec.CommandContext(ctx, "docker", args...)
-	pr, pw := io.Pipe()
-	cmd.Stdout = pw
-	cmd.Stderr = pw
-
-	if err := cmd.Start(); err != nil {
-		return func() tea.Msg { return LogsEndMsg{Err: err, Gen: gen} }
-	}
-
-	go func() {
-		err := cmd.Wait()
-		contextCancelled := ctx.Err() != nil
-		if err != nil && !contextCancelled {
-			if cerr := pw.CloseWithError(err); cerr != nil {
-				log.Printf("pipe close: %v", cerr)
-			}
-		} else {
-			if cerr := pw.Close(); cerr != nil {
-				log.Printf("pipe close: %v", cerr)
-			}
-		}
-	}()
-
-	scanner := bufio.NewScanner(pr)
-
-	var readNext tea.Cmd
-	readNext = func() tea.Msg {
-		if scanner.Scan() {
-			return LogsLineMsg{Line: scanner.Text(), Next: readNext, Gen: gen}
-		}
-		return LogsEndMsg{Err: scanner.Err(), Gen: gen}
-	}
-
-	return readNext
+	return streamCmd(ctx, exec.CommandContext(ctx, "docker", args...),
+		func(line string, next tea.Cmd) tea.Msg {
+			return LogsLineMsg{Line: line, Next: next, Gen: gen}
+		},
+		func(err error) tea.Msg { return LogsEndMsg{Err: err, Gen: gen} },
+	)
 }
 
 func (CLI) StartComposeLogs(ctx context.Context, project string, tail string, timestamps bool, gen int) tea.Cmd {
@@ -85,38 +54,10 @@ func (CLI) StartComposeLogs(ctx context.Context, project string, tail string, ti
 	if timestamps {
 		args = append(args, "--timestamps")
 	}
-	cmd := exec.CommandContext(ctx, "docker", args...)
-	pr, pw := io.Pipe()
-	cmd.Stdout = pw
-	cmd.Stderr = pw
-
-	if err := cmd.Start(); err != nil {
-		return func() tea.Msg { return LogsEndMsg{Err: err, Gen: gen} }
-	}
-
-	go func() {
-		err := cmd.Wait()
-		contextCancelled := ctx.Err() != nil
-		if err != nil && !contextCancelled {
-			if cerr := pw.CloseWithError(err); cerr != nil {
-				log.Printf("pipe close: %v", cerr)
-			}
-		} else {
-			if cerr := pw.Close(); cerr != nil {
-				log.Printf("pipe close: %v", cerr)
-			}
-		}
-	}()
-
-	scanner := bufio.NewScanner(pr)
-
-	var readNext tea.Cmd
-	readNext = func() tea.Msg {
-		if scanner.Scan() {
-			return LogsLineMsg{Line: scanner.Text(), Next: readNext, Gen: gen}
-		}
-		return LogsEndMsg{Err: scanner.Err(), Gen: gen}
-	}
-
-	return readNext
+	return streamCmd(ctx, exec.CommandContext(ctx, "docker", args...),
+		func(line string, next tea.Cmd) tea.Msg {
+			return LogsLineMsg{Line: line, Next: next, Gen: gen}
+		},
+		func(err error) tea.Msg { return LogsEndMsg{Err: err, Gen: gen} },
+	)
 }

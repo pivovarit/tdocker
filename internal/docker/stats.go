@@ -1,11 +1,8 @@
 package docker
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
-	"io"
-	"log"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -39,46 +36,18 @@ type (
 )
 
 func (CLI) StartAllStats(ctx context.Context, gen int) tea.Cmd {
-	cmd := exec.CommandContext(ctx, "docker", "stats", "--format", "{{json .}}")
-	pr, pw := io.Pipe()
-	cmd.Stdout = pw
-	cmd.Stderr = pw
-
-	if err := cmd.Start(); err != nil {
-		return func() tea.Msg { return StatsEndMsg{Err: err, Gen: gen} }
-	}
-
-	go func() {
-		err := cmd.Wait()
-		contextCancelled := ctx.Err() != nil
-		if err != nil && !contextCancelled {
-			if cerr := pw.CloseWithError(err); cerr != nil {
-				log.Printf("pipe close: %v", cerr)
-			}
-		} else {
-			if cerr := pw.Close(); cerr != nil {
-				log.Printf("pipe close: %v", cerr)
-			}
-		}
-	}()
-
-	scanner := bufio.NewScanner(pr)
-
-	var readNext tea.Cmd
-	readNext = func() tea.Msg {
-		for scanner.Scan() {
-			line := strings.TrimSpace(ansiEscRe.ReplaceAllString(scanner.Text(), ""))
+	return streamCmd(ctx, exec.CommandContext(ctx, "docker", "stats", "--format", "{{json .}}"),
+		func(line string, next tea.Cmd) tea.Msg {
+			line = strings.TrimSpace(ansiEscRe.ReplaceAllString(line, ""))
 			if line == "" {
-				continue
+				return nil
 			}
 			var e StatsEntry
 			if err := json.Unmarshal([]byte(line), &e); err != nil {
-				continue
+				return nil
 			}
-			return StatsLineMsg{Entry: e, Next: readNext, Gen: gen}
-		}
-		return StatsEndMsg{Err: scanner.Err(), Gen: gen}
-	}
-
-	return readNext
+			return StatsLineMsg{Entry: e, Next: next, Gen: gen}
+		},
+		func(err error) tea.Msg { return StatsEndMsg{Err: err, Gen: gen} },
+	)
 }
