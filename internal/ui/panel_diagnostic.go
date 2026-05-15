@@ -283,7 +283,7 @@ func (m App) refreshDiagnostic() (tea.Model, tea.Cmd) {
 	return m, tea.Batch(
 		m.client.InspectContainer(id),
 		m.client.FetchContainerEvents(id, time.Hour),
-		m.client.StartLogs(ctx, id, "50", false, "", m.diagnostic.logsGen),
+		m.client.StartLogs(ctx, docker.LogsOpts{ContainerID: id, Tail: "50", Gen: m.diagnostic.logsGen}),
 	)
 }
 

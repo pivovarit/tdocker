@@ -110,8 +110,8 @@ func TestClient_TKey_OpensStatsPanelFromInlineStats(t *testing.T) {
 func TestClient_LKey_CallsStartLogsWithID(t *testing.T) {
 	mc := newStubClient()
 	var gotID string
-	mc.startLogs = func(_ context.Context, id string, _ string, _ bool, _ string, _ int) tea.Cmd {
-		gotID = id
+	mc.startLogs = func(_ context.Context, opts docker.LogsOpts) tea.Cmd {
+		gotID = opts.ContainerID
 		return func() tea.Msg { return nil }
 	}
 	m := modelWithMock(mc, []docker.Container{runningContainer})
@@ -220,11 +220,11 @@ func TestClient_ShellUnavailableMsg_SetsError(t *testing.T) {
 	}
 }
 
-func TestClient_LKey_OnCollapsedCompose_CallsStartComposeLogs(t *testing.T) {
+func TestClient_LKey_OnCollapsedCompose_CallsStartLogsWithProject(t *testing.T) {
 	mc := newStubClient()
 	var gotProject string
-	mc.startComposeLogs = func(_ context.Context, project string, _ string, _ bool, _ int) tea.Cmd {
-		gotProject = project
+	mc.startLogs = func(_ context.Context, opts docker.LogsOpts) tea.Cmd {
+		gotProject = opts.ComposeProject
 		return func() tea.Msg { return nil }
 	}
 	collapsed := docker.Container{
@@ -235,6 +235,6 @@ func TestClient_LKey_OnCollapsedCompose_CallsStartComposeLogs(t *testing.T) {
 	m := modelWithMock(mc, []docker.Container{collapsed})
 	update(m, runeKey("l"))
 	if gotProject != "myapp" {
-		t.Errorf("want StartComposeLogs(%q), got %q", "myapp", gotProject)
+		t.Errorf("want StartLogs with ComposeProject=%q, got %q", "myapp", gotProject)
 	}
 }

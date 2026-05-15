@@ -119,7 +119,7 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 				m.logs.gen++
 				ctx, cancel := context.WithCancel(context.Background())
 				m.logs.cancel = cancel
-				firstLine := m.client.StartComposeLogs(ctx, proj, logsTailDefault, false, m.logs.gen)
+				firstLine := m.client.StartLogs(ctx, docker.LogsOpts{ComposeProject: proj, Tail: logsTailDefault, Gen: m.logs.gen})
 				m.table.SetHeight(m.tableHeight())
 				return m, firstLine
 			} else if c.ID != "" {
@@ -137,7 +137,7 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 				m.logs.gen++
 				ctx, cancel := context.WithCancel(context.Background())
 				m.logs.cancel = cancel
-				firstLine := m.client.StartLogs(ctx, c.ID, logsTailDefault, false, "", m.logs.gen)
+				firstLine := m.client.StartLogs(ctx, docker.LogsOpts{ContainerID: c.ID, Tail: logsTailDefault, Gen: m.logs.gen})
 				m.table.SetHeight(m.tableHeight())
 				return m, firstLine
 			}
@@ -242,7 +242,7 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, tea.Batch(
 				m.client.InspectContainer(c.ID),
 				m.client.FetchContainerEvents(c.ID, time.Hour),
-				m.client.StartLogs(ctx, c.ID, "50", false, "", m.diagnostic.logsGen),
+				m.client.StartLogs(ctx, docker.LogsOpts{ContainerID: c.ID, Tail: "50", Gen: m.diagnostic.logsGen}),
 			)
 		}
 	case keyCopy:

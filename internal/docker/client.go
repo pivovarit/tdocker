@@ -20,8 +20,7 @@ type Client interface {
 	InspectContainer(id string) tea.Cmd
 	InspectContainerExpand(id string) tea.Cmd
 	StartAllStats(ctx context.Context, gen int) tea.Cmd
-	StartLogs(ctx context.Context, id string, tail string, timestamps bool, grep string, gen int) tea.Cmd
-	StartComposeLogs(ctx context.Context, project string, tail string, timestamps bool, gen int) tea.Cmd
+	StartLogs(ctx context.Context, opts LogsOpts) tea.Cmd
 	SupportsGrep() tea.Cmd
 	StartEvents(ctx context.Context, gen int) tea.Cmd
 	FetchContainerEvents(id string, since time.Duration) tea.Cmd

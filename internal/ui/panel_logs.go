@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
+
+	"github.com/pivovarit/tdocker/internal/docker"
 )
 
 type logsState struct {
@@ -46,14 +48,18 @@ func (m App) restartLogs() (tea.Model, tea.Cmd) {
 	if m.logs.allMode {
 		tail = "all"
 	}
-	if m.logs.isCompose {
-		return m, m.client.StartComposeLogs(ctx, m.logs.composeProject, tail, m.logs.timestamps, m.logs.gen)
-	}
 	grep := ""
 	if m.logs.grepMode {
 		grep = m.logs.searchQuery
 	}
-	return m, m.client.StartLogs(ctx, m.logs.containerID, tail, m.logs.timestamps, grep, m.logs.gen)
+	return m, m.client.StartLogs(ctx, docker.LogsOpts{
+		ContainerID:    m.logs.containerID,
+		ComposeProject: m.logs.composeProject,
+		Tail:           tail,
+		Timestamps:     m.logs.timestamps,
+		Grep:           grep,
+		Gen:            m.logs.gen,
+	})
 }
 
 func (m App) logsFiltered() []string {

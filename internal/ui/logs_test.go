@@ -29,8 +29,8 @@ func logsOpenWithLines(lines []string) App {
 func TestLogs_FToggle_SwitchesToAllTail(t *testing.T) {
 	mc := newStubClient()
 	var gotTail string
-	mc.startLogs = func(_ context.Context, _ string, tail string, _ bool, _ string, _ int) tea.Cmd {
-		gotTail = tail
+	mc.startLogs = func(_ context.Context, opts docker.LogsOpts) tea.Cmd {
+		gotTail = opts.Tail
 		return func() tea.Msg { return nil }
 	}
 	m := logsOpen(mc, runningContainer)
@@ -43,8 +43,8 @@ func TestLogs_FToggle_SwitchesToAllTail(t *testing.T) {
 func TestLogs_FToggle_SwitchesBackToTail200(t *testing.T) {
 	mc := newStubClient()
 	var gotTail string
-	mc.startLogs = func(_ context.Context, _ string, tail string, _ bool, _ string, _ int) tea.Cmd {
-		gotTail = tail
+	mc.startLogs = func(_ context.Context, opts docker.LogsOpts) tea.Cmd {
+		gotTail = opts.Tail
 		return func() tea.Msg { return nil }
 	}
 	m := logsOpen(mc, runningContainer)
@@ -68,8 +68,8 @@ func TestLogs_FToggle_ClearsLines(t *testing.T) {
 func TestLogs_FToggle_IncrementsGen(t *testing.T) {
 	mc := newStubClient()
 	var gotGen int
-	mc.startLogs = func(_ context.Context, _ string, _ string, _ bool, _ string, gen int) tea.Cmd {
-		gotGen = gen
+	mc.startLogs = func(_ context.Context, opts docker.LogsOpts) tea.Cmd {
+		gotGen = opts.Gen
 		return func() tea.Msg { return nil }
 	}
 	m := logsOpen(mc, runningContainer)
@@ -83,8 +83,8 @@ func TestLogs_FToggle_IncrementsGen(t *testing.T) {
 func TestLogs_FToggle_PassesContainerID(t *testing.T) {
 	mc := newStubClient()
 	var gotID string
-	mc.startLogs = func(_ context.Context, id string, _ string, _ bool, _ string, _ int) tea.Cmd {
-		gotID = id
+	mc.startLogs = func(_ context.Context, opts docker.LogsOpts) tea.Cmd {
+		gotID = opts.ContainerID
 		return func() tea.Msg { return nil }
 	}
 	m := logsOpen(mc, runningContainer)
@@ -157,30 +157,16 @@ func composeLogsOpen(mc *stubClient, project string) App {
 	return m
 }
 
-func TestComposeLogs_FToggle_CallsStartComposeLogs(t *testing.T) {
+func TestComposeLogs_FToggle_CallsStartLogsWithProject(t *testing.T) {
 	mc := newStubClient()
 	var gotProject string
-	mc.startComposeLogs = func(_ context.Context, project string, _ string, _ bool, _ int) tea.Cmd {
-		gotProject = project
+	mc.startLogs = func(_ context.Context, opts docker.LogsOpts) tea.Cmd {
+		gotProject = opts.ComposeProject
 		return func() tea.Msg { return nil }
 	}
 	m := composeLogsOpen(mc, "myapp")
 	update(m, runeKey("f"))
 	if gotProject != "myapp" {
-		t.Errorf("want StartComposeLogs(%q) on f-toggle, got %q", "myapp", gotProject)
-	}
-}
-
-func TestComposeLogs_FToggle_DoesNotCallStartLogs(t *testing.T) {
-	mc := newStubClient()
-	startLogsCalled := false
-	mc.startLogs = func(_ context.Context, _ string, _ string, _ bool, _ string, _ int) tea.Cmd {
-		startLogsCalled = true
-		return func() tea.Msg { return nil }
-	}
-	m := composeLogsOpen(mc, "myapp")
-	update(m, runeKey("f"))
-	if startLogsCalled {
-		t.Error("want StartLogs not called in compose mode")
+		t.Errorf("want StartLogs with ComposeProject=%q on f-toggle, got %q", "myapp", gotProject)
 	}
 }

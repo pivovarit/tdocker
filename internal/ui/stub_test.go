@@ -21,8 +21,7 @@ type stubClient struct {
 	inspectContainer       func(string) tea.Cmd
 	inspectContainerExpand func(string) tea.Cmd
 	startAllStats          func(context.Context, int) tea.Cmd
-	startLogs              func(context.Context, string, string, bool, string, int) tea.Cmd
-	startComposeLogs       func(context.Context, string, string, bool, int) tea.Cmd
+	startLogs              func(context.Context, docker.LogsOpts) tea.Cmd
 	supportsGrep           func() tea.Cmd
 	startEvents            func(context.Context, int) tea.Cmd
 	fetchContainerEvents   func(string, time.Duration) tea.Cmd
@@ -61,8 +60,7 @@ func newStubClient() *stubClient {
 		inspectContainer:       noopStr,
 		inspectContainerExpand: noopStr,
 		startAllStats:          func(_ context.Context, _ int) tea.Cmd { return noop },
-		startLogs:              func(_ context.Context, _ string, _ string, _ bool, _ string, _ int) tea.Cmd { return noop },
-		startComposeLogs:       func(_ context.Context, _ string, _ string, _ bool, _ int) tea.Cmd { return noop },
+		startLogs:              func(_ context.Context, _ docker.LogsOpts) tea.Cmd { return noop },
 		supportsGrep:           func() tea.Cmd { return noop },
 		startEvents:            func(_ context.Context, _ int) tea.Cmd { return noop },
 		fetchContainerEvents:   func(_ string, _ time.Duration) tea.Cmd { return noop },
@@ -98,12 +96,9 @@ func (c *stubClient) InspectContainerExpand(id string) tea.Cmd { return c.inspec
 func (c *stubClient) StartAllStats(ctx context.Context, gen int) tea.Cmd {
 	return c.startAllStats(ctx, gen)
 }
-func (c *stubClient) StartLogs(ctx context.Context, id string, tail string, timestamps bool, grep string, gen int) tea.Cmd {
-	c.lastStartLogsID = id
-	return c.startLogs(ctx, id, tail, timestamps, grep, gen)
-}
-func (c *stubClient) StartComposeLogs(ctx context.Context, project string, tail string, timestamps bool, gen int) tea.Cmd {
-	return c.startComposeLogs(ctx, project, tail, timestamps, gen)
+func (c *stubClient) StartLogs(ctx context.Context, opts docker.LogsOpts) tea.Cmd {
+	c.lastStartLogsID = opts.ContainerID
+	return c.startLogs(ctx, opts)
 }
 func (c *stubClient) SupportsGrep() tea.Cmd { return c.supportsGrep() }
 func (c *stubClient) StartEvents(ctx context.Context, gen int) tea.Cmd {
