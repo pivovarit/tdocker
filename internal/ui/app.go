@@ -157,11 +157,7 @@ func (m App) Init() tea.Cmd {
 }
 
 func matchesFilter(c docker.Container, q string) bool {
-	return strings.Contains(strings.ToLower(c.Names), q) ||
-		strings.Contains(strings.ToLower(c.Image), q) ||
-		strings.Contains(strings.ToLower(c.ID), q) ||
-		strings.Contains(strings.ToLower(c.ComposeProject()), q) ||
-		strings.Contains(strings.ToLower(c.ComposeService()), q)
+	return strings.Contains(c.SearchIndex, q)
 }
 
 func (m App) filtered() []docker.Container {

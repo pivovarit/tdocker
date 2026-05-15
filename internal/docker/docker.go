@@ -57,15 +57,16 @@ const (
 )
 
 type Container struct {
-	ID         string `json:"ID"`
-	Names      string `json:"Names"`
-	Image      string `json:"Image"`
-	Command    string `json:"Command"`
-	State      string `json:"State"`
-	Status     string `json:"Status"`
-	RunningFor string `json:"RunningFor"`
-	Ports      string `json:"Ports"`
-	Labels     Labels `json:"Labels"`
+	ID          string `json:"ID"`
+	Names       string `json:"Names"`
+	Image       string `json:"Image"`
+	Command     string `json:"Command"`
+	State       string `json:"State"`
+	Status      string `json:"Status"`
+	RunningFor  string `json:"RunningFor"`
+	Ports       string `json:"Ports"`
+	Labels      Labels `json:"Labels"`
+	SearchIndex string `json:"-"`
 }
 
 func (c Container) ComposeProject() string {
@@ -214,5 +215,13 @@ func Sort(containers []Container) []Container {
 		}
 		return strings.Compare(a.Names, b.Names)
 	})
+	BuildSearchIndex(sorted)
 	return sorted
+}
+
+func BuildSearchIndex(containers []Container) {
+	for i := range containers {
+		c := &containers[i]
+		c.SearchIndex = strings.ToLower(c.Names + "\x00" + c.Image + "\x00" + c.ID + "\x00" + c.ComposeProject() + "\x00" + c.ComposeService())
+	}
 }

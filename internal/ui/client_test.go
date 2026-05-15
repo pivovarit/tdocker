@@ -10,6 +10,7 @@ import (
 
 func modelWithMock(mc *stubClient, containers []docker.Container) App {
 	m := newWithClient(mc, "")
+	docker.BuildSearchIndex(containers)
 	m.sorted = containers
 	m.containers = containers
 	m.fetch.loading = false
