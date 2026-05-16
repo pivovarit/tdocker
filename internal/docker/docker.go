@@ -14,6 +14,8 @@ import (
 
 var ErrDaemonUnavailable = errors.New("docker daemon unavailable")
 
+const searchSep = "\x00"
+
 func isDaemonUnavailable(out []byte) bool {
 	s := string(out)
 	return strings.Contains(s, "Cannot connect to the Docker daemon") ||
@@ -222,6 +224,6 @@ func Sort(containers []Container) []Container {
 func BuildSearchIndex(containers []Container) {
 	for i := range containers {
 		c := &containers[i]
-		c.SearchIndex = strings.ToLower(c.Names + "\x00" + c.Image + "\x00" + c.ID + "\x00" + c.ComposeProject() + "\x00" + c.ComposeService())
+		c.SearchIndex = strings.ToLower(c.Names + searchSep + c.Image + searchSep + c.ID + searchSep + c.ComposeProject() + searchSep + c.ComposeService())
 	}
 }
