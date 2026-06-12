@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	charm.land/bubbles/v2 v2.1.0
 	charm.land/bubbletea/v2 v2.0.7
-	charm.land/lipgloss/v2 v2.0.3
+	charm.land/lipgloss/v2 v2.0.4
 	github.com/testcontainers/testcontainers-go v0.42.0
 )
 
