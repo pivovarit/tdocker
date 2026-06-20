@@ -1,0 +1,16 @@
+name: Homebrew Install Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  brew-install:
+    runs-on: macos-latest
+    steps:
+      - name: Install from tap
+        run: brew install pivovarit/tap/tdocker
+
+      - name: Smoke-test
+        run: |
+          tdocker --version
+          tdocker --version | grep -q '^tdocker '
