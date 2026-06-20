@@ -10,13 +10,35 @@ https://github.com/user-attachments/assets/4a017151-5596-4e36-9041-b31236d2b066
 
 ### Getting started
 
-Install with Homebrew:
+Install with Homebrew (macOS or Linux):
 
 ```
 brew install pivovarit/tap/tdocker
 ```
 
-Or install with `go install`:
+#### Linux
+
+Grab a prebuilt binary (amd64):
+
+```
+curl -sSL https://github.com/pivovarit/tdocker/releases/latest/download/tdocker_linux_amd64.tar.gz | tar xz
+sudo mv tdocker /usr/local/bin/
+```
+
+For arm64, swap `amd64` for `arm64`.
+
+Or install a native package from the [latest release](https://github.com/pivovarit/tdocker/releases/latest):
+
+| Distro | Package |
+|--------|---------|
+| Debian / Ubuntu | `.deb` |
+| Fedora / RHEL / openSUSE | `.rpm` |
+| Alpine | `.apk` |
+| Arch | `.pkg.tar.zst` |
+
+#### From source
+
+Install with `go install`:
 
 ```
 go install github.com/pivovarit/tdocker@latest
@@ -42,14 +64,15 @@ Or run directly from source:
 git clone https://github.com/pivovarit/tdocker && cd tdocker && go run .
 ```
 
-### Tested on
+### Built & verified on
 
-| Component | Version |
-|-----------|---------|
-| macOS | 26.3 (Sequoia) |
-| Docker Desktop | 29.2.1 |
+| Environment | Details |
+|-------------|---------|
+| macOS | 26.3 (Sequoia), arm64 (Apple Silicon), Docker Desktop 29.2.1 |
+| Linux | Ubuntu (CI), unit + Testcontainers integration tests on every push |
 | Go | 1.26 |
-| Architecture | arm64 (Apple Silicon) |
+
+Released binaries are built for Linux and macOS on both `amd64` and `arm64`.
 
 Clipboard integration is supported on macOS (`pbcopy`), Windows (`clip`), Linux/X11 (`xclip`), Linux/Wayland (`wl-copy`), and SSH/headless via OSC 52.
 
