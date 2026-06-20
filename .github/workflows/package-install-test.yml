@@ -27,7 +27,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: linux-packages
           path: dist/*_linux_amd64.*
@@ -54,7 +54,7 @@ jobs:
             image: archlinux:latest
             install: pacman -U --noconfirm /pkg/*_linux_amd64.pkg.tar.zst
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: linux-packages
           path: dist
