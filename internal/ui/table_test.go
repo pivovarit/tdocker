@@ -175,6 +175,19 @@ func TestBuildTableName_NotExpandedStandaloneNoPrefix(t *testing.T) {
 	}
 }
 
+func TestBuildTable_DetailRowNotTruncatedWhenWidthAllows(t *testing.T) {
+	full := "│  Ports    80 → 0.0.0.0:80"
+	containers := []docker.Container{
+		{ID: "a1", Names: "web", Image: "nginx", State: docker.StateRunning, Status: "Up", RunningFor: "now", Ports: "0.0.0.0:8080->80/tcp"},
+		{State: docker.StateDetail, Names: full},
+	}
+	tbl := buildTable(containers, 100, nil)
+	got := tbl.Rows()[1][1]
+	if got != full {
+		t.Errorf("detail value truncated despite ample width:\n want %q\n got  %q", full, got)
+	}
+}
+
 func TestBuildTableRows(t *testing.T) {
 	containers := []docker.Container{
 		{ID: "abc123", Names: "my-app", Image: "nginx:alpine", State: docker.StateRunning, Status: "Up 2 hours", RunningFor: "2 hours ago", Ports: "80/tcp"},

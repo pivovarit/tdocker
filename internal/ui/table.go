@@ -31,6 +31,9 @@ func buildTable(containers []docker.Container, width int, stats map[string]docke
 	for i, c := range containers {
 		names[i] = buildTableName(containers, i)
 		if c.State == docker.StateDetail {
+			if w := len([]rune(names[i])); w > nameW {
+				nameW = w
+			}
 			continue
 		}
 		if w := len([]rune(names[i])); w > nameW {
