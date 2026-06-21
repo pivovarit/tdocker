@@ -2,7 +2,7 @@
 
 A minimalistic terminal UI for everyday Docker operations. Not a dashboard, not a full Docker management suite - just the handful of things you actually do dozens of times a day, each a single keypress away: tail logs, exec into a shell, restart a container, copy an ID.
 
-https://github.com/user-attachments/assets/4a017151-5596-4e36-9041-b31236d2b066
+![tdocker demo](docs/tdocker.gif)
 
 ### Philosophy
 
