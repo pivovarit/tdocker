@@ -10,9 +10,13 @@ import (
 
 type CLI struct{}
 
+const psFormat = `{"ID":{{json .ID}},"Names":{{json .Names}},"Image":{{json .Image}},` +
+	`"Command":{{json .Command}},"State":{{json .State}},"Status":{{json .Status}},` +
+	`"RunningFor":{{json .RunningFor}},"Ports":{{json .Ports}},"Labels":{{json .Labels}}}`
+
 func (CLI) FetchContainers(all bool) tea.Cmd {
 	return func() tea.Msg {
-		args := []string{"ps", "--format", "{{json .}}"}
+		args := []string{"ps", "--format", psFormat}
 		if all {
 			args = append(args, "-a")
 		}
