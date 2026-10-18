@@ -117,7 +117,7 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 				m.logs.allMode = false
 				m.logs.visible = true
 				m.logs.gen++
-				ctx, cancel := context.WithCancel(context.Background())
+				ctx, cancel := context.WithCancel(m.ctx)
 				m.logs.cancel = cancel
 				firstLine := m.client.StartLogs(ctx, docker.LogsOpts{ComposeProject: proj, Tail: logsTailDefault, Gen: m.logs.gen})
 				m.table.SetHeight(m.tableHeight())
@@ -135,7 +135,7 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 				m.logs.allMode = false
 				m.logs.visible = true
 				m.logs.gen++
-				ctx, cancel := context.WithCancel(context.Background())
+				ctx, cancel := context.WithCancel(m.ctx)
 				m.logs.cancel = cancel
 				firstLine := m.client.StartLogs(ctx, docker.LogsOpts{ContainerID: c.ID, Tail: logsTailDefault, Gen: m.logs.gen})
 				m.table.SetHeight(m.tableHeight())
@@ -236,7 +236,7 @@ func (m App) handleMainKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			m.diagnostic.containerID = c.ID
 			m.diagnostic.scroll = scrollState{}
 			m.diagnostic.logsGen++
-			ctx, cancel := context.WithCancel(context.Background())
+			ctx, cancel := context.WithCancel(m.ctx)
 			m.diagnostic.logsCancel = cancel
 			m.table.SetHeight(m.tableHeight())
 			return m, tea.Batch(
