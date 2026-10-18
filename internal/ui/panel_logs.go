@@ -42,7 +42,7 @@ func (m App) restartLogs() (tea.Model, tea.Cmd) {
 	m.logs.lines = nil
 	m.logs.scroll = scrollState{autoScroll: true}
 	m.logs.gen++
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(m.ctx)
 	m.logs.cancel = cancel
 	tail := logsTailDefault
 	if m.logs.allMode {

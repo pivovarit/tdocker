@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"context"
 	"fmt"
 	"slices"
 	"time"
@@ -456,7 +455,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.gen != m.bgEventsGen {
 			return m, nil
 		}
-		return m, m.client.StartEvents(context.Background(), m.bgEventsGen)
+		return m, m.client.StartEvents(m.ctx, m.bgEventsGen)
 
 	case docker.StatsLineMsg:
 		if msg.Gen != m.bgStatsGen {
@@ -514,7 +513,7 @@ func (m App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.gen != m.bgStatsGen {
 			return m, nil
 		}
-		return m, m.client.StartAllStats(context.Background(), m.bgStatsGen)
+		return m, m.client.StartAllStats(m.ctx, m.bgStatsGen)
 
 	case docker.GrepSupportMsg:
 		m.grepSupported = msg.Available

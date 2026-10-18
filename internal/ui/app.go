@@ -75,6 +75,7 @@ type renameState struct {
 }
 
 type App struct {
+	ctx            context.Context
 	client         docker.Client
 	table          table.Model
 	containers     []docker.Container
@@ -117,12 +118,15 @@ type App struct {
 	grepSupported     bool
 }
 
-func New(version string) App {
-	return newWithClient(docker.CLI{}, version)
+func New(ctx context.Context, version string) App {
+	m := newWithClient(docker.CLI{}, version)
+	m.ctx = ctx
+	return m
 }
 
 func newWithClient(c docker.Client, version string) App {
 	return App{
+		ctx:                context.Background(),
 		client:             c,
 		version:            version,
 		showAll:            true,
@@ -145,9 +149,9 @@ func newWithClient(c docker.Client, version string) App {
 func (m App) Init() tea.Cmd {
 	return tea.Batch(
 		m.client.FetchContainers(m.showAll),
-		m.client.StartAllStats(context.Background(), m.bgStatsGen),
+		m.client.StartAllStats(m.ctx, m.bgStatsGen),
 		m.client.FetchContexts(),
-		m.client.StartEvents(context.Background(), m.bgEventsGen),
+		m.client.StartEvents(m.ctx, m.bgEventsGen),
 		m.client.SupportsGrep(),
 		fetchTimerCmd(),
 		fetchSlowCmd(m.fetch.gen),

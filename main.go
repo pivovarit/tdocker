@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -16,8 +17,12 @@ func main() {
 		return
 	}
 
-	p := tea.NewProgram(ui.New(version))
-	if _, err := p.Run(); err != nil {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	p := tea.NewProgram(ui.New(ctx, version))
+	_, err := p.Run()
+	cancel()
+	if err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}

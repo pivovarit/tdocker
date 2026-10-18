@@ -277,7 +277,7 @@ func (m App) refreshDiagnostic() (tea.Model, tea.Cmd) {
 	m.diagnostic.logs = nil
 	m.diagnostic.events = nil
 	m.diagnostic.loading = true
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(m.ctx)
 	m.diagnostic.logsCancel = cancel
 	id := m.diagnostic.containerID
 	return m, tea.Batch(
