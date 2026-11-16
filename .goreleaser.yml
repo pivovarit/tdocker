@@ -30,17 +30,19 @@ archives:
 checksum:
   name_template: "checksums.txt"
 
-brews:
+homebrew_casks:
   - ids:
       - tar
     repository:
       owner: pivovarit
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-    directory: Formula
     description: "Minimalistic TUI for Docker"
     homepage: "https://github.com/pivovarit/tdocker"
-    license: "MIT"
+    hooks:
+      post:
+        install: |
+          system "/usr/bin/xattr", "-dr", "com.apple.quarantine", "{{ printf "{{ %q }}" "{{staged_path}}" }}/tdocker"
 
 nfpms:
   - maintainer: Grzegorz Piwowarek <gpiwowarek@gmail.com>
